@@ -6,31 +6,36 @@ InstructionDecoder &InstructionDecoder::the() {
 }
 
 Instruction InstructionDecoder::decode(const uint32_t inst) {
-    return Instruction(Instruction::Type::S, Fields());
+    return Instruction(Instruction::Type::WRONG, Fields());
 }
 
 std::set<uint8_t> InstructionDecoder::i_opcodes = {
-    // TODO: complete OPCodes.
+        0b0000011, // L*
+        0b0010011, // ADDI, SLTI, SLTIU, XORI, ANDI, SLLI, SRLI, SRAI
+        0b1100111, // JALR
 };
 
 std::set<uint8_t> InstructionDecoder::r_opcodes = {
-    // TODO: complete OPCodes.
+    0b0110011, // ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND
+
 };
 
 std::set<uint8_t> InstructionDecoder::b_opcodes = {
-    // TODO: complete OPCodes.
+    0b1100011, // B*
+
 };
 
 std::set<uint8_t> InstructionDecoder::s_opcodes = {
-    // TODO: complete OPCodes.
+    0b0100011, // S*
 };
 
 std::set<uint8_t> InstructionDecoder::j_opcodes = {
-    // TODO: complete OPCodes.
+    0b1101111, // JAL
 };
 
 std::set<uint8_t> InstructionDecoder::u_opcodes = {
-    // TODO: complete OPCodes.
+    0b0110111, // LUI
+    0b0010111, // AUIPC
 };
 
 Instruction::Type InstructionDecoder::instr_type(uint32_t inst) {
