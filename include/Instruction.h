@@ -26,6 +26,10 @@ public:
 public:
     Instruction(Type t, Fields vals)
         : t(t), f(vals) {};
+
+    Type get_type() {
+        return t;
+    }
 private:
     Type t;
     Fields f;

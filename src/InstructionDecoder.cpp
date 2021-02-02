@@ -6,7 +6,8 @@ InstructionDecoder &InstructionDecoder::the() {
 }
 
 Instruction InstructionDecoder::decode(const uint32_t inst) {
-    return Instruction(Instruction::Type::WRONG, Fields());
+    auto t = instr_type(inst);
+    return Instruction(t, Fields());
 }
 
 std::set<uint8_t> InstructionDecoder::i_opcodes = {
