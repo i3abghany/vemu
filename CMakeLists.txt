@@ -3,4 +3,4 @@ project(EMU-V)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(EMU_V main.cpp InstructionDecoder.cpp InstructionDecoder.h VEmu.cpp VEmu.h Instruction.cpp Instruction.h defs.h)
+add_executable(EMU_V src/main.cpp src/InstructionDecoder.cpp include/InstructionDecoder.h src/VEmu.cpp include/VEmu.h src/Instruction.cpp include/Instruction.h include/defs.h)

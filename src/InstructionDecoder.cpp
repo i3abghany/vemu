@@ -1,4 +1,4 @@
-#include "InstructionDecoder.h"
+#include "../include/InstructionDecoder.h"
 
 InstructionDecoder &InstructionDecoder::the() {
     static InstructionDecoder inst;
