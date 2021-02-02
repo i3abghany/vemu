@@ -1,0 +1,1 @@
+#define OPCODE_MASK (uint32_t) 0x0000007F
