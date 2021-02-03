@@ -31,6 +31,7 @@ public:
 
     Type get_type();
     Fields get_fields();
+    IName get_name();
 
 private:
     Type t;

@@ -7,3 +7,7 @@ Instruction::Type Instruction::get_type() {
 Fields Instruction::get_fields() {
     return f;
 }
+
+IName Instruction::get_name() {
+    return name;
+}
