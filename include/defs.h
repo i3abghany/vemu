@@ -8,52 +8,6 @@
 #define FUNCT7_PRIMARY (uint8_t) 0x00000000
 #define FUNCT7_ALT (uint8_t) 0x00100000
 
-//enum class IType : uint8_t {
-//    LB,
-//    LH,
-//    LW,
-//    LBU,
-//    LHU,
-//    ADDI,
-//    SLTI,
-//    SLTIU,
-//    XORI,
-//    ORI,
-//    ANDI,
-//    SLLI,
-//    SRLI,
-//    SRAI,
-//};
-//
-//enum class BType : uint8_t {
-//    BEQ,
-//    BNE,
-//    BLT,
-//    BGE,
-//    BLTU,
-//    BGEU,
-//};
-//
-//enum class SType : uint8_t {
-//    SB,
-//    SH,
-//    SW,
-//};
-//
-//enum class RType : uint8_t {
-//    ADD,
-//    SUB,
-//    SLL,
-//    SLT,
-//    SLTU,
-//    XOR,
-//    SRL,
-//    SRA,
-//    OR,
-//    AND,
-//};
-
-
 enum class IName : uint8_t {
     LB,
     LH,
@@ -88,5 +42,9 @@ enum class IName : uint8_t {
     SRA,
     OR,
     AND,
+    JAL,
+    JALR,
+    LUI,
+    AUIPC,
     XXX, // wrong instruction.
 };
