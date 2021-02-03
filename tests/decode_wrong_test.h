@@ -1,3 +1,4 @@
+#pragma once
 #include "../include/InstructionDecoder.h"
 
 int decode_wrong_test() {
