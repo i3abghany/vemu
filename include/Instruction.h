@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "defs.h"
 
 struct Fields {
     uint8_t OPCode;
@@ -24,13 +25,15 @@ public:
     };
 
 public:
-    Instruction(Type t, Fields vals)
-        : t(t), f(vals) {};
+    Instruction() = default;
+    Instruction(Type t, IName i, Fields vals)
+        : t(t), name(i), f(vals) {};
 
     Type get_type();
     Fields get_fields();
 
 private:
     Type t;
+    IName name;
     Fields f;
 };
