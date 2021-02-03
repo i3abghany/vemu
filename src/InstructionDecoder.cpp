@@ -8,34 +8,22 @@ InstructionDecoder &InstructionDecoder::the() {
 
 Instruction InstructionDecoder::decode(const uint32_t inst) {
     auto t = instr_type(inst);
-    Instruction res;
-
     switch (t) {
         case Instruction::Type::R:
-            res = decode_r(inst);
-            break;
+            return decode_r(inst);
         case Instruction::Type::I:
-            res = decode_i(inst);
-            break;
+            return decode_i(inst);
         case Instruction::Type::S:
-            res = decode_s(inst);
-            break;
+            return decode_s(inst);
         case Instruction::Type::B:
-            res = decode_b(inst);
-            break;
+            return decode_b(inst);
         case Instruction::Type::U:
-            res = decode_u(inst);
-            break;
+            return decode_u(inst);
         case Instruction::Type::J:
-            res = decode_j(inst);
-            break;
-        case Instruction::Type::WRONG:
-            Fields f{};
-            std::memset(&f, -1, sizeof(f));
-            return Instruction(t, f);
+            return decode_j(inst);
+        case Instruction::Type::WRONG: default:
+            return Instruction(t, IName::XXX, Fields{});
     }
-
-    return Instruction(Instruction::Type::WRONG, f);
 }
 
 std::set<uint8_t> InstructionDecoder::i_opcodes = {
@@ -172,6 +160,26 @@ Instruction InstructionDecoder::decode_r(uint32_t inst) {
         }
     }
     return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+}
+
+Instruction InstructionDecoder::decode_i(uint32_t) {
+    return Instruction();
+}
+
+Instruction InstructionDecoder::decode_b(uint32_t) {
+    return Instruction();
+}
+
+Instruction InstructionDecoder::decode_s(uint32_t) {
+    return Instruction();
+}
+
+Instruction InstructionDecoder::decode_j(uint32_t) {
+    return Instruction();
+}
+
+Instruction InstructionDecoder::decode_u(uint32_t) {
+    return Instruction();
 }
 
 uint8_t InstructionDecoder::extract_opcode(uint32_t inst) {
