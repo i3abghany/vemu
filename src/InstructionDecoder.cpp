@@ -177,6 +177,7 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
     uint8_t rd = extract_rd(inst);
     uint8_t rs1 = extract_rs1(inst);
     uint8_t rs2 = extract_rs2(inst);
+    int32_t imm = get_immediate(inst);
 
     return Fields {
             .OPCode = op,
@@ -185,13 +186,13 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
             .rs1 = rs1,
             .rs2 = rs2,
             .funct7 = funct7,
-            .imm = 0,
+            .imm = imm,
     };
 }
 
 uint8_t InstructionDecoder::get_opcode(IName name) {
     if (name == IName::XXX) {
-        return -1;
+        return UINT8_MAX;
     }
     if (r_opcodes.find(name) != r_opcodes.end())
         return r_opcodes.at(name);
@@ -206,10 +207,13 @@ uint8_t InstructionDecoder::get_opcode(IName name) {
     if (u_opcodes.find(name) != u_opcodes.end())
         return u_opcodes.at(name);
 
-    return -1;
+    return UINT8_MAX;
 }
 
-IName InstructionDecoder::get_iname(uint8_t op) {
+IName InstructionDecoder::get_iname(uint32_t inst) {
+    auto op = extract_opcode(inst);
+    auto funct3 = extract_funct3(inst);
+    auto funct7 = extract_funct7(inst);
     Instruction::Type t = instr_type(op);
 
     if (t == Instruction::Type::WRONG) {
@@ -218,7 +222,7 @@ IName InstructionDecoder::get_iname(uint8_t op) {
 
     if (t == Instruction::Type::I) {
         for (const auto&[k, v] : i_opcodes) {
-            if (op == v) return k;
+            if (op == v && i_funct3.at(k) == funct3) return k;
         }
         return IName::XXX;
     }
@@ -231,20 +235,21 @@ IName InstructionDecoder::get_iname(uint8_t op) {
 
     if (t == Instruction::Type::S) {
         for (const auto&[k, v] : s_opcodes) {
-            if (op == v) return k;
+            if (op == v && s_funct3.at(k) == funct3) return k;
         }
         return IName::XXX;
     }
 
     if (t == Instruction::Type::B) {
         for (const auto&[k, v] : b_opcodes) {
-            if (op == v) return k;
+            if (op == v && b_funct3.at(k) == funct3) return k;
         }
         return IName::XXX;
     }
     if (t == Instruction::Type::R) {
         for (const auto&[k, v] : r_opcodes) {
-            if (op == v) return k;
+            if (op == v && r_funct3.at(k) == funct3 && r_funct7.at(k) == funct7)
+                return k;
         }
         return IName::XXX;
     }
@@ -259,27 +264,16 @@ IName InstructionDecoder::get_iname(uint8_t op) {
     return IName::XXX;
 }
 
-IName InstructionDecoder::get_iname(uint32_t inst) {
-    auto op = extract_opcode(inst);
-    return get_iname(op);
-}
+uint8_t InstructionDecoder::get_funct3(IName n) {
+    auto op = get_opcode(n);
 
-uint8_t InstructionDecoder::get_funct3(IName name) {
-    auto op = get_opcode(name);
-    return get_funct3(op);
-}
-
-uint8_t InstructionDecoder::get_funct3(uint32_t inst) {
-    auto op = extract_opcode(inst);
-    return get_funct3(op);
-}
-
-uint8_t InstructionDecoder::get_funct3(uint8_t op) {
-    auto n = get_iname(op);
+    if (op == UINT8_MAX) {
+        return op;
+    }
     auto t = instr_type(op);
 
     if (t == Instruction::Type::WRONG) {
-        return -1;
+        return UINT8_MAX;
     }
 
     if (t == Instruction::Type::I &&
@@ -302,31 +296,21 @@ uint8_t InstructionDecoder::get_funct3(uint8_t op) {
         return r_funct3.at(n);
     }
 
-    return -1;
+    return UINT8_MAX;
 }
 
-uint8_t InstructionDecoder::get_funct7(IName name) {
-    auto op = get_opcode(name);
-    return get_funct7(op);
-}
-
-uint8_t InstructionDecoder::get_funct7(uint32_t inst) {
-    auto op = extract_opcode(inst);
-    return get_funct7(op);
-}
-
-uint8_t InstructionDecoder::get_funct7(uint8_t op) {
+uint8_t InstructionDecoder::get_funct7(IName n) {
+    auto op = get_opcode(n);
     auto t = instr_type(op);
-    auto n = get_iname(op);
 
     if (t != Instruction::Type::R)
-        return -1;
+        return UINT8_MAX;
 
     if (r_funct7.find(n) != r_funct7.end()) {
         return r_funct7.at(n);
     }
 
-    return -1;
+    return UINT8_MAX;
 }
 
 Instruction InstructionDecoder::decode_r(uint32_t inst) {
@@ -339,24 +323,54 @@ Instruction InstructionDecoder::decode_r(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f);
 }
 
-Instruction InstructionDecoder::decode_i(uint32_t) {
-    return Instruction(Instruction::Type::I, IName::XXX, Fields{});
+Instruction InstructionDecoder::decode_i(uint32_t inst) {
+    Fields f = get_fields(inst);
+    for (auto [ins, f3] : i_funct3) {
+        if (f3 == f.funct3) {
+            return Instruction(Instruction::Type::I, ins, f);
+        }
+    }
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
 }
 
-Instruction InstructionDecoder::decode_b(uint32_t) {
-    return Instruction(Instruction::Type::B, IName::XXX, Fields{});
+Instruction InstructionDecoder::decode_b(uint32_t inst) {
+    Fields f = get_fields(inst);
+    for (const auto &[ins, f3] : b_funct3) {
+        if (f3 == f.funct3) {
+            return Instruction(Instruction::Type::B, ins, f);
+        }
+    }
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
 }
 
-Instruction InstructionDecoder::decode_s(uint32_t) {
-    return Instruction(Instruction::Type::S, IName::XXX, Fields{});
+Instruction InstructionDecoder::decode_s(uint32_t inst) {
+    Fields f = get_fields(inst);
+    for (const auto &[ins, f3] : s_funct3) {
+        if (f3 == f.funct3) {
+            return Instruction(Instruction::Type::S, ins, f);
+        }
+    }
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
 }
 
-Instruction InstructionDecoder::decode_j(uint32_t) {
-    return Instruction(Instruction::Type::J, IName::XXX, Fields{});
+Instruction InstructionDecoder::decode_j(uint32_t inst) {
+    Fields f = get_fields(inst);
+    for (const auto &[ins, op] : j_opcodes) {
+        if (op == f.OPCode) {
+            return Instruction(Instruction::Type::J, ins, f);
+        }
+    }
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
 }
 
-Instruction InstructionDecoder::decode_u(uint32_t) {
-    return Instruction(Instruction::Type::U, IName::XXX, Fields{});
+Instruction InstructionDecoder::decode_u(uint32_t inst) {
+    Fields f = get_fields(inst);
+    for (const auto &[ins, op] : u_opcodes) {
+        if (op == f.OPCode) {
+            return Instruction(Instruction::Type::U, ins, f);
+        }
+    }
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
 }
 
 uint8_t InstructionDecoder::extract_opcode(uint32_t inst) {

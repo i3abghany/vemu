@@ -21,15 +21,10 @@ public:
     uint8_t get_opcode(IName name);
 
     IName get_iname(uint32_t inst);
-    IName get_iname(uint8_t op);
 
     uint8_t get_funct3(IName);
-    uint8_t get_funct3(uint32_t inst);
-    uint8_t get_funct3(uint8_t op);
-
     uint8_t get_funct7(IName);
-    uint8_t get_funct7(uint32_t inst);
-    uint8_t get_funct7(uint8_t op);
+
 private:
     Instruction::Type instr_type(uint32_t instr);
     Instruction::Type instr_type(uint8_t op);

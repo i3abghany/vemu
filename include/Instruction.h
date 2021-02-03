@@ -9,7 +9,7 @@ struct Fields {
     uint8_t rs1;
     uint8_t rs2;
     uint8_t funct7;
-    uint32_t imm;
+    int32_t imm;
 };
 
 class Instruction {
