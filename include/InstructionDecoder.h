@@ -34,6 +34,7 @@ private:
     Instruction::Type instr_type(uint32_t instr);
     Instruction::Type instr_type(uint8_t op);
 
+public:
     int32_t get_immediate(uint32_t);
     int32_t imm_i(uint32_t);
     int32_t imm_s(uint32_t);

@@ -1,4 +1,3 @@
-#include <cstring>
 #include "../include/InstructionDecoder.h"
 
 InstructionDecoder &InstructionDecoder::the() {
@@ -382,4 +381,77 @@ uint8_t InstructionDecoder::extract_rs1(uint32_t inst) {
 
 uint8_t InstructionDecoder::extract_rs2(uint32_t inst) {
     return (inst & RS2_MASK) >> 20U;
+}
+
+int32_t InstructionDecoder::get_immediate(uint32_t inst) {
+     auto t = instr_type(inst);
+
+     if (t == Instruction::Type::WRONG) {
+         return -1;
+     }
+
+     if (t == Instruction::Type::R) {
+         return 0;
+     }
+
+     if (t == Instruction::Type::I) {
+         return imm_i(inst);
+     }
+
+     if (t == Instruction::Type::J) {
+         return imm_j(inst);
+     }
+
+     if (t == Instruction::Type::B) {
+         return imm_b(inst);
+     }
+
+     if (t == Instruction::Type::S) {
+         return imm_s(inst);
+     }
+
+     if (t == Instruction::Type::U) {
+         return imm_u(inst);
+     }
+
+     return -1;
+}
+
+int32_t InstructionDecoder::imm_i(uint32_t inst) {
+    int32_t imm = 0;
+    imm = ((int32_t)(inst & IMM12_MASK) >> 20);
+
+    return imm;
+}
+
+int32_t InstructionDecoder::imm_s(uint32_t inst) {
+    int32_t imm = 0;
+    imm |= extract_rd(inst);
+    imm |= (inst & FUNCT7_MASK) >> 20;
+    return (imm << 20) >> 20;
+}
+
+int32_t InstructionDecoder::imm_b(uint32_t inst) {
+    int32_t imm = 0;
+    imm |= ((inst & B_INST_IMM_0) >> 7) & B_IMM_0;
+    imm |= ((inst & B_INST_IMM_1) >> 20) & B_IMM_1;
+    imm |= ((inst & B_INST_IMM_2) << 4) & B_IMM_2;
+    imm |= ((inst & B_INST_IMM_3) >> 19) & B_IMM_3;
+
+    return (imm << 19) >> 19;
+}
+
+int32_t InstructionDecoder::imm_u(uint32_t inst) {
+    return (int32_t)inst & IMM20_MASK;
+}
+
+int32_t InstructionDecoder::imm_j(uint32_t inst) {
+    int32_t imm = 0;
+    imm |= ((inst & J_INST_IMM_0) >> 20) & J_IMM_0;
+    imm |= ((inst & J_INST_IMM_1) >> 20) & J_IMM_1;
+    imm |= ((inst & J_INST_IMM_2) >> 9)  & J_IMM_2;
+    imm |= (inst  & J_INST_IMM_3)        & J_IMM_3;
+    imm |=  ((inst & J_INST_IMM_4) >> 11) & J_IMM_4;
+
+    return (imm << 11) >> 11;
 }
