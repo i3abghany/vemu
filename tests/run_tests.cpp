@@ -4,6 +4,7 @@
 #include "decode_r_test.h"
 #include "decode_several_instructions_test.h"
 #include "decode_system_instructions_test.h"
+#include "decode_shift_test.h"
 
 int main() {
     if (decode_type_test() != 0) {
@@ -29,6 +30,11 @@ int main() {
     if (decode_system_instructions_test() != 0) {
 
         std::cout << "ERROR: decode_system_instructions_test() returned " << decode_system_instructions_test();
+        return 1;
+    }
+
+    if (decode_shift_test() != 0) {
+        std::cout << "ERROR: decode_shift_test() returned " << decode_shift_test();
         return 1;
     }
 
