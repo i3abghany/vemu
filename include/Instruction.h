@@ -11,6 +11,7 @@ struct Fields {
     uint8_t funct7;
     uint8_t shamt32;
     uint8_t shamt64;
+    uint8_t funct6;
     int32_t imm;
 };
 

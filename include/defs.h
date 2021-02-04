@@ -1,6 +1,7 @@
 #define OPCODE_MASK (uint32_t) 0x0000007F
 #define FUNCT3_MASK (uint32_t) 0x00007000
 #define FUNCT7_MASK (uint32_t) 0xFE000000
+#define FUNCT6_MASK (uint32_t) 0xFC000000
 #define RD_MASK     (uint32_t) 0x00000F80
 #define RS1_MASK    (uint32_t) 0x000F8000
 #define RS2_MASK    (uint32_t) 0x01F00000
