@@ -37,12 +37,12 @@ public:
     int32_t imm_u(uint32_t);
     int32_t imm_j(uint32_t);
 
-    static std::map<IName, uint8_t> i_opcodes;
-    static std::map<IName, uint8_t> j_opcodes;
-    static std::map<IName, uint8_t> u_opcodes;
-    static std::map<IName, uint8_t> r_opcodes;
-    static std::map<IName, uint8_t> b_opcodes;
-    static std::map<IName, uint8_t> s_opcodes;
+    const static std::map<IName, uint8_t> i_opcodes;
+    const static std::map<IName, uint8_t> j_opcodes;
+    const static std::map<IName, uint8_t> u_opcodes;
+    const static std::map<IName, uint8_t> r_opcodes;
+    const static std::map<IName, uint8_t> b_opcodes;
+    const static std::map<IName, uint8_t> s_opcodes;
 
     const static std::map<IName, uint8_t> i_funct3;
     const static std::map<IName, uint8_t> r_funct3;

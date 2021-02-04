@@ -25,7 +25,7 @@ Instruction InstructionDecoder::decode(const uint32_t inst) {
     }
 }
 
-std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
+const std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
         {IName::LB,     0b0000011},
         {IName::LBU,    0b0000011},
         {IName::LH,     0b0000011},
@@ -44,10 +44,16 @@ std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
         {IName::FENCE,  0b0001111},
         {IName::FENCEI, 0b0001111},
         {IName::ECALL,  0b1110011},
-        {IName::EBREAK, 0b1110011}
+        {IName::EBREAK, 0b1110011},
+        {IName::CSRRW,  0b1110011},
+        {IName::CSRRS,  0b1110011},
+        {IName::CSRRC,  0b1110011},
+        {IName::CSRRWI, 0b1110011},
+        {IName::CSRRSI, 0b1110011},
+        {IName::CSRRCI, 0b1110011},
 };
 
-std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
+const std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
         {IName::ADD,  0b0110011},
         {IName::SUB,  0b0110011},
         {IName::SLL,  0b0110011},
@@ -59,7 +65,7 @@ std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
         {IName::OR,   0b0110011},
         {IName::AND,  0b0110011},
 };
-std::map<IName, uint8_t> InstructionDecoder::b_opcodes = {
+const std::map<IName, uint8_t> InstructionDecoder::b_opcodes = {
         {IName::BEQ,  0b1100011},
         {IName::BNE,  0b1100011},
         {IName::BLT,  0b1100011},
@@ -68,22 +74,22 @@ std::map<IName, uint8_t> InstructionDecoder::b_opcodes = {
         {IName::BGEU, 0b1100011},
 };
 
-std::map<IName, uint8_t> InstructionDecoder::s_opcodes = {
+const std::map<IName, uint8_t> InstructionDecoder::s_opcodes = {
         {IName::SB, 0b0100011},
         {IName::SH, 0b0100011},
         {IName::SW, 0b0100011},
 };
 
-std::map<IName, uint8_t> InstructionDecoder::j_opcodes = {
+const std::map<IName, uint8_t> InstructionDecoder::j_opcodes = {
         {IName::JAL, 0b1101111},
 };
 
-std::map<IName, uint8_t> InstructionDecoder::u_opcodes = {
+const std::map<IName, uint8_t> InstructionDecoder::u_opcodes = {
         {IName::LUI,   0b0110111},
         {IName::AUIPC, 0b0010111},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
+const std::map<IName, uint8_t> InstructionDecoder::i_funct3 {
         {IName::LB,     0b000},
         {IName::LH,     0b001},
         {IName::LW,     0b010},
@@ -102,9 +108,15 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
         {IName::EBREAK, 0b000},
         {IName::FENCE,  0b000},
         {IName::FENCEI, 0b001},
+        {IName::CSRRW,  0b001},
+        {IName::CSRRS,  0b010},
+        {IName::CSRRC,  0b011},
+        {IName::CSRRWI, 0b101},
+        {IName::CSRRSI, 0b110},
+        {IName::CSRRCI, 0b111},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
+const std::map<IName, uint8_t> InstructionDecoder::r_funct3 {
         {IName::ADD,  0b000},
         {IName::SUB,  0b000},
         {IName::SLL,  0b001},
