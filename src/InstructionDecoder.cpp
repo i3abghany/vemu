@@ -26,21 +26,25 @@ Instruction InstructionDecoder::decode(const uint32_t inst) {
 }
 
 std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
-        {IName::LB,    0b0000011},
-        {IName::LBU,   0b0000011},
-        {IName::LH,    0b0000011},
-        {IName::LHU,   0b0000011},
-        {IName::LW,    0b0000011},
-        {IName::ADDI,  0b0010011},
-        {IName::SLTI,  0b0010011},
-        {IName::SLTIU, 0b0010011},
-        {IName::XORI,  0b0010011},
-        {IName::ORI,   0b0010011},
-        {IName::ANDI,  0b0010011},
-        {IName::SLLI,  0b0010011},
-        {IName::SRLI,  0b0010011},
-        {IName::SRAI,  0b0010011},
-        {IName::JALR,  0b1100111},
+        {IName::LB,     0b0000011},
+        {IName::LBU,    0b0000011},
+        {IName::LH,     0b0000011},
+        {IName::LHU,    0b0000011},
+        {IName::LW,     0b0000011},
+        {IName::ADDI,   0b0010011},
+        {IName::SLTI,   0b0010011},
+        {IName::SLTIU,  0b0010011},
+        {IName::XORI,   0b0010011},
+        {IName::ORI,    0b0010011},
+        {IName::ANDI,   0b0010011},
+        {IName::SLLI,   0b0010011},
+        {IName::SRLI,   0b0010011},
+        {IName::SRAI,   0b0010011},
+        {IName::JALR,   0b1100111},
+        {IName::FENCE,  0b0001111},
+        {IName::FENCEI, 0b0001111},
+        {IName::ECALL,  0b1110011},
+        {IName::EBREAK, 0b1110011}
 };
 
 std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
@@ -80,20 +84,24 @@ std::map<IName, uint8_t> InstructionDecoder::u_opcodes = {
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
-        {IName::LB,    0b000},
-        {IName::LH,    0b001},
-        {IName::LW,    0b010},
-        {IName::LBU,   0b100},
-        {IName::LHU,   0b101},
-        {IName::ADDI,  0b000},
-        {IName::SLTI,  0b010},
-        {IName::SLTIU, 0b011},
-        {IName::XORI,  0b100},
-        {IName::ORI,   0b110},
-        {IName::ANDI,  0b111},
-        {IName::SLLI,  0b001},
-        {IName::SRLI,  0b101},
-        {IName::SRAI,  0b101},
+        {IName::LB,     0b000},
+        {IName::LH,     0b001},
+        {IName::LW,     0b010},
+        {IName::LBU,    0b100},
+        {IName::LHU,    0b101},
+        {IName::ADDI,   0b000},
+        {IName::SLTI,   0b010},
+        {IName::SLTIU,  0b011},
+        {IName::XORI,   0b100},
+        {IName::ORI,    0b110},
+        {IName::ANDI,   0b111},
+        {IName::SLLI,   0b001},
+        {IName::SRLI,   0b101},
+        {IName::SRAI,   0b101},
+        {IName::ECALL,  0b000},
+        {IName::EBREAK, 0b000},
+        {IName::FENCE,  0b000},
+        {IName::FENCEI, 0b001},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
@@ -325,9 +333,13 @@ Instruction InstructionDecoder::decode_r(uint32_t inst) {
 
 Instruction InstructionDecoder::decode_i(uint32_t inst) {
     Fields f = get_fields(inst);
-    for (auto [ins, f3] : i_funct3) {
-        if (f3 == f.funct3) {
-            return Instruction(Instruction::Type::I, ins, f);
+    for (auto[ins, f3] : i_funct3) {
+        if (get_opcode(ins) == f.OPCode && f3 == f.funct3) {
+            if (ins == IName::ECALL && f.imm == 0 ||
+                ins == IName::EBREAK && f.imm == 1 ||
+                ins != IName::EBREAK && ins != IName::ECALL) {
+                return Instruction(Instruction::Type::I, ins, f);
+            }
         }
     }
     return Instruction(Instruction::Type::WRONG, IName::XXX, f);
