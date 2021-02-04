@@ -32,14 +32,18 @@ const std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
         {IName::LHU,    0b0000011},
         {IName::LW,     0b0000011},
         {IName::ADDI,   0b0010011},
+        {IName::ADDIW,  0b0011011},
         {IName::SLTI,   0b0010011},
         {IName::SLTIU,  0b0010011},
         {IName::XORI,   0b0010011},
         {IName::ORI,    0b0010011},
         {IName::ANDI,   0b0010011},
-        {IName::SLLI,   0b0010011},
-        {IName::SRLI,   0b0010011},
-        {IName::SRAI,   0b0010011},
+        {IName::SLLI,   0b0010011}, // RV64I shifts
+        {IName::SRLI,   0b0010011}, // RV64I shifts
+        {IName::SRAI,   0b0010011}, // RV64I shifts
+        {IName::SLLIW,  0b0010011}, // RV32I shifts
+        {IName::SRLIW,  0b0010011}, // RV32I shifts
+        {IName::SRAIW,  0b0010011}, // RV32I shifts
         {IName::JALR,   0b1100111},
         {IName::FENCE,  0b0001111},
         {IName::FENCEI, 0b0001111},
@@ -56,12 +60,16 @@ const std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
 const std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
         {IName::ADD,  0b0110011},
         {IName::SUB,  0b0110011},
+        {IName::SUBW,  0b0111011},
         {IName::SLL,  0b0110011},
+        {IName::SLLW, 0b0111011},
         {IName::SLT,  0b0110011},
         {IName::SLTU, 0b0110011},
         {IName::XOR,  0b0110011},
         {IName::SRL,  0b0110011},
+        {IName::SRLW, 0b0111011},
         {IName::SRA,  0b0110011},
+        {IName::SRAW, 0b0111011},
         {IName::OR,   0b0110011},
         {IName::AND,  0b0110011},
 };
@@ -89,13 +97,15 @@ const std::map<IName, uint8_t> InstructionDecoder::u_opcodes = {
         {IName::AUIPC, 0b0010111},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::i_funct3 {
+const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
         {IName::LB,     0b000},
         {IName::LH,     0b001},
         {IName::LW,     0b010},
         {IName::LBU,    0b100},
         {IName::LHU,    0b101},
+        {IName::LD,     0b011},
         {IName::ADDI,   0b000},
+        {IName::ADDIW,  0b000},
         {IName::SLTI,   0b010},
         {IName::SLTIU,  0b011},
         {IName::XORI,   0b100},
@@ -104,6 +114,9 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3 {
         {IName::SLLI,   0b001},
         {IName::SRLI,   0b101},
         {IName::SRAI,   0b101},
+        {IName::SLLW,   0b001},
+        {IName::SRLW,   0b101},
+        {IName::SRAW,   0b101},
         {IName::ECALL,  0b000},
         {IName::EBREAK, 0b000},
         {IName::FENCE,  0b000},
@@ -119,6 +132,7 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3 {
 const std::map<IName, uint8_t> InstructionDecoder::r_funct3 {
         {IName::ADD,  0b000},
         {IName::SUB,  0b000},
+        {IName::SUBW,  0b000},
         {IName::SLL,  0b001},
         {IName::SLT,  0b010},
         {IName::SLTU, 0b011},
@@ -142,17 +156,22 @@ const std::map<IName, uint8_t> InstructionDecoder::s_funct3{
         {IName::SB, 0b000},
         {IName::SH, 0b001},
         {IName::SW, 0b010},
+        {IName::SD, 0b011},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::r_funct7{
         {IName::ADD,  FUNCT7_PRIMARY},
         {IName::SUB,  FUNCT7_ALT},
+        {IName::SUBW,  FUNCT7_ALT},
         {IName::SLL,  FUNCT7_PRIMARY},
+        {IName::SLLW,  FUNCT7_PRIMARY},
         {IName::SLT,  FUNCT7_PRIMARY},
         {IName::SLTU, FUNCT7_PRIMARY},
         {IName::XOR,  FUNCT7_PRIMARY},
         {IName::SRL,  FUNCT7_PRIMARY},
+        {IName::SRLW,  FUNCT7_PRIMARY},
         {IName::SRA,  FUNCT7_ALT},
+        {IName::SRAW,  FUNCT7_ALT},
         {IName::OR,   FUNCT7_PRIMARY},
         {IName::AND,  FUNCT7_PRIMARY},
 };
@@ -195,6 +214,8 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
     uint8_t funct7 = extract_funct7(inst);
     uint8_t op = extract_opcode(inst);
     uint8_t rd = extract_rd(inst);
+    uint8_t shamt32 = extract_shamt32(inst);
+    uint8_t shamt64 = extract_shamt64(inst);
     uint8_t rs1 = extract_rs1(inst);
     uint8_t rs2 = extract_rs2(inst);
     int32_t imm = get_immediate(inst);
@@ -206,6 +227,8 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
             .rs1 = rs1,
             .rs2 = rs2,
             .funct7 = funct7,
+            .shamt32 = shamt32,
+            .shamt64 = shamt64,
             .imm = imm,
     };
 }
@@ -492,4 +515,12 @@ int32_t InstructionDecoder::imm_j(uint32_t inst) {
     imm |=  ((inst & J_INST_IMM_4) >> 11) & J_IMM_4;
 
     return (imm << 11) >> 11;
+}
+
+uint8_t InstructionDecoder::extract_shamt32(uint32_t inst) {
+    return (inst & SHAMT32_MASK) >> 20U;
+}
+
+uint8_t InstructionDecoder::extract_shamt64(uint32_t inst) {
+    return (inst & SHAMT64_MASK) >> 20U;
 }

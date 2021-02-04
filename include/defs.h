@@ -7,6 +7,9 @@
 #define IMM12_MASK  (uint32_t) 0xFFF00000
 #define IMM20_MASK  (uint32_t) 0xFFFFF000
 
+#define SHAMT64_MASK  (uint32_t) 0x03F00000
+#define SHAMT32_MASK  (uint32_t) 0x01F00000
+
 #define J_IMM_0 (uint32_t) 0x0000001E
 #define J_IMM_1 (uint32_t) 0x000007E0
 #define J_IMM_2 (uint32_t) 0x00000800
@@ -38,7 +41,9 @@ enum class IName : uint8_t {
     LW,
     LBU,
     LHU,
+    LD,
     ADDI,
+    ADDIW,
     SLTI,
     SLTIU,
     XORI,
@@ -47,6 +52,9 @@ enum class IName : uint8_t {
     SLLI,
     SRLI,
     SRAI,
+    SLLIW,
+    SRLIW,
+    SRAIW,
     FENCE,
     FENCEI,
     ECALL,
@@ -66,14 +74,19 @@ enum class IName : uint8_t {
     SB,
     SH,
     SW,
+    SD,
     ADD,
     SUB,
+    SUBW,
     SLL,
+    SLLW,
     SLT,
     SLTU,
     XOR,
     SRL,
+    SRLW,
     SRA,
+    SRAW,
     OR,
     AND,
     JAL,

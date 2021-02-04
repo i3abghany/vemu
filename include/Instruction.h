@@ -9,6 +9,8 @@ struct Fields {
     uint8_t rs1;
     uint8_t rs2;
     uint8_t funct7;
+    uint8_t shamt32;
+    uint8_t shamt64;
     int32_t imm;
 };
 

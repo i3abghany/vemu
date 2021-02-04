@@ -61,6 +61,8 @@ public:
     uint8_t extract_opcode(uint32_t);
     uint8_t extract_funct3(uint32_t);
     uint8_t extract_funct7(uint32_t);
+    uint8_t extract_shamt32(uint32_t);
+    uint8_t extract_shamt64(uint32_t);
     uint8_t extract_rd(uint32_t);
     uint8_t extract_rs1(uint32_t);
     uint8_t extract_rs2(uint32_t);
