@@ -395,7 +395,8 @@ uint8_t InstructionDecoder::get_funct7(IName n) {
 Instruction InstructionDecoder::decode_r(uint32_t inst) {
     Fields f = get_fields(inst);
     for (auto [ins, f3] : r_funct3) {
-        if (f3 == f.funct3 && r_funct7.at(ins) == f.funct7) {
+        auto f7 = r_funct7.at(ins);
+        if (f.OPCode == get_opcode(ins) && f3 == f.funct3 && r_funct7.at(ins) == f.funct7) {
             return Instruction(Instruction::Type::R, ins, f);
         }
     }

@@ -33,8 +33,8 @@
 #define B_INST_IMM_2 (uint32_t) 0x00000080
 #define B_INST_IMM_3 (uint32_t) 0x80000000
 
-#define FUNCT7_PRIMARY (uint8_t) 0x00000000
-#define FUNCT7_ALT     (uint8_t) 0x00100000
+#define FUNCT7_PRIMARY (uint8_t) 0b00000000
+#define FUNCT7_ALT     (uint8_t) 0b00100000
 
 enum class IName : uint8_t {
     LB,
