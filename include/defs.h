@@ -43,6 +43,7 @@ enum class IName : uint8_t {
     LBU,
     LHU,
     LD,
+    LWU,
     ADDI,
     ADDIW,
     SLTI,
