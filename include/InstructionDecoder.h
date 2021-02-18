@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Instruction.h"
+#include "InstructionDecoder.h"
 
 #include <string>
 #include <set>
@@ -21,6 +22,7 @@ public:
     uint8_t get_opcode(IName name);
 
     IName get_iname(uint32_t inst);
+    std::string get_string_name(IName);
 
     uint8_t get_funct3(IName);
     uint8_t get_funct7(IName);
@@ -40,6 +42,8 @@ public:
     int32_t imm_j(uint32_t);
 
 private:
+	const static std::map<IName, std::string> inst_string_names;
+	
     const static std::map<IName, uint8_t> i_opcodes;
     const static std::map<IName, uint8_t> j_opcodes;
     const static std::map<IName, uint8_t> u_opcodes;
