@@ -18,7 +18,7 @@ int decode_r_test() {
     }
 
     if (a.get_fields().funct3 != InstructionDecoder::the().get_funct3(IName::ADD)) {
-        return 2;
+        return 3;
     }
 
     return 0;
