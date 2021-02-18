@@ -21,9 +21,65 @@ Instruction InstructionDecoder::decode(const uint32_t inst) {
         case Instruction::Type::J:
             return decode_j(inst);
         case Instruction::Type::WRONG: default:
-            return Instruction(t, IName::XXX, Fields{});
+            return Instruction(t, IName::XXX, Fields{}, "XXX");
     }
 }
+
+const std::map<IName, std::string> InstructionDecoder::inst_string_names = {
+		{IName::LB,         "LB"},
+		{IName::LH,         "LH"},
+		{IName::LW,         "LW"},
+		{IName::LBU,       "LBU"},
+		{IName::LHU,       "LHU"},
+		{IName::LD,         "LD"},
+		{IName::LWU,       "LWU"},
+		{IName::ADDI,     "ADDI"},
+		{IName::ADDIW,   "ADDIW"},
+		{IName::SLTI,     "SLTI"},
+		{IName::SLTIU,   "SLTIU"},
+		{IName::XORI,     "XORI"},
+		{IName::ORI,       "ORI"},
+		{IName::ANDI,     "ANDI"},
+		{IName::SLLI,     "SLLI"},
+		{IName::SRLI,     "SRLI"},
+		{IName::SRAI,     "SRAI"},
+		{IName::SLLIW,   "SLLIW"},
+		{IName::SRLIW,   "SRLIW"},
+		{IName::SRAIW,   "SRAIW"},
+		{IName::FENCE,   "FENCE"},
+		{IName::FENCEI, "FENCEI"},
+		{IName::ECALL,   "ECALL"},
+		{IName::EBREAK, "EBREAK"},
+		{IName::CSRRW,   "CSRRW"},
+		{IName::CSRRS,   "CSRRS"},
+		{IName::CSRRC,   "CSRRC"},
+		{IName::CSRRWI, "CSRRWI"},
+		{IName::CSRRSI, "CSRRSI"},
+		{IName::CSRRCI, "CSRRCI"},
+		{IName::BEQ,       "BEQ"},
+		{IName::BNE,       "BNE"},
+		{IName::BLT,       "BLT"},
+		{IName::BGE,       "BGE"},
+		{IName::BLTU,     "BLTU"},
+		{IName::BGEU,     "BGEU"},
+		{IName::SB,         "SB"},
+		{IName::SH,         "SH"},
+		{IName::SW,         "SW"},
+		{IName::SD,         "SD"},
+		{IName::ADD,       "ADD"},
+		{IName::SUB,       "SUB"},
+		{IName::SUBW,     "SUBW"},
+		{IName::SLL,       "SLL"},
+		{IName::SLLW,     "SLLW"},
+		{IName::SLT,       "SLT"},
+		{IName::SLTU,     "SLTU"},
+		{IName::XOR,       "XOR"},
+		{IName::SRL,       "SRL"},
+		{IName::SRLW,     "SRLW"},
+		{IName::XXX,       "XXX"},
+        {IName::LUI,       "LUI"},
+        {IName::AUIPC,   "AUIPC"},
+};
 
 const std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
         {IName::LB,     0b0000011},
@@ -337,6 +393,10 @@ IName InstructionDecoder::get_iname(uint32_t inst) {
     return IName::XXX;
 }
 
+std::string InstructionDecoder::get_string_name(IName ins) {
+	return inst_string_names.at(ins);
+}
+
 uint8_t InstructionDecoder::get_i_funct7(IName n) {
     if (n == IName::XXX) {
         return UINT8_MAX;
@@ -404,13 +464,13 @@ uint8_t InstructionDecoder::get_funct7(IName n) {
 
 Instruction InstructionDecoder::decode_r(uint32_t inst) {
     Fields f = get_fields(inst);
-    for (auto [ins, f3] : r_funct3) {
+    for (auto &[ins, f3] : r_funct3) {
         if (f.OPCode == get_opcode(ins) && f3 == f.funct3 &&
             r_funct7.at(ins) == f.funct7) {
-            return Instruction(Instruction::Type::R, ins, f);
+            return Instruction(Instruction::Type::R, ins, f, get_string_name(ins));
         }
     }
-    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
 Instruction InstructionDecoder::decode_i(uint32_t inst) {
@@ -421,57 +481,57 @@ Instruction InstructionDecoder::decode_i(uint32_t inst) {
             if (ins == IName::ECALL && f.imm == 0 ||
                 ins == IName::EBREAK && f.imm == 1 ||
                 ins != IName::EBREAK && ins != IName::ECALL) {
-                return Instruction(Instruction::Type::I, ins, f);
+                return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
             }
         } else if (is_shift_imm_32_instruction(ins) && f.OPCode == get_opcode(ins) &&
                 f3 == f.funct3 && get_i_funct7(ins) == f.funct7) {
-            return Instruction(Instruction::Type::I, ins, f);
+            return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
         } else if (is_shift_imm_64_instruction(ins) && f.OPCode == get_opcode(ins) &&
                 f3 == f.funct3 && get_i_funct6(ins) == f.funct6) {
-            return Instruction(Instruction::Type::I, ins, f);
+            return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
         }
     }
-    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
 Instruction InstructionDecoder::decode_b(uint32_t inst) {
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : b_funct3) {
         if (f.OPCode == get_opcode(ins) && f3 == f.funct3) {
-            return Instruction(Instruction::Type::B, ins, f);
+            return Instruction(Instruction::Type::B, ins, f, get_string_name(ins));
         }
     }
-    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
 Instruction InstructionDecoder::decode_s(uint32_t inst) {
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : s_funct3) {
         if (f.OPCode == get_opcode(ins) && f3 == f.funct3) {
-            return Instruction(Instruction::Type::S, ins, f);
+            return Instruction(Instruction::Type::S, ins, f, get_string_name(ins));
         }
     }
-    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
 Instruction InstructionDecoder::decode_j(uint32_t inst) {
     Fields f = get_fields(inst);
     for (const auto &[ins, op] : j_opcodes) {
         if (op == f.OPCode) {
-            return Instruction(Instruction::Type::J, ins, f);
+            return Instruction(Instruction::Type::J, ins, f, get_string_name(ins));
         }
     }
-    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
 Instruction InstructionDecoder::decode_u(uint32_t inst) {
     Fields f = get_fields(inst);
     for (const auto &[ins, op] : u_opcodes) {
         if (op == f.OPCode) {
-            return Instruction(Instruction::Type::U, ins, f);
+            return Instruction(Instruction::Type::U, ins, f, get_string_name(ins));
         }
     }
-    return Instruction(Instruction::Type::WRONG, IName::XXX, f);
+    return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
 uint8_t InstructionDecoder::extract_opcode(uint32_t inst) {
