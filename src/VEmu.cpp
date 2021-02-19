@@ -10,11 +10,14 @@ VEmu::VEmu(std::string f_name) :
 void VEmu::read_file()
 {
 	std::ifstream ifs(bin_file_name, std::ios_base::binary);
+	std::filesystem::path file_path {bin_file_name};
+
+	auto sz = std::filesystem::file_size(file_path);
 
 	char byte;
 
-	while ((byte = ifs.get()) && byte != EOF) {
-		code.push_back(static_cast<uint8_t>(byte));
+	while (sz--) {
+		code.push_back(static_cast<uint8_t>(ifs.get()));
 	}
 }
 

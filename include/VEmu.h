@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdint>
 #include <fstream>
+#include <filesystem>
 
 #include "InstructionDecoder.h"
 
