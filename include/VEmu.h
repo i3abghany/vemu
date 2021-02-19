@@ -22,7 +22,7 @@ public:
 private:
 	Instruction curr_instr;
 	constexpr static size_t REGS_NUM = 32;
-	std::array<uint64_t, REGS_NUM> regs;
+	std::array<long long signed int, REGS_NUM> regs;
 	
 	uint32_t get_4byte_aligned_instr(uint32_t);
 	std::vector<uint8_t> code;
@@ -39,11 +39,11 @@ private:
     void CSRRSI(); void CSRRCI(); void BEQ();   void BNE();
     void BLT();    void BGE();    void BLTU();  void BGEU();
     void SB();     void SH();     void SW();    void SD();
-    void ADD();    void SUB();    void SUBW();  void SLL();
-    void SLLW();   void SLT();    void SLTU();  void XOR();
-    void SRL();    void SRLW();   void SRA();   void SRAW();
-    void OR();     void AND();    void JAL();   void JALR();
-    void LUI();    void AUIPC();  void XXX(); 
+    void ADD();    void ADDW();   void SUB();   void SUBW();  
+	void SLL();    void SLLW();   void SLT();   void SLTU();  
+	void XOR();    void SRL();    void SRLW();  void SRA();   
+	void SRAW();   void OR();     void AND();   void JAL();   
+	void JALR();   void LUI();    void AUIPC(); void XXX(); 
 
 	std::string bin_file_name;
 };
