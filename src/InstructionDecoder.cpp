@@ -117,6 +117,7 @@ const std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
 
 const std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
         {IName::ADD,  0b0110011},
+        {IName::ADDW, 0b0111011},
         {IName::SUB,  0b0110011},
         {IName::SUBW, 0b0111011},
         {IName::SLL,  0b0110011},
@@ -200,6 +201,7 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
 
 const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
         {IName::ADD,  0b000},
+        {IName::ADDW, 0b000},
         {IName::SUB,  0b000},
         {IName::SUBW, 0b000},
         {IName::SLL,  0b001},
@@ -230,6 +232,7 @@ const std::map<IName, uint8_t> InstructionDecoder::s_funct3{
 
 const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::ADD,  FUNCT7_PRIMARY},
+        {IName::ADDW, FUNCT7_PRIMARY},
         {IName::SUB,  FUNCT7_ALT},
         {IName::SUBW, FUNCT7_ALT},
         {IName::SLL,  FUNCT7_PRIMARY},
