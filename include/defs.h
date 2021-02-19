@@ -1,3 +1,5 @@
+#pragma once
+
 #define OPCODE_MASK (uint32_t) 0x0000007F
 #define FUNCT3_MASK (uint32_t) 0x00007000
 #define FUNCT7_MASK (uint32_t) 0xFE000000
@@ -35,6 +37,8 @@
 
 #define FUNCT7_PRIMARY (uint8_t) 0b00000000
 #define FUNCT7_ALT     (uint8_t) 0b00100000
+
+#define ADDR_BASE (uint32_t) 0x8000'0000
 
 enum class IName : uint8_t {
     LB,
