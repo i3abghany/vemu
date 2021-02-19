@@ -303,7 +303,7 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
     uint8_t shamt64 = extract_shamt64(inst);
     uint8_t rs1 = extract_rs1(inst);
     uint8_t rs2 = extract_rs2(inst);
-    int32_t imm = get_immediate(inst);
+    uint32_t imm = get_immediate(inst);
 
     return Fields {
             .OPCode = op,
@@ -570,11 +570,11 @@ uint8_t InstructionDecoder::extract_shamt64(uint32_t inst) {
     return (inst & SHAMT64_MASK) >> 20U;
 }
 
-int32_t InstructionDecoder::get_immediate(uint32_t inst) {
+uint32_t InstructionDecoder::get_immediate(uint32_t inst) {
      auto t = instr_type(inst);
 
      if (t == Instruction::Type::WRONG) {
-         return -1;
+         return 0;
      }
 
      if (t == Instruction::Type::R) {
@@ -601,46 +601,56 @@ int32_t InstructionDecoder::get_immediate(uint32_t inst) {
          return imm_u(inst);
      }
 
-     return -1;
+     return 0;
 }
 
-int32_t InstructionDecoder::imm_i(uint32_t inst) {
+uint32_t InstructionDecoder::imm_i(uint32_t inst) {
     int32_t imm = 0;
-    imm = ((int32_t)(inst & IMM12_MASK) >> 20);
+    imm = inst & IMM12_MASK;
 
-    return imm;
+    return static_cast<uint32_t>(imm >> 20);
 }
 
-int32_t InstructionDecoder::imm_s(uint32_t inst) {
+uint32_t InstructionDecoder::imm_s(uint32_t inst) {
     int32_t imm = 0;
     imm |= extract_rd(inst);
-    imm |= (inst & FUNCT7_MASK) >> 20;
-    return (imm << 20) >> 20;
+    imm |= (static_cast<int32_t>(inst) & FUNCT7_MASK) >> 20;
+    imm <<= 20;
+	imm >>= 20;
+
+	return static_cast<uint32_t>(imm);
 }
 
-int32_t InstructionDecoder::imm_b(uint32_t inst) {
+uint32_t InstructionDecoder::imm_b(uint32_t inst) {
     int32_t imm = 0;
-    imm |= ((inst & B_INST_IMM_0) >> 7) & B_IMM_0;
-    imm |= ((inst & B_INST_IMM_1) >> 20) & B_IMM_1;
-    imm |= ((inst & B_INST_IMM_2) << 4) & B_IMM_2;
-    imm |= ((inst & B_INST_IMM_3) >> 19) & B_IMM_3;
+    imm |= ((static_cast<int32_t>(inst) & B_INST_IMM_0) >> 7) & B_IMM_0;
+    imm |= ((static_cast<int32_t>(inst) & B_INST_IMM_1) >> 20) & B_IMM_1;
+    imm |= ((static_cast<int32_t>(inst) & B_INST_IMM_2) << 4) & B_IMM_2;
+    imm |= ((static_cast<int32_t>(inst) & B_INST_IMM_3) >> 19) & B_IMM_3;
 
-    return (imm << 19) >> 19;
+    imm = (imm << 19) >> 19;
+
+	return static_cast<uint32_t>(imm);
 }
 
-int32_t InstructionDecoder::imm_u(uint32_t inst) {
-    return (int32_t)inst & IMM20_MASK;
+uint32_t InstructionDecoder::imm_u(uint32_t inst) {
+	int32_t imm = inst & IMM20_MASK;
+	imm >>= 12;
+
+	return static_cast<uint32_t>(imm);
 }
 
-int32_t InstructionDecoder::imm_j(uint32_t inst) {
+uint32_t InstructionDecoder::imm_j(uint32_t inst) {
     int32_t imm = 0;
-    imm |= ((inst & J_INST_IMM_0) >> 20) & J_IMM_0;
-    imm |= ((inst & J_INST_IMM_1) >> 20) & J_IMM_1;
-    imm |= ((inst & J_INST_IMM_2) >> 9)  & J_IMM_2;
-    imm |= (inst  & J_INST_IMM_3)        & J_IMM_3;
-    imm |=  ((inst & J_INST_IMM_4) >> 11) & J_IMM_4;
+    imm |= ((static_cast<int32_t>(inst) & J_INST_IMM_0) >> 20) & J_IMM_0;
+    imm |= ((static_cast<int32_t>(inst) & J_INST_IMM_1) >> 20) & J_IMM_1;
+    imm |= ((static_cast<int32_t>(inst) & J_INST_IMM_2) >> 9)  & J_IMM_2;
+    imm |= ( static_cast<int32_t>(inst) & J_INST_IMM_3)        & J_IMM_3;
+    imm |= ((static_cast<int32_t>(inst) & J_INST_IMM_4) >> 11) & J_IMM_4;
 
-    return (imm << 11) >> 11;
+    imm = (imm << 11) >> 11;
+
+	return static_cast<uint32_t>(imm);
 }
 
 bool InstructionDecoder::is_shift_imm_32_instruction(IName n) {

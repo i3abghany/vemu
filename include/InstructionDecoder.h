@@ -34,12 +34,12 @@ private:
     Instruction::Type instr_type(uint8_t op);
 
 public:
-    int32_t get_immediate(uint32_t);
-    int32_t imm_i(uint32_t);
-    int32_t imm_s(uint32_t);
-    int32_t imm_b(uint32_t);
-    int32_t imm_u(uint32_t);
-    int32_t imm_j(uint32_t);
+    uint32_t get_immediate(uint32_t);
+    uint32_t imm_i(uint32_t);
+    uint32_t imm_s(uint32_t);
+    uint32_t imm_b(uint32_t);
+    uint32_t imm_u(uint32_t);
+    uint32_t imm_j(uint32_t);
 
 private:
 	const static std::map<IName, std::string> inst_string_names;
