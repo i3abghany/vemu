@@ -3,6 +3,7 @@
 VEmu::VEmu(std::string f_name) :
 	bin_file_name(std::move(f_name)) 
 {
+	pc = 0x00000000;
 	regs.fill(0);
 	read_file();
 	inst_funcs = {
@@ -57,13 +58,11 @@ VEmu::VEmu(std::string f_name) :
 		{IName::XOR,    &VEmu::XOR},
 		{IName::SRL,    &VEmu::SRL},
 		{IName::SRLW,   &VEmu::SRLW},
-		{IName::XXX,    &VEmu::XXX},
 		{IName::LUI,    &VEmu::LUI},
 		{IName::AUIPC,  &VEmu::AUIPC},
 		{IName::XXX,    &VEmu::XXX},
 	};
 }
-
 
 void VEmu::read_file()
 {
@@ -91,8 +90,8 @@ uint32_t VEmu::get_4byte_aligned_instr(uint32_t i)
 
 uint32_t VEmu::run()
 {
-	for (int i = 0; i < code.size(); i += 4) {
-		uint32_t inst = get_4byte_aligned_instr(i);
+	for (; pc < code.size(); pc += 4) {
+		uint32_t inst = get_4byte_aligned_instr(pc);
 
 		curr_instr = InstructionDecoder::the().decode(inst);
 		IName instr_iname = curr_instr.get_name();
@@ -174,7 +173,7 @@ void VEmu::SLTIU()
 	auto rd  = curr_instr.get_fields().rd;
 	auto rs1 = curr_instr.get_fields().rs1;
 
-	regs[rd] = (static_cast<uint64_t>(regs[rs1]) < satic_cast<uint64_t>(imm)) ? 1 : 0;
+	regs[rd] = (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(imm)) ? 1 : 0;
 }
 
 void VEmu::XORI()
@@ -273,26 +272,81 @@ void VEmu::CSRRCI()
 
 void VEmu::BEQ()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	if (regs[rs1] == regs[rs2]) {
+		this->pc += imm;
+	}
+
 }
 
 void VEmu::BNE()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	if (regs[rs1] != regs[rs2]) {
+		this->pc += imm;
+	}
 }
 
 void VEmu::BLT()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	if (regs[rs1] < regs[rs2]) {
+		this->pc += imm;
+	}
 }
 
 void VEmu::BGE()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	if (regs[rs1] > regs[rs2]) {
+		this->pc += imm;
+	}
 }
 
 void VEmu::BLTU()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	if (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(regs[rs2])) {
+		this->pc += imm;
+	}
 }
 
 void VEmu::BGEU()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	if (static_cast<uint64_t>(regs[rs1]) > static_cast<uint64_t>(regs[rs2])) {
+		this->pc += imm;
+	}
 }
 
 void VEmu::SB()

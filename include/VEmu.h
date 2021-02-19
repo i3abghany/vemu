@@ -22,7 +22,8 @@ public:
 private:
 	Instruction curr_instr;
 	constexpr static size_t REGS_NUM = 32;
-	std::array<long long signed int, REGS_NUM> regs;
+	std::array<int64_t, REGS_NUM> regs;
+	uint64_t pc;
 	
 	uint32_t get_4byte_aligned_instr(uint32_t);
 	std::vector<uint8_t> code;
