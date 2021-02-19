@@ -10,6 +10,8 @@
 #include <functional>
 
 #include "InstructionDecoder.h"
+#include "Bus.h"
+#include "util.h"
 
 class VEmu {
 public:
@@ -20,14 +22,6 @@ public:
 	void read_file();
 
 private:
-	Instruction curr_instr;
-	constexpr static size_t REGS_NUM = 32;
-	std::array<int64_t, REGS_NUM> regs;
-	uint64_t pc;
-	
-	uint32_t get_4byte_aligned_instr(uint32_t);
-	std::vector<uint8_t> code;
-
 	std::map<IName, std::function<void(VEmu *)>> inst_funcs;
 
     void LB();     void LH();     void LW();    void LBU();
@@ -45,6 +39,18 @@ private:
 	void XOR();    void SRL();    void SRLW();  void SRA();   
 	void SRAW();   void OR();     void AND();   void JAL();   
 	void JALR();   void LUI();    void AUIPC(); void XXX(); 
+
+private:
+	Instruction curr_instr;
+
+	constexpr static size_t REGS_NUM = 32;
+	std::array<int64_t, REGS_NUM> regs;
+
+	uint64_t pc;
+	uint64_t code_size;
+
+	Bus bus;
+	uint32_t get_4byte_aligned_instr(uint32_t);
 
 	std::string bin_file_name;
 };

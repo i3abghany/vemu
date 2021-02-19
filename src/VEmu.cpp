@@ -3,7 +3,8 @@
 VEmu::VEmu(std::string f_name) :
 	bin_file_name(std::move(f_name)) 
 {
-	pc = 0x00000000;
+	pc = 0x80000000;
+	bus = Bus{};
 	regs.fill(0);
 	read_file();
 	inst_funcs = {
@@ -70,27 +71,24 @@ void VEmu::read_file()
 	std::filesystem::path file_path {bin_file_name};
 
 	auto sz = std::filesystem::file_size(file_path);
+	code_size = sz;
 
 	char byte;
-
+	uint64_t i = 0;
 	while (sz--) {
-		code.push_back(static_cast<uint8_t>(ifs.get()));
+		bus.store(ADDR_BASE + i, static_cast<uint8_t>(ifs.get()), 8);
+		i++;
 	}
 }
 
 uint32_t VEmu::get_4byte_aligned_instr(uint32_t i) 
 {
-	uint32_t inst = code[i];
-	inst |= static_cast<uint32_t>(code[i + 1]) << 8;
-	inst |= static_cast<uint32_t>(code[i + 2]) << 16;
-	inst |= static_cast<uint32_t>(code[i + 3]) << 24;
-
-	return inst;
+	return bus.load(i, 32);
 }
 
 uint32_t VEmu::run()
 {
-	for (; pc < code.size(); pc += 4) {
+	for (; pc < ADDR_BASE + code_size; pc += 4) {
 		uint32_t inst = get_4byte_aligned_instr(pc);
 
 		curr_instr = InstructionDecoder::the().decode(inst);
@@ -104,30 +102,89 @@ uint32_t VEmu::run()
 
 void VEmu::LB()
 {
-}
+	LBU();
 
-void VEmu::LH()
-{
+	auto rd = curr_instr.get_fields().rd;
+
+	regs[rd] = sext_byte(regs[rd]);
 }
 
 void VEmu::LW()
 {
+	LWU();
+
+	auto rd = curr_instr.get_fields().rd;
+
+	regs[rd] = sext_word(regs[rd]);
 }
 
 void VEmu::LBU()
 {
+	auto base_reg = curr_instr.get_fields().rs1;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	// add as signed then convert to unsigned.
+	uint64_t mem_addr = 
+		static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+
+	regs[rd] = bus.load(mem_addr, 8);
+}
+
+void VEmu::LH()
+{
+	LHU();
+
+	auto rd = curr_instr.get_fields().rd;
+
+	regs[rd] = sext_hword(regs[rd]);
 }
 
 void VEmu::LHU()
 {
+	auto base_reg = curr_instr.get_fields().rs1;
+	auto rd = curr_instr.get_fields().rd;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	// add as signed then convert to unsigned.
+	uint64_t mem_addr = 
+		static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+
+	regs[rd] = bus.load(mem_addr, 16);
 }
 
 void VEmu::LD()
 {
+	auto base_reg = curr_instr.get_fields().rs1;
+	auto rd = curr_instr.get_fields().rd;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	// add as signed then convert to unsigned.
+	uint64_t mem_addr = 
+		static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+
+	regs[rd] = sext_dword(bus.load(mem_addr, 64));
 }
 
 void VEmu::LWU()
 {
+	auto base_reg = curr_instr.get_fields().rs1;
+	auto rd = curr_instr.get_fields().rd;
+	
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	// add as signed then convert to unsigned.
+	uint64_t mem_addr = 
+		static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+
+	regs[rd] = bus.load(mem_addr, 32);
 }
 
 void VEmu::ADDI()
