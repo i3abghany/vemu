@@ -23,11 +23,3 @@ uint64_t sext_word(uint32_t w) {
 		)
 	);
 }
-
-uint64_t sext_dword(uint64_t dw) {
-	return static_cast<uint64_t>(
-		static_cast<int64_t>(
-			static_cast<int32_t>(dw)
-		)
-	);
-}
