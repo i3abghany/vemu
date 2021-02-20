@@ -145,6 +145,7 @@ const std::map<IName, uint8_t> InstructionDecoder::s_opcodes = {
         {IName::SB, 0b0100011},
         {IName::SH, 0b0100011},
         {IName::SW, 0b0100011},
+        {IName::SD, 0b0100011},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::j_opcodes = {
@@ -637,10 +638,7 @@ uint32_t InstructionDecoder::imm_b(uint32_t inst) {
 }
 
 uint32_t InstructionDecoder::imm_u(uint32_t inst) {
-	int32_t imm = inst & IMM20_MASK;
-	imm >>= 12;
-
-	return static_cast<uint32_t>(imm);
+	return static_cast<uint32_t>(inst & IMM20_MASK);
 }
 
 uint32_t InstructionDecoder::imm_j(uint32_t inst) {
