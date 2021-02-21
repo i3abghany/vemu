@@ -73,7 +73,6 @@ void VEmu::read_file()
 	auto sz = std::filesystem::file_size(file_path);
 	code_size = sz;
 
-	char byte;
 	uint64_t i = 0;
 	while (sz--) {
 		bus.store(ADDR_BASE + i, static_cast<uint8_t>(ifs.get()), 8);
@@ -233,7 +232,9 @@ void VEmu::SLTIU()
 	auto rd  = curr_instr.get_fields().rd;
 	auto rs1 = curr_instr.get_fields().rs1;
 
-	regs[rd] = (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(imm)) ? 1 : 0;
+	regs[rd] = 
+		(static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(imm)) ?
+			1 : 0;
 }
 
 void VEmu::XORI()
@@ -268,7 +269,8 @@ void VEmu::ANDI()
 
 void VEmu::SLLI()
 {
-	uint8_t shamt = static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
+	uint8_t shamt = 
+		static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
 	auto rs1 = curr_instr.get_fields().rs1;
 	auto rd = curr_instr.get_fields().rd;
 
@@ -280,7 +282,8 @@ void VEmu::SLLI()
 
 void VEmu::SRLI()
 {
-	uint8_t shamt = static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
+	uint8_t shamt = 
+		static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
 	auto rs1 = curr_instr.get_fields().rs1;
 	auto rd = curr_instr.get_fields().rd;
 
@@ -292,7 +295,8 @@ void VEmu::SRLI()
 
 void VEmu::SRAI()
 {
-	uint8_t shamt = static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
+	uint8_t shamt = 
+		static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
 	auto rs1 = curr_instr.get_fields().rs1;
 	auto rd = curr_instr.get_fields().rd;
 
@@ -301,7 +305,8 @@ void VEmu::SRAI()
 
 void VEmu::SLLIW()
 {
-	uint8_t shamt = static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
+	uint8_t shamt = 
+		static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
 	auto rs1 = curr_instr.get_fields().rs1;
 	auto rd = curr_instr.get_fields().rd;
 
@@ -315,7 +320,8 @@ void VEmu::SLLIW()
 
 void VEmu::SRLIW()
 {
-	uint8_t shamt = static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
+	uint8_t shamt = 
+		static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
 	auto rs1 = curr_instr.get_fields().rs1;
 	auto rd = curr_instr.get_fields().rd;
 
@@ -329,7 +335,8 @@ void VEmu::SRLIW()
 
 void VEmu::SRAIW()
 {
-	uint8_t shamt = static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
+	uint8_t shamt = 
+		static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
 	auto rs1 = curr_instr.get_fields().rs1;
 	auto rd = curr_instr.get_fields().rd;
 
@@ -583,6 +590,11 @@ void VEmu::SLTU()
 
 void VEmu::XOR()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	regs[rd] = regs[rs1] ^ regs[rs2];
 }
 
 void VEmu::SRL()
@@ -651,23 +663,50 @@ void VEmu::SRAW()
 
 void VEmu::OR()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	regs[rd] = regs[rs1] | regs[rs2];
 }
 
 void VEmu::AND()
 {
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	regs[rd] = regs[rs1] & regs[rs2];
 }
 
 void VEmu::JAL()
 {
+	auto rd = curr_instr.get_fields().rd;
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	regs[rd] = static_cast<int64_t>(this->pc + 4);
+	
+	this->pc += imm;
 }
 
 void VEmu::JALR()
 {
+	auto rd = curr_instr.get_fields().rd;
+	auto rs1 = curr_instr.get_fields().rs1;
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	regs[rd] = static_cast<int64_t>(this->pc + 4);
+
+	this->pc = static_cast<uint64_t>(regs[rs1] + imm);
+	this->pc |= ~(0x1);
 }
 
 void VEmu::LUI()
 {
-	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm); // the full 32-bit U-imm
+	// the full 32-bit U-imm
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm); 
 	auto rd = curr_instr.get_fields().rd;
 
 	regs[rd] = static_cast<int64_t>(imm_32);
@@ -675,6 +714,11 @@ void VEmu::LUI()
 
 void VEmu::AUIPC()
 {
+	// the full 32-bit U-imm
+	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
+	int64_t imm = static_cast<int64_t>(imm_32);
+
+	this->pc += imm;
 }
 
 void VEmu::XXX()
