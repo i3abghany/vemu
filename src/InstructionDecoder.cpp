@@ -76,9 +76,11 @@ const std::map<IName, std::string> InstructionDecoder::inst_string_names = {
 		{IName::XOR,       "XOR"},
 		{IName::SRL,       "SRL"},
 		{IName::SRLW,     "SRLW"},
-		{IName::XXX,       "XXX"},
         {IName::LUI,       "LUI"},
         {IName::AUIPC,   "AUIPC"},
+        {IName::JAL,       "JAL"},
+        {IName::JALR,     "JALR"},
+		{IName::XXX,       "XXX"},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_opcodes = {
