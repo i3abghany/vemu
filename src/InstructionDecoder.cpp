@@ -482,9 +482,9 @@ Instruction InstructionDecoder::decode_i(uint32_t inst) {
     for (auto[ins, f3] : i_funct3) {
         if (get_opcode(ins) == f.OPCode && f3 == f.funct3 && !is_shift_imm_32_instruction(ins)
             && !is_shift_imm_64_instruction(ins)) {
-            if (ins == IName::ECALL && f.imm == 0 ||
-                ins == IName::EBREAK && f.imm == 1 ||
-                ins != IName::EBREAK && ins != IName::ECALL) {
+            if ((ins == IName::ECALL && f.imm == 0) ||
+                (ins == IName::EBREAK && f.imm == 1)||
+                (ins != IName::EBREAK && ins != IName::ECALL)) {
                 return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
             }
         } else if (is_shift_imm_32_instruction(ins) && f.OPCode == get_opcode(ins) &&
