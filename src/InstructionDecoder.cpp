@@ -67,6 +67,7 @@ const std::map<IName, std::string> InstructionDecoder::inst_string_names = {
 		{IName::SW,         "SW"},
 		{IName::SD,         "SD"},
 		{IName::ADD,       "ADD"},
+		{IName::ADDW,     "ADDW"},
 		{IName::SUB,       "SUB"},
 		{IName::SUBW,     "SUBW"},
 		{IName::SLL,       "SLL"},
@@ -200,6 +201,7 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
         {IName::CSRRWI, 0b101},
         {IName::CSRRSI, 0b110},
         {IName::CSRRCI, 0b111},
+        {IName::JALR,   0b000},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
