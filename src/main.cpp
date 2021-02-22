@@ -3,10 +3,13 @@
 #include <string>
 #include "../include/InstructionDecoder.h"
 
-int main() {
-	std::string name = "./code.bin";
-	VEmu em { name };
-	uint32_t inst = em.run();
+int main(int argc, char *argv[]) {
+	if (argc < 2) {
+		std::cout << "Provide a program.\n";
+		return 1;
+	}
+	VEmu em { std::string {argv[1]} };
+	em.run();
 
     return 0;
 }
