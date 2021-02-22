@@ -91,13 +91,18 @@ uint32_t VEmu::get_4byte_aligned_instr(uint32_t i)
 uint32_t VEmu::run()
 {
 	for (; pc < ADDR_BASE + code_size; pc += 4) {
+		if (pc == 0x0) break;
 		uint32_t inst = get_4byte_aligned_instr(pc);
 
 		curr_instr = InstructionDecoder::the().decode(inst);
 		IName instr_iname = curr_instr.get_name();
 
 		(inst_funcs[instr_iname])(this);
+
 	}
+
+ 	for (int i = 0; i < 32; i++)
+ 		std::cout << "regs[" << i << "] = " << regs[i] << '\n';
 
 	return 0;
 }
@@ -419,6 +424,7 @@ void VEmu::BEQ()
 
 	if (regs[rs1] == regs[rs2]) {
 		this->pc += imm;
+		this->pc -= 4;
 	}
 
 }
@@ -433,6 +439,7 @@ void VEmu::BNE()
 
 	if (regs[rs1] != regs[rs2]) {
 		this->pc += imm;
+		this->pc -= 4;
 	}
 }
 
@@ -446,6 +453,7 @@ void VEmu::BLT()
 
 	if (regs[rs1] < regs[rs2]) {
 		this->pc += imm;
+		this->pc -= 4;
 	}
 }
 
@@ -457,8 +465,9 @@ void VEmu::BGE()
 	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
 	int64_t imm = static_cast<int64_t>(imm_32);
 
-	if (regs[rs1] > regs[rs2]) {
+	if (regs[rs1] >= regs[rs2]) {
 		this->pc += imm;
+		this->pc -= 4;
 	}
 }
 
@@ -472,6 +481,7 @@ void VEmu::BLTU()
 
 	if (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(regs[rs2])) {
 		this->pc += imm;
+		this->pc -= 4;
 	}
 }
 
@@ -483,8 +493,9 @@ void VEmu::BGEU()
 	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
 	int64_t imm = static_cast<int64_t>(imm_32);
 
-	if (static_cast<uint64_t>(regs[rs1]) > static_cast<uint64_t>(regs[rs2])) {
+	if (static_cast<uint64_t>(regs[rs1]) >= static_cast<uint64_t>(regs[rs2])) {
 		this->pc += imm;
+		this->pc -= 4;
 	}
 }
 
@@ -723,10 +734,12 @@ void VEmu::JAL()
 	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
 	int64_t imm = static_cast<int64_t>(imm_32);
 
-	if (rd == 0) return;
-	regs[rd] = static_cast<int64_t>(this->pc + 4);
+	if (rd != 0) {
+		regs[rd] = static_cast<int64_t>(this->pc + 4);
+	}
 	
 	this->pc += imm;
+	this->pc -= 4;
 }
 
 void VEmu::JALR()
@@ -736,11 +749,13 @@ void VEmu::JALR()
 	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
 	int64_t imm = static_cast<int64_t>(imm_32);
 
-	if (rd == 0) return;
-	regs[rd] = static_cast<int64_t>(this->pc + 4);
+	if (rd != 0) {
+		regs[rd] = static_cast<int64_t>(this->pc + 4);
+	}
 
 	this->pc = static_cast<uint64_t>(regs[rs1] + imm);
-	this->pc |= ~(0x1);
+	this->pc &= ~(0x1);
+	this->pc -= 4;
 }
 
 void VEmu::LUI()
