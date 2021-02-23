@@ -254,12 +254,12 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_funct7 {
-        {IName::SLLI,  0b0000000},
-        {IName::SRLI,  0b0000000},
-        {IName::SRAI,  0b0100000},
-        {IName::SLLIW, 0b0000000},
-        {IName::SRLIW, 0b0000000},
-        {IName::SRAIW, 0b0100000},
+        {IName::SLLI,  FUNCT7_PRIMARY},
+        {IName::SRLI,  FUNCT7_PRIMARY},
+        {IName::SRAI,  FUNCT7_ALT},
+        {IName::SLLIW, FUNCT7_PRIMARY},
+        {IName::SRLIW, FUNCT7_PRIMARY},
+        {IName::SRAIW, FUNCT7_ALT},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_funct6 {
@@ -347,60 +347,6 @@ uint8_t InstructionDecoder::get_opcode(IName name) {
     return UINT8_MAX;
 }
 
-IName InstructionDecoder::get_iname(uint32_t inst) {
-    auto op = extract_opcode(inst);
-    auto funct3 = extract_funct3(inst);
-    auto funct7 = extract_funct7(inst);
-    Instruction::Type t = instr_type(op);
-
-    if (t == Instruction::Type::WRONG) {
-        return IName::XXX;
-    }
-
-    if (t == Instruction::Type::I) {
-        for (const auto&[k, v] : i_opcodes) {
-            if (op == v && i_funct3.at(k) == funct3) return k;
-        }
-        return IName::XXX;
-    }
-    if (t == Instruction::Type::J) {
-        for (const auto&[k, v] : j_opcodes) {
-            if (op == v) return k;
-        }
-        return IName::XXX;
-    }
-
-    if (t == Instruction::Type::S) {
-        for (const auto&[k, v] : s_opcodes) {
-            if (op == v && s_funct3.at(k) == funct3) return k;
-        }
-        return IName::XXX;
-    }
-
-    if (t == Instruction::Type::B) {
-        for (const auto&[k, v] : b_opcodes) {
-            if (op == v && b_funct3.at(k) == funct3) return k;
-        }
-        return IName::XXX;
-    }
-    if (t == Instruction::Type::R) {
-        for (const auto&[k, v] : r_opcodes) {
-            if (op == v && r_funct3.at(k) == funct3 && r_funct7.at(k) == funct7)
-                return k;
-        }
-        return IName::XXX;
-    }
-
-    if (t == Instruction::Type::U) {
-        for (const auto&[k, v] : u_opcodes) {
-            if (op == v) return k;
-        }
-        return IName::XXX;
-    }
-
-    return IName::XXX;
-}
-
 std::string InstructionDecoder::get_string_name(IName ins) {
 	return inst_string_names.at(ins);
 }
@@ -419,55 +365,6 @@ uint8_t InstructionDecoder::get_i_funct6(IName n) {
     } else {
         return i_funct6.at(n);
     }
-}
-
-uint8_t InstructionDecoder::get_funct3(IName n) {
-    auto op = get_opcode(n);
-
-    if (op == UINT8_MAX) {
-        return op;
-    }
-    auto t = instr_type(op);
-
-    if (t == Instruction::Type::WRONG) {
-        return UINT8_MAX;
-    }
-
-    if (t == Instruction::Type::I &&
-        i_funct3.find(n) != i_funct3.end()) {
-        return i_funct3.at(n);
-    }
-
-    if (t == Instruction::Type::S &&
-        s_funct3.find(n) != s_funct3.end()) {
-        return s_funct3.at(n);
-    }
-
-    if (t == Instruction::Type::B &&
-        b_funct3.find(n) != b_funct3.end()) {
-        return b_funct3.at(n);
-    }
-
-    if (t == Instruction::Type::R &&
-        r_funct3.find(n) != b_funct3.end()) {
-        return r_funct3.at(n);
-    }
-
-    return UINT8_MAX;
-}
-
-uint8_t InstructionDecoder::get_funct7(IName n) {
-    auto op = get_opcode(n);
-    auto t = instr_type(op);
-
-    if (t != Instruction::Type::R)
-        return UINT8_MAX;
-
-    if (r_funct7.find(n) != r_funct7.end()) {
-        return r_funct7.at(n);
-    }
-
-    return UINT8_MAX;
 }
 
 Instruction InstructionDecoder::decode_r(uint32_t inst) {

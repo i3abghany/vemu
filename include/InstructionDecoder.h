@@ -21,11 +21,10 @@ public:
     Instruction decode(uint32_t);
     uint8_t get_opcode(IName name);
 
-    IName get_iname(uint32_t inst);
     std::string get_string_name(IName);
 
-    uint8_t get_funct3(IName);
-    uint8_t get_funct7(IName);
+    // uint8_t get_funct3(IName);
+    // uint8_t get_funct7(IName);
     uint8_t get_i_funct7(IName);
     uint8_t get_i_funct6(IName);
 
