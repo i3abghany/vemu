@@ -4,7 +4,6 @@
 #include "InstructionDecoder.h"
 
 #include <string>
-#include <set>
 #include <map>
 
 class InstructionDecoder {
@@ -40,6 +39,7 @@ public:
 
 private:
 	const static std::map<IName, std::string> inst_string_names;
+	std::map<uint32_t, Instruction> instr_cache;
 	
     const static std::map<IName, uint8_t> i_opcodes;
     const static std::map<IName, uint8_t> j_opcodes;

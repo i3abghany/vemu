@@ -6,20 +6,23 @@ InstructionDecoder &InstructionDecoder::the() {
 }
 
 Instruction InstructionDecoder::decode(const uint32_t inst) {
+	if (instr_cache.find(inst) != instr_cache.end())
+		return instr_cache.at(inst);
+
     auto t = instr_type(inst);
     switch (t) {
         case Instruction::Type::R:
-            return decode_r(inst);
+            return instr_cache[inst] = decode_r(inst);
         case Instruction::Type::I:
-            return decode_i(inst);
+            return instr_cache[inst] = decode_i(inst);
         case Instruction::Type::S:
-            return decode_s(inst);
+            return instr_cache[inst] = decode_s(inst);
         case Instruction::Type::B:
-            return decode_b(inst);
+            return instr_cache[inst] = decode_b(inst);
         case Instruction::Type::U:
-            return decode_u(inst);
+            return instr_cache[inst] = decode_u(inst);
         case Instruction::Type::J:
-            return decode_j(inst);
+            return instr_cache[inst] = decode_j(inst);
         case Instruction::Type::WRONG: default:
             return Instruction(t, IName::XXX, Fields{}, "XXX");
     }
