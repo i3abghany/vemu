@@ -168,13 +168,6 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
         {IName::LHU,    0b101},
         {IName::LD,     0b011},
         {IName::LWU,    0b110},
-        {IName::JALR,   0b000},
-        {IName::BEQ,    0b000},
-        {IName::BNE,    0b001},
-        {IName::BLT,    0b100},
-        {IName::BGE,    0b101},
-        {IName::BLTU,   0b110},
-        {IName::BGEU,   0b111},
         {IName::ADDI,   0b000},
         {IName::ADDIW,  0b000},
         {IName::SLTI,   0b010},
@@ -185,9 +178,6 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
         {IName::SLLI,   0b001},
         {IName::SRLI,   0b101},
         {IName::SRAI,   0b101},
-        {IName::SLLW,   0b001},
-        {IName::SRLW,   0b101},
-        {IName::SRAW,   0b101},
         {IName::SLLIW,  0b001},
         {IName::SRLIW,  0b101},
         {IName::SRAIW,  0b101},
@@ -327,22 +317,16 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
     };
 }
 
-uint8_t InstructionDecoder::get_opcode(IName name) {
-    if (name == IName::XXX) {
-        return UINT8_MAX;
-    }
-    if (r_opcodes.find(name) != r_opcodes.end())
-        return r_opcodes.at(name);
-    if (i_opcodes.find(name) != i_opcodes.end())
-        return i_opcodes.at(name);
-    if (j_opcodes.find(name) != j_opcodes.end())
-        return j_opcodes.at(name);
-    if (s_opcodes.find(name) != s_opcodes.end())
-        return s_opcodes.at(name);
-    if (b_opcodes.find(name) != b_opcodes.end())
-        return b_opcodes.at(name);
-    if (u_opcodes.find(name) != u_opcodes.end())
-        return u_opcodes.at(name);
+uint8_t InstructionDecoder::get_opcode(IName name, Instruction::Type t) {
+	switch (t) {
+		case Instruction::Type::R: return r_opcodes.at(name);
+		case Instruction::Type::I: return i_opcodes.at(name);
+		case Instruction::Type::S: return s_opcodes.at(name);
+		case Instruction::Type::B: return b_opcodes.at(name);
+		case Instruction::Type::U: return u_opcodes.at(name);
+		case Instruction::Type::J: return j_opcodes.at(name);
+		case Instruction::Type::WRONG: return UINT8_MAX;
+	}
 
     return UINT8_MAX;
 }
@@ -370,7 +354,7 @@ uint8_t InstructionDecoder::get_i_funct6(IName n) {
 Instruction InstructionDecoder::decode_r(uint32_t inst) {
     Fields f = get_fields(inst);
     for (auto &[ins, f3] : r_funct3) {
-        if (f.OPCode == get_opcode(ins) && f3 == f.funct3 &&
+        if (f.OPCode == get_opcode(ins, Instruction::Type::R) && f3 == f.funct3 &&
             r_funct7.at(ins) == f.funct7) {
             return Instruction(Instruction::Type::R, ins, f, get_string_name(ins));
         }
@@ -380,18 +364,18 @@ Instruction InstructionDecoder::decode_r(uint32_t inst) {
 
 Instruction InstructionDecoder::decode_i(uint32_t inst) {
     Fields f = get_fields(inst);
-    for (auto[ins, f3] : i_funct3) {
-        if (get_opcode(ins) == f.OPCode && f3 == f.funct3 && !is_shift_imm_32_instruction(ins)
+    for (const auto &[ins, f3] : i_funct3) {
+        if (get_opcode(ins, Instruction::Type::I) == f.OPCode && f3 == f.funct3 && !is_shift_imm_32_instruction(ins)
             && !is_shift_imm_64_instruction(ins)) {
             if ((ins == IName::ECALL && f.imm == 0) ||
                 (ins == IName::EBREAK && f.imm == 1)||
                 (ins != IName::EBREAK && ins != IName::ECALL)) {
                 return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
             }
-        } else if (is_shift_imm_32_instruction(ins) && f.OPCode == get_opcode(ins) &&
+        } else if (is_shift_imm_32_instruction(ins) && f.OPCode == get_opcode(ins, Instruction::Type::I) &&
                 f3 == f.funct3 && get_i_funct7(ins) == f.funct7) {
             return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
-        } else if (is_shift_imm_64_instruction(ins) && f.OPCode == get_opcode(ins) &&
+        } else if (is_shift_imm_64_instruction(ins) && f.OPCode == get_opcode(ins, Instruction::Type::I) &&
                 f3 == f.funct3 && get_i_funct6(ins) == f.funct6) {
             return Instruction(Instruction::Type::I, ins, f, get_string_name(ins));
         }
@@ -402,7 +386,7 @@ Instruction InstructionDecoder::decode_i(uint32_t inst) {
 Instruction InstructionDecoder::decode_b(uint32_t inst) {
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : b_funct3) {
-        if (f.OPCode == get_opcode(ins) && f3 == f.funct3) {
+        if (f.OPCode == get_opcode(ins, Instruction::Type::B) && f3 == f.funct3) {
             return Instruction(Instruction::Type::B, ins, f, get_string_name(ins));
         }
     }
@@ -412,7 +396,7 @@ Instruction InstructionDecoder::decode_b(uint32_t inst) {
 Instruction InstructionDecoder::decode_s(uint32_t inst) {
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : s_funct3) {
-        if (f.OPCode == get_opcode(ins) && f3 == f.funct3) {
+        if (f.OPCode == get_opcode(ins, Instruction::Type::S) && f3 == f.funct3) {
             return Instruction(Instruction::Type::S, ins, f, get_string_name(ins));
         }
     }

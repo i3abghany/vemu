@@ -19,12 +19,10 @@ public:
     InstructionDecoder(InstructionDecoder&) = delete;
 
     Instruction decode(uint32_t);
-    uint8_t get_opcode(IName name);
+    uint8_t get_opcode(IName name, Instruction::Type t);
 
     std::string get_string_name(IName);
 
-    // uint8_t get_funct3(IName);
-    // uint8_t get_funct7(IName);
     uint8_t get_i_funct7(IName);
     uint8_t get_i_funct6(IName);
 
