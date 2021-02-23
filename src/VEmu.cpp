@@ -622,10 +622,23 @@ void VEmu::SLLW()
 
 void VEmu::SLT()
 {
+	auto rs1 = curr_instr().get_fields().rs1;
+	auto rs2 = curr_instr().get_fields().rs2;
+	auto rd = curr_instr().get_fields().rd;
+
+
+	regs[rd] = (regs[rs1] < regs[rs2]) ? 1 : 0;
 }
 
 void VEmu::SLTU()
 {
+	auto rs1 = curr_instr().get_fields().rs1;
+	auto rs2 = curr_instr().get_fields().rs2;
+	auto rd = curr_instr().get_fields().rd;
+
+
+	regs[rd] = 
+		(static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(regs[rs2])) ? 1 : 0;
 }
 
 void VEmu::XOR()
