@@ -5,6 +5,7 @@
 
 #include <string>
 #include <map>
+#include <unordered_map>
 
 class InstructionDecoder {
 public:
@@ -39,7 +40,7 @@ public:
 
 private:
 	const static std::map<IName, std::string> inst_string_names;
-	std::map<uint32_t, Instruction> instr_cache;
+	std::unordered_map<uint32_t, Instruction> instr_cache;
 	
     const static std::map<IName, uint8_t> i_opcodes;
     const static std::map<IName, uint8_t> j_opcodes;
