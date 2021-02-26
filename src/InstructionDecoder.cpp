@@ -84,6 +84,10 @@ const std::map<IName, std::string> InstructionDecoder::inst_string_names = {
         {IName::AUIPC,   "AUIPC"},
         {IName::JAL,       "JAL"},
         {IName::JALR,     "JALR"},
+        {IName::LRW,       "LRW"},
+        {IName::SCW,       "SCW"},
+        {IName::LRD,       "LRD"},
+        {IName::SCD,       "SCD"},
 		{IName::XXX,       "XXX"},
 };
 
@@ -137,7 +141,12 @@ const std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
         {IName::SRAW, 0b0111011},
         {IName::OR,   0b0110011},
         {IName::AND,  0b0110011},
+        {IName::LRW,  0b0101111},
+        {IName::SCW,  0b0101111},
+        {IName::LRD,  0b0101111},
+        {IName::SCD,  0b0101111},
 };
+
 const std::map<IName, uint8_t> InstructionDecoder::b_opcodes = {
         {IName::BEQ,  0b1100011},
         {IName::BNE,  0b1100011},
@@ -219,6 +228,10 @@ const std::map<IName, uint8_t> InstructionDecoder::b_funct3{
         {IName::BGE,  0b101},
         {IName::BLTU, 0b110},
         {IName::BGEU, 0b111},
+        {IName::LRW,  0b010},
+        {IName::SCW,  0b010},
+        {IName::LRD,  0b010},
+        {IName::SCD,  0b010},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::s_funct3{
@@ -244,6 +257,10 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::SRAW, FUNCT7_ALT},
         {IName::OR,   FUNCT7_PRIMARY},
         {IName::AND,  FUNCT7_PRIMARY},
+        {IName::LRW,  0b0001000}, // Least significant 2 bits are aq and rl
+        {IName::SCW,  0b0001100}, // Least significant 2 bits are aq and rl
+        {IName::LRD,  0b0001000}, // Least significant 2 bits are aq and rl
+        {IName::SCD,  0b0001100}, // Least significant 2 bits are aq and rl
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_funct7 {
@@ -357,10 +374,22 @@ uint8_t InstructionDecoder::get_i_funct6(IName n) {
 Instruction InstructionDecoder::decode_r(uint32_t inst) {
     Fields f = get_fields(inst);
     for (auto &[ins, f3] : r_funct3) {
-        if (f.OPCode == get_opcode(ins, Instruction::Type::R) && f3 == f.funct3 &&
-            r_funct7.at(ins) == f.funct7) {
+		auto ins_opcode = get_opcode(ins, Instruction::Type::R);
+		auto ins_f7 = r_funct7.at(ins);
+
+        if (f.OPCode == ins_opcode && 
+			f3 == f.funct3 &&
+            ins_f7 == f.funct7) {
             return Instruction(Instruction::Type::R, ins, f, get_string_name(ins));
-        }
+        } else if (f.OPCode == ins_opcode &&
+				f3 == f.funct3 && 
+				f.OPCode == AM_OPCODE) {
+			auto f5 = f.funct7 & (~0x11);
+
+			if (f5 == ins_f7) {
+				return Instruction(Instruction::Type::R, ins, f, get_string_name(ins));
+			}
+		}
     }
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }

@@ -3,6 +3,7 @@
 VEmu::VEmu(std::string f_name) :
 	bin_file_name(std::move(f_name)) 
 {
+	mode = Mode::Machine;
 	pc = 0x80000000;
 	bus = Bus{};
 	regs.fill(0);
@@ -64,6 +65,10 @@ VEmu::VEmu(std::string f_name) :
 		{IName::AUIPC,  &VEmu::AUIPC},
 		{IName::JAL,    &VEmu::JAL},
 		{IName::JALR,   &VEmu::JALR},
+		{IName::LRW,    &VEmu::LRW},
+		{IName::LRD,    &VEmu::LRD},
+		{IName::SCW,    &VEmu::SCW},
+		{IName::SCD,    &VEmu::SCD},
 		{IName::XXX,    &VEmu::XXX},
 	};
 }
@@ -78,9 +83,29 @@ void VEmu::read_file()
 
 	uint64_t i = 0;
 	while (sz--) {
-		bus.store(ADDR_BASE + i, static_cast<uint8_t>(ifs.get()), 8);
+		store(ADDR_BASE + i, static_cast<uint8_t>(ifs.get()), 8);
 		i++;
 	}
+}
+
+uint64_t VEmu::load(uint64_t addr, size_t sz)
+{
+	return bus.load(addr, sz);
+}
+
+void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
+{
+	// FIXME: only checks on aligned addresses
+	// Will have to check for individual bytes.
+	// For example: if the address 0x81000000 
+	// is in the reservation set, storing in 
+	// the address 0x810000001 will not
+	// mark the word as not reserved.
+	if (reservation_set.contains(addr)) {
+		reservation_set.remove(addr);
+	}
+
+	store(addr, data, sz);
 }
 
 uint32_t VEmu::get_4byte_aligned_instr(uint32_t i) 
@@ -441,6 +466,7 @@ void VEmu::CSRRS()
 	uint64_t csr_val = load_csr(csr_addr);
 	store_csr(csr_addr, csr_val | regs[rs1]);
 
+	if (rd == 0) return;
 	regs[rd] = csr_val;
 }
 
@@ -453,9 +479,11 @@ void VEmu::CSRRC()
 	csr_addr &= 0xFFF;
 
 	uint64_t csr_val = load_csr(csr_addr);
-	regs[rd] = csr_val;
 
 	store_csr(csr_addr, csr_val & (!regs[rs1]));
+	
+	if (rd == 0) return;
+	regs[rd] = csr_val;
 }
 
 void VEmu::CSRRWI()
@@ -467,9 +495,10 @@ void VEmu::CSRRWI()
 	csr_addr &= 0xFFF;
 
 	uint64_t csr_val = load_csr(csr_addr);
-
-	regs[rd] = csr_val;
 	store_csr(csr_addr, uimm);
+
+	if (rd == 0) return;
+	regs[rd] = csr_val;
 }
 
 void VEmu::CSRRSI()
@@ -483,6 +512,7 @@ void VEmu::CSRRSI()
 	uint64_t csr_val = load_csr(csr_addr);
 	store_csr(csr_addr, csr_val | uimm);
 
+	if (rd == 0) return;
 	regs[rd] = csr_val;
 }
 
@@ -497,6 +527,7 @@ void VEmu::CSRRCI()
 	uint64_t csr_val = load_csr(csr_addr);
 	store_csr(csr_addr, csr_val & (!uimm));
 
+	if (rd == 0) return;
 	regs[rd] = csr_val;
 }
 
@@ -592,7 +623,7 @@ void VEmu::SB()
 	int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm); 
 
 	uint64_t data = static_cast<uint64_t>(regs[rs2]) & 0xFF;
-	bus.store(regs[rs1] + offset, data, 8);
+	store(regs[rs1] + offset, data, 8);
 }
 
 void VEmu::SH()
@@ -602,7 +633,7 @@ void VEmu::SH()
 	int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm); 
 
 	uint64_t data = static_cast<uint64_t>(regs[rs2]) & 0xFFFF;
-	bus.store(regs[rs1] + offset, data, 16);
+	store(regs[rs1] + offset, data, 16);
 }
 
 void VEmu::SW()
@@ -612,7 +643,7 @@ void VEmu::SW()
 	int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm); 
 
 	uint64_t data = static_cast<uint64_t>(regs[rs2]) & 0xFFFFFFFF;
-	bus.store(regs[rs1] + offset, data, 32);
+	store(regs[rs1] + offset, data, 32);
 }
 
 void VEmu::SD()
@@ -622,7 +653,7 @@ void VEmu::SD()
 	int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm); 
 
 	uint64_t data = static_cast<uint64_t>(regs[rs2]);
-	bus.store(regs[rs1] + offset, data, 64);
+	store(regs[rs1] + offset, data, 64);
 }
 
 void VEmu::ADD()
@@ -874,6 +905,86 @@ void VEmu::AUIPC()
 	int64_t imm = static_cast<int64_t>(imm_32);
 
 	this->pc += imm;
+}
+
+void VEmu::LRW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rd = curr_instr.get_fields().rd;
+	uint64_t addr = regs[rs1];
+
+	if (addr % 4 != 0) {
+		std::cout << "Unaligned access in LRW.";
+		exit(EXIT_FAILURE);
+	}
+
+	reservation_set.insert(addr);
+
+	if (rd == 0) return;
+	regs[rd] = bus.load(addr, 32);
+}
+
+void VEmu::LRD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rd = curr_instr.get_fields().rd;
+	uint64_t addr = regs[rs1];
+
+	if (addr % 8 != 0) {
+		std::cout << "Unaligned access in LRD.";
+		exit(EXIT_FAILURE);
+	}
+	
+	reservation_set.insert(addr);
+	
+	if (rd == 0) return;
+	regs[rd] = bus.load(addr, 64);
+}
+
+void VEmu::SCW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+	uint64_t addr = regs[rs1];
+
+	if (addr % 4 != 0) {
+		std::cout << "Unaligned access in SCW.";
+		exit(EXIT_FAILURE);
+	}
+
+	if (!reservation_set.contains(addr)) {
+		reservation_set.remove(addr);
+		store(addr, regs[rs2], 32);
+
+		if (rd == 0) return;
+		regs[rd] = 0;
+	} else {
+		regs[rd] = 1;
+	}
+}
+
+void VEmu::SCD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+	uint64_t addr = regs[rs1];
+
+	if (addr % 8 != 0) {
+		std::cout << "Unaligned access in SCD.";
+		exit(EXIT_FAILURE);
+	}
+	
+	if (!reservation_set.contains(addr)) {
+		reservation_set.remove(addr);
+		store(addr, regs[rs2], 64);
+
+		if (rd == 0) return;
+		regs[rd] = 0;
+	} else {
+		regs[rd] = 1;
+	}
 }
 
 void VEmu::XXX()

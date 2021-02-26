@@ -40,6 +40,8 @@
 
 #define ADDR_BASE (uint32_t) 0x8000'0000
 
+#define AM_OPCODE (uint8_t) 0b0101111
+
 enum class IName : uint8_t {
     LB,
     LH,
@@ -100,6 +102,11 @@ enum class IName : uint8_t {
     JALR,
     LUI,
     AUIPC,
+	// A-extension instructions
+	LRD,
+	LRW,
+	SCW,
+	SCD,
     XXX, // wrong instruction.
 };
 
@@ -128,3 +135,10 @@ enum class IName : uint8_t {
 #define STVAL 0x143
 
 #define SATP 0x180
+
+
+enum class Mode : uint8_t {
+	User = 0b00,
+	Supervisor = 0b01,
+	Machine = 0b11
+};

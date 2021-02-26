@@ -8,6 +8,7 @@
 #include <fstream>
 #include <filesystem>
 #include <functional>
+#include <unordered_set>
 
 #include "InstructionDecoder.h"
 #include "Bus.h"
@@ -19,7 +20,6 @@ public:
 
 	uint32_t run();
 
-	void read_file();
 
 private:
 	std::map<IName, std::function<void(VEmu *)>> inst_funcs;
@@ -39,25 +39,39 @@ private:
 	void XOR();    void SRL();    void SRLW();  void SRA();   
 	void SRAW();   void OR();     void AND();   void JAL();   
 	void JALR();   void LUI();    void AUIPC(); void XXX(); 
+	void LRW();    void LRD();    void SCW();   void SCD(); 
 
 private:
+	void read_file();
+	std::string bin_file_name;
+
 	Instruction curr_instr;
+
+	uint64_t pc;
+	uint64_t code_size;
+
+private:
+	Mode mode;
 
 	constexpr static size_t REGS_NUM = 32;
 	std::array<int64_t, REGS_NUM> regs;
 
+
+private:
 	constexpr static size_t CSR_NUM = 4096;
 	std::array<uint64_t, CSR_NUM> csrs;
 
 	uint64_t load_csr(uint64_t);
 	void store_csr(uint64_t, uint64_t);
 
-	uint64_t pc;
-	uint64_t code_size;
-
+private:
 	Bus bus;
 	uint32_t get_4byte_aligned_instr(uint32_t);
 
-	std::string bin_file_name;
+	uint64_t load(uint64_t, size_t);
+	void store(uint64_t, uint64_t, size_t);
+
+private:
+	std::unordered_set<uint64_t> reservation_set;
 };
 
