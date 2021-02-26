@@ -90,21 +90,47 @@ uint32_t VEmu::get_4byte_aligned_instr(uint32_t i)
 
 uint32_t VEmu::run()
 {
+	uint64_t msse = 0, mssd = 0;
 	for (; pc < ADDR_BASE + code_size; pc += 4) {
+		auto t1 = std::chrono::high_resolution_clock::now();
 		if (pc == 0x0) break;
 		uint32_t inst = get_4byte_aligned_instr(pc);
 
 		curr_instr = InstructionDecoder::the().decode(inst);
 		IName instr_iname = curr_instr.get_name();
+		auto t2 = std::chrono::high_resolution_clock::now();
 
 		(inst_funcs[instr_iname])(this);
+		auto t3 = std::chrono::high_resolution_clock::now();
 
+		msse += std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count();
+		mssd += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
 	}
 
  	for (int i = 0; i < 32; i++)
  		std::cout << "regs[" << i << "] = " << regs[i] << '\n';
 
+	std::cout << "Decoding in: " << mssd << std::endl;
+	std::cout << "Exec in: " << msse << std::endl;
 	return 0;
+}
+
+uint64_t VEmu::load_csr(uint64_t addr)
+{
+	if (addr == SIE) {
+		return csrs[MIE] & csrs[MIDELEG];
+	} else {
+		return csrs[addr];
+	}
+}
+
+void VEmu::store_csr(uint64_t addr, uint64_t val) {
+	if (addr == SIE) {
+		csrs[MIE] &= !csrs[MIDELEG];
+		csrs[MIE] |= (val & csrs[MIDELEG]);
+	} else {
+		csrs[addr] = val;
+	}
 }
 
 void VEmu::LB()
@@ -392,26 +418,86 @@ void VEmu::EBREAK()
 
 void VEmu::CSRRW()
 {
+	auto rd = curr_instr.get_fields().rd;
+	auto rs1 = curr_instr.get_fields().rs1;
+	uint64_t csr_addr = curr_instr.get_fields().imm;
+
+	csr_addr &= 0xFFF;
+
+	uint64_t csr_val = load_csr(csr_addr);
+	store_csr(csr_addr, regs[rs1]);
+
+	regs[rd] = csr_val;
 }
 
 void VEmu::CSRRS()
 {
+	auto rd = curr_instr.get_fields().rd;
+	auto rs1 = curr_instr.get_fields().rs1;
+	uint64_t csr_addr = curr_instr.get_fields().imm;
+
+	csr_addr &= 0xFFF;
+
+	uint64_t csr_val = load_csr(csr_addr);
+	store_csr(csr_addr, csr_val | regs[rs1]);
+
+	regs[rd] = csr_val;
 }
 
 void VEmu::CSRRC()
 {
+	auto rd = curr_instr.get_fields().rd;
+	auto rs1 = curr_instr.get_fields().rs1;
+	uint64_t csr_addr = curr_instr.get_fields().imm;
+
+	csr_addr &= 0xFFF;
+
+	uint64_t csr_val = load_csr(csr_addr);
+	regs[rd] = csr_val;
+
+	store_csr(csr_addr, csr_val & (!regs[rs1]));
 }
 
 void VEmu::CSRRWI()
 {
+	uint64_t uimm = static_cast<uint64_t>(curr_instr.get_fields().rs1);
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t csr_addr = curr_instr.get_fields().imm;
+	csr_addr &= 0xFFF;
+
+	uint64_t csr_val = load_csr(csr_addr);
+
+	regs[rd] = csr_val;
+	store_csr(csr_addr, uimm);
 }
 
 void VEmu::CSRRSI()
 {
+	uint64_t uimm = static_cast<uint64_t>(curr_instr.get_fields().rs1);
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t csr_addr = curr_instr.get_fields().imm;
+	csr_addr &= 0xFFF;
+
+	uint64_t csr_val = load_csr(csr_addr);
+	store_csr(csr_addr, csr_val | uimm);
+
+	regs[rd] = csr_val;
 }
 
 void VEmu::CSRRCI()
 {
+	uint64_t uimm = static_cast<uint64_t>(curr_instr.get_fields().rs1);
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t csr_addr = curr_instr.get_fields().imm;
+	csr_addr &= 0xFFF;
+
+	uint64_t csr_val = load_csr(csr_addr);
+	store_csr(csr_addr, csr_val & (!uimm));
+
+	regs[rd] = csr_val;
 }
 
 void VEmu::BEQ()
@@ -622,9 +708,9 @@ void VEmu::SLLW()
 
 void VEmu::SLT()
 {
-	auto rs1 = curr_instr().get_fields().rs1;
-	auto rs2 = curr_instr().get_fields().rs2;
-	auto rd = curr_instr().get_fields().rd;
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
 
 
 	regs[rd] = (regs[rs1] < regs[rs2]) ? 1 : 0;
@@ -632,9 +718,9 @@ void VEmu::SLT()
 
 void VEmu::SLTU()
 {
-	auto rs1 = curr_instr().get_fields().rs1;
-	auto rs2 = curr_instr().get_fields().rs2;
-	auto rd = curr_instr().get_fields().rd;
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
 
 
 	regs[rd] = 

@@ -46,6 +46,12 @@ private:
 	constexpr static size_t REGS_NUM = 32;
 	std::array<int64_t, REGS_NUM> regs;
 
+	constexpr static size_t CSR_NUM = 4096;
+	std::array<uint64_t, CSR_NUM> csrs;
+
+	uint64_t load_csr(uint64_t);
+	void store_csr(uint64_t, uint64_t);
+
 	uint64_t pc;
 	uint64_t code_size;
 
