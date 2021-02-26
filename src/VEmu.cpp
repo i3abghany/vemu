@@ -101,8 +101,8 @@ void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 	// is in the reservation set, storing in 
 	// the address 0x810000001 will not
 	// mark the word as not reserved.
-	if (reservation_set.contains(addr)) {
-		reservation_set.remove(addr);
+	if (reservation_set.count(addr)) {
+		reservation_set.erase(addr);
 	}
 
 	store(addr, data, sz);
@@ -953,8 +953,8 @@ void VEmu::SCW()
 		exit(EXIT_FAILURE);
 	}
 
-	if (!reservation_set.contains(addr)) {
-		reservation_set.remove(addr);
+	if (!reservation_set.count(addr)) {
+		reservation_set.erase(addr);
 		store(addr, regs[rs2], 32);
 
 		if (rd == 0) return;
@@ -976,8 +976,8 @@ void VEmu::SCD()
 		exit(EXIT_FAILURE);
 	}
 	
-	if (!reservation_set.contains(addr)) {
-		reservation_set.remove(addr);
+	if (!reservation_set.count(addr)) {
+		reservation_set.erase(addr);
 		store(addr, regs[rs2], 64);
 
 		if (rd == 0) return;
