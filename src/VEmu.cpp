@@ -76,6 +76,16 @@ VEmu::VEmu(std::string f_name) :
 		{IName::AMOMAXW,  &VEmu::AMOMAXW},
 		{IName::AMOMINUW, &VEmu::AMOMINUW},
 		{IName::AMOMAXUW, &VEmu::AMOMAXUW},
+
+		{IName::AMOSWAPD, &VEmu::AMOSWAPD},
+		{IName::AMOADDD,  &VEmu::AMOADDD},
+		{IName::AMOXORD,  &VEmu::AMOXORD},
+		{IName::AMOANDD,  &VEmu::AMOANDD},
+		{IName::AMOORD,   &VEmu::AMOORD},
+		{IName::AMOMIND,  &VEmu::AMOMIND},
+		{IName::AMOMAXD,  &VEmu::AMOMAXD},
+		{IName::AMOMINUD, &VEmu::AMOMINUD},
+		{IName::AMOMAXUD, &VEmu::AMOMAXUD},
 		{IName::LRD,      &VEmu::LRD},
 		{IName::SCD,      &VEmu::SCD},
 		{IName::XXX,      &VEmu::XXX},
@@ -1147,6 +1157,157 @@ void VEmu::AMOMAXUW()
 		static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
 	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+
+void VEmu::AMOSWAPD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t tmp = load(regs[rs1], 64);
+
+	store(regs[rs1], regs[rs2], 64);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOADDD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int64_t tmp = load(regs[rs1], 64);
+	int64_t rs2_val = regs[rs2] ;
+
+	int64_t res = tmp + rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = tmp;
+}
+
+void VEmu::AMOXORD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t tmp = load(regs[rs1], 64);
+	uint64_t rs2_val = regs[rs2] ;
+
+	uint64_t res = tmp ^ rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOANDD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t tmp = load(regs[rs1], 64);
+	uint64_t rs2_val = regs[rs2] ;
+
+	uint64_t res = tmp ^ rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOORD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t tmp = load(regs[rs1], 64);
+	uint64_t rs2_val = regs[rs2] ;
+
+	uint64_t res = tmp | rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMIND()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int64_t tmp = load(regs[rs1], 64);
+	int64_t rs2_val = regs[rs2];
+
+	uint64_t res = tmp < rs2_val ? tmp : rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = tmp;
+}
+
+void VEmu::AMOMAXD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int64_t tmp = load(regs[rs1], 64);
+	int64_t rs2_val = regs[rs2] ;
+
+	uint64_t res = tmp > rs2_val ? tmp : rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMINUD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t tmp = load(regs[rs1], 64);
+	uint64_t rs2_val = regs[rs2] ;
+
+	uint64_t res = tmp < rs2_val ? tmp : rs2_val;
+
+	store(regs[rs1], res, 64);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMAXUD()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint64_t tmp = load(regs[rs1], 64);
+	uint64_t rs2_val = regs[rs2] ;
+
+	uint64_t res = tmp > rs2_val ? tmp : rs2_val;
+
+	store(regs[rs1], res, 64);
 
 	if (rd == 0) return;
 	regs[rd] = static_cast<int64_t>(tmp);

@@ -40,10 +40,14 @@ private:
 	void SRAW();     void OR();      void AND();      void JAL();   
 	void JALR();     void LUI();     void AUIPC();    void XXX(); 
 	void LRW();      void LRD();     void SCW();      void SCD(); 
+
 	void AMOSWAPW(); void AMOADDW(); void AMOANDW();  void AMOXORW();
 	void AMOMINW();  void AMOMAXW(); void AMOMINUW(); void AMOMAXUW();
 	void AMOORW();
 	
+	void AMOSWAPD(); void AMOADDD(); void AMOANDD();  void AMOXORD();
+	void AMOMIND();  void AMOMAXD(); void AMOMINUD(); void AMOMAXUD();
+	void AMOORD();
 
 private:
 	void read_file();

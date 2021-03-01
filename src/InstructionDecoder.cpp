@@ -95,6 +95,15 @@ const std::map<IName, std::string> InstructionDecoder::inst_string_names = {
         {IName::AMOMAXW,   "AMOMAXW"},
         {IName::AMOMINUW, "AMOMINUW"},
         {IName::AMOMAXUW, "AMOMAXUW"},
+		{IName::AMOSWAPD, "AMOSWAPD"},
+		{IName::AMOADDD,   "AMOADDD"},
+		{IName::AMOXORD,   "AMOXORD"},
+		{IName::AMOANDD,   "AMOANDD"},
+		{IName::AMOORD,     "AMOORD"},
+		{IName::AMOMIND,   "AMOMIND"},
+		{IName::AMOMAXD,   "AMOMAXD"},
+		{IName::AMOMINUD, "AMOMINUD"},
+		{IName::AMOMAXUD, "AMOMAXUD"},
         {IName::LRD,           "LRD"},
         {IName::SCD,           "SCD"},
 		{IName::XXX,           "XXX"},
@@ -161,6 +170,15 @@ const std::map<IName, uint8_t> InstructionDecoder::r_opcodes = {
         {IName::AMOMAXW,  0b0101111},
         {IName::AMOMINUW, 0b0101111},
         {IName::AMOMAXUW, 0b0101111},
+		{IName::AMOSWAPD, 0b0101111},
+		{IName::AMOADDD,  0b0101111},
+		{IName::AMOXORD,  0b0101111},
+		{IName::AMOANDD,  0b0101111},
+		{IName::AMOORD,   0b0101111},
+		{IName::AMOMIND,  0b0101111},
+		{IName::AMOMAXD,  0b0101111},
+		{IName::AMOMINUD, 0b0101111},
+		{IName::AMOMAXUD, 0b0101111},
         {IName::LRD,      0b0101111},
         {IName::SCD,      0b0101111},
 };
@@ -248,8 +266,18 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
         {IName::AMOMAXW,  0b010},
         {IName::AMOMINUW, 0b010},
         {IName::AMOMAXUW, 0b010},
-        {IName::LRD,      0b010},
-        {IName::SCD,      0b010},
+
+        {IName::AMOSWAPD, 0b011},
+        {IName::AMOADDD,  0b011},
+        {IName::AMOXORD,  0b011},
+        {IName::AMOANDD,  0b011},
+        {IName::AMOORD,   0b011},
+        {IName::AMOMIND,  0b011},
+        {IName::AMOMAXD,  0b011},
+        {IName::AMOMINUD, 0b011},
+        {IName::AMOMAXUD, 0b011},
+        {IName::LRD,      0b011},
+        {IName::SCD,      0b011},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::b_funct3{
@@ -285,7 +313,8 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::OR,   FUNCT7_PRIMARY},
         {IName::AND,  FUNCT7_PRIMARY},
 
-		// Least significant 2 bits are aq and rl
+		// Atomic 32-bit word instructions
+		// Least significant 2 bits are aq and rl.
         {IName::LRW,      0b0001000}, 
         {IName::SCW,      0b0001100}, 
         {IName::AMOSWAPW, 0b0000100}, 
@@ -297,8 +326,20 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::AMOMAXW,  0b1011100}, 
         {IName::AMOMINUW, 0b1100000}, 
         {IName::AMOMAXUW, 0b1110000}, 
+
+		// Atomic 64-bit word instructions
+		// Least significant 2 bits are aq and rl.
         {IName::LRD,      0b0001000}, 
         {IName::SCD,      0b0001100}, 
+        {IName::AMOSWAPD, 0b0000100}, 
+        {IName::AMOADDD,  0b0000000}, 
+        {IName::AMOXORD,  0b0010000}, 
+        {IName::AMOANDD,  0b0110000}, 
+        {IName::AMOORD,   0b0100000}, 
+        {IName::AMOMIND,  0b1000000}, 
+        {IName::AMOMAXD,  0b1011100}, 
+        {IName::AMOMINUD, 0b1100000}, 
+        {IName::AMOMAXUD, 0b1110000}, 
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_funct7 {

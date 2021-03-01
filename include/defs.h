@@ -114,10 +114,18 @@ enum class IName : uint8_t {
 	AMOMAXW,
 	AMOMINUW,
 	AMOMAXUW,
-
 	// A64-extension instructions
 	LRD,
 	SCD,
+	AMOSWAPD,
+	AMOADDD,
+	AMOXORD,
+	AMOANDD,
+	AMOORD,
+	AMOMIND,
+	AMOMAXD,
+	AMOMINUD,
+	AMOMAXUD,
     XXX, // wrong instruction.
 };
 
