@@ -19,7 +19,7 @@ public:
 	VEmu(std::string f_name);
 
 	uint32_t run();
-
+	void dump_regs();
 
 private:
 	std::map<IName, std::function<void(VEmu *)>> inst_funcs;
@@ -65,6 +65,12 @@ private:
 	constexpr static size_t REGS_NUM = 32;
 	std::array<int64_t, REGS_NUM> regs;
 
+	constexpr static std::array<const char *, REGS_NUM> abi_map = {{
+		"zero", "ra","sp", "gp", "tp", "t0", "t1", "t2", 
+	 	"s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",  
+	 	"a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7", 
+	 	"s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
+	}};
 
 private:
 	constexpr static size_t CSR_NUM = 4096;

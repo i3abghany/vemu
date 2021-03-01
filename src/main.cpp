@@ -9,6 +9,7 @@ int main(int argc, char *argv[]) {
 	}
 	VEmu em { std::string {argv[1]} };
 	em.run();
+	em.dump_regs();
 
     return 0;
 }

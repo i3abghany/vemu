@@ -88,6 +88,7 @@ VEmu::VEmu(std::string f_name) :
 		{IName::AMOMAXUD, &VEmu::AMOMAXUD},
 		{IName::LRD,      &VEmu::LRD},
 		{IName::SCD,      &VEmu::SCD},
+
 		{IName::XXX,      &VEmu::XXX},
 	};
 }
@@ -144,12 +145,22 @@ uint32_t VEmu::run()
 
 		(inst_funcs[instr_iname])(this);
 	}
-
- 	for (int i = 0; i < 32; i++)
- 		std::cout << "regs[" << i << "] = " << regs[i] << '\n';
-
 	return 0;
 }
+
+void VEmu::dump_regs() {
+ 	for (int i = 0; i < 32; i++) {
+ 		std::cout << "{" << std::left 
+			<< std::setw(3)
+			<< abi_map[i] 
+			<< "} " << "regs[" 
+			<< std::left 
+			<< std::setw(2) 
+			<< i << "] = "
+			<< regs[i] << '\n';
+	}
+}
+
 
 uint64_t VEmu::load_csr(uint64_t addr)
 {
