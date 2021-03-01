@@ -1,7 +1,6 @@
-#include "../include/VEmu.h"
 #include <iostream>
 #include <string>
-#include "../include/InstructionDecoder.h"
+#include "../include/VEmu.h"
 
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
