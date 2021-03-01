@@ -24,27 +24,32 @@ public:
 private:
 	std::map<IName, std::function<void(VEmu *)>> inst_funcs;
 
-    void LB();     void LH();     void LW();    void LBU();
-    void LHU();    void LD();     void LWU();   void ADDI();
-    void ADDIW();  void SLTI();   void SLTIU(); void XORI();
-    void ORI();    void ANDI();   void SLLI();  void SRLI();
-    void SRAI();   void SLLIW();  void SRLIW(); void SRAIW();
-    void FENCE();  void FENCEI(); void ECALL(); void EBREAK();
-    void CSRRW();  void CSRRS();  void CSRRC(); void CSRRWI();
-    void CSRRSI(); void CSRRCI(); void BEQ();   void BNE();
-    void BLT();    void BGE();    void BLTU();  void BGEU();
-    void SB();     void SH();     void SW();    void SD();
-    void ADD();    void ADDW();   void SUB();   void SUBW();  
-	void SLL();    void SLLW();   void SLT();   void SLTU();  
-	void XOR();    void SRL();    void SRLW();  void SRA();   
-	void SRAW();   void OR();     void AND();   void JAL();   
-	void JALR();   void LUI();    void AUIPC(); void XXX(); 
-	void LRW();    void LRD();    void SCW();   void SCD(); 
+    void LB();       void LH();      void LW();       void LBU();
+    void LHU();      void LD();      void LWU();      void ADDI();
+    void ADDIW();    void SLTI();    void SLTIU();    void XORI();
+    void ORI();      void ANDI();    void SLLI();     void SRLI();
+    void SRAI();     void SLLIW();   void SRLIW();    void SRAIW();
+    void FENCE();    void FENCEI();  void ECALL();    void EBREAK();
+    void CSRRW();    void CSRRS();   void CSRRC();    void CSRRWI();
+    void CSRRSI();   void CSRRCI();  void BEQ();      void BNE();
+    void BLT();      void BGE();     void BLTU();     void BGEU();
+    void SB();       void SH();      void SW();       void SD();
+    void ADD();      void ADDW();    void SUB();      void SUBW();  
+	void SLL();      void SLLW();    void SLT();      void SLTU();  
+	void XOR();      void SRL();     void SRLW();     void SRA();   
+	void SRAW();     void OR();      void AND();      void JAL();   
+	void JALR();     void LUI();     void AUIPC();    void XXX(); 
+	void LRW();      void LRD();     void SCW();      void SCD(); 
+	void AMOSWAPW(); void AMOADDW(); void AMOANDW();  void AMOXORW();
+	void AMOMINW();  void AMOMAXW(); void AMOMINUW(); void AMOMAXUW();
+	void AMOORW();
+	
 
 private:
 	void read_file();
 	std::string bin_file_name;
 
+	uint32_t hex_instr;
 	Instruction curr_instr;
 
 	uint64_t pc;

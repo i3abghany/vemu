@@ -10,66 +10,75 @@ VEmu::VEmu(std::string f_name) :
 	regs[2] = ADDR_BASE + DRAM::RAM_SIZE;
 	read_file();
 	inst_funcs = {
-		{IName::LB,     &VEmu::LB},
-		{IName::LH,     &VEmu::LH},
-		{IName::LW,     &VEmu::LW},
-		{IName::LBU,    &VEmu::LBU},
-		{IName::LHU,    &VEmu::LHU},
-		{IName::LD,     &VEmu::LD},
-		{IName::LWU,    &VEmu::LWU},
-		{IName::ADDI,   &VEmu::ADDI},
-		{IName::ADDIW,  &VEmu::ADDIW},
-		{IName::SLTI,   &VEmu::SLTI},
-		{IName::SLTIU,  &VEmu::SLTIU},
-		{IName::XORI,   &VEmu::XORI},
-		{IName::ORI,    &VEmu::ORI},
-		{IName::ANDI,   &VEmu::ANDI},
-		{IName::SLLI,   &VEmu::SLLI},
-		{IName::SRLI,   &VEmu::SRLI},
-		{IName::SRAI,   &VEmu::SRAI},
-		{IName::SLLIW,  &VEmu::SLLIW},
-		{IName::SRLIW,  &VEmu::SRLIW},
-		{IName::SRAIW,  &VEmu::SRAIW},
-		{IName::FENCE,  &VEmu::FENCE},
-		{IName::FENCEI, &VEmu::FENCEI},
-		{IName::ECALL,  &VEmu::ECALL},
-		{IName::EBREAK, &VEmu::EBREAK},
-		{IName::CSRRW,  &VEmu::CSRRW},
-		{IName::CSRRS,  &VEmu::CSRRS},
-		{IName::CSRRC,  &VEmu::CSRRC},
-		{IName::CSRRWI, &VEmu::CSRRWI},
-		{IName::CSRRSI, &VEmu::CSRRSI},
-		{IName::CSRRCI, &VEmu::CSRRCI},
-		{IName::BEQ,    &VEmu::BEQ},
-		{IName::BNE,    &VEmu::BNE},
-		{IName::BLT,    &VEmu::BLT},
-		{IName::BGE,    &VEmu::BGE},
-		{IName::BLTU,   &VEmu::BLTU},
-		{IName::BGEU,   &VEmu::BGEU},
-		{IName::SB,     &VEmu::SB},
-		{IName::SH,     &VEmu::SH},
-		{IName::SW,     &VEmu::SW},
-		{IName::SD,     &VEmu::SD},
-		{IName::ADD,    &VEmu::ADD},
-		{IName::ADDW,   &VEmu::ADDW},
-		{IName::SUB,    &VEmu::SUB},
-		{IName::SUBW,   &VEmu::SUBW},
-		{IName::SLL,    &VEmu::SLL},
-		{IName::SLLW,   &VEmu::SLLW},
-		{IName::SLT,    &VEmu::SLT},
-		{IName::SLTU,   &VEmu::SLTU},
-		{IName::XOR,    &VEmu::XOR},
-		{IName::SRL,    &VEmu::SRL},
-		{IName::SRLW,   &VEmu::SRLW},
-		{IName::LUI,    &VEmu::LUI},
-		{IName::AUIPC,  &VEmu::AUIPC},
-		{IName::JAL,    &VEmu::JAL},
-		{IName::JALR,   &VEmu::JALR},
-		{IName::LRW,    &VEmu::LRW},
-		{IName::LRD,    &VEmu::LRD},
-		{IName::SCW,    &VEmu::SCW},
-		{IName::SCD,    &VEmu::SCD},
-		{IName::XXX,    &VEmu::XXX},
+		{IName::LB,       &VEmu::LB},
+		{IName::LH,       &VEmu::LH},
+		{IName::LW,       &VEmu::LW},
+		{IName::LBU,      &VEmu::LBU},
+		{IName::LHU,      &VEmu::LHU},
+		{IName::LD,       &VEmu::LD},
+		{IName::LWU,      &VEmu::LWU},
+		{IName::ADDI,     &VEmu::ADDI},
+		{IName::ADDIW,    &VEmu::ADDIW},
+		{IName::SLTI,     &VEmu::SLTI},
+		{IName::SLTIU,    &VEmu::SLTIU},
+		{IName::XORI,     &VEmu::XORI},
+		{IName::ORI,      &VEmu::ORI},
+		{IName::ANDI,     &VEmu::ANDI},
+		{IName::SLLI,     &VEmu::SLLI},
+		{IName::SRLI,     &VEmu::SRLI},
+		{IName::SRAI,     &VEmu::SRAI},
+		{IName::SLLIW,    &VEmu::SLLIW},
+		{IName::SRLIW,    &VEmu::SRLIW},
+		{IName::SRAIW,    &VEmu::SRAIW},
+		{IName::FENCE,    &VEmu::FENCE},
+		{IName::FENCEI,   &VEmu::FENCEI},
+		{IName::ECALL,    &VEmu::ECALL},
+		{IName::EBREAK,   &VEmu::EBREAK},
+		{IName::CSRRW,    &VEmu::CSRRW},
+		{IName::CSRRS,    &VEmu::CSRRS},
+		{IName::CSRRC,    &VEmu::CSRRC},
+		{IName::CSRRWI,   &VEmu::CSRRWI},
+		{IName::CSRRSI,   &VEmu::CSRRSI},
+		{IName::CSRRCI,   &VEmu::CSRRCI},
+		{IName::BEQ,      &VEmu::BEQ},
+		{IName::BNE,      &VEmu::BNE},
+		{IName::BLT,      &VEmu::BLT},
+		{IName::BGE,      &VEmu::BGE},
+		{IName::BLTU,     &VEmu::BLTU},
+		{IName::BGEU,     &VEmu::BGEU},
+		{IName::SB,       &VEmu::SB},
+		{IName::SH,       &VEmu::SH},
+		{IName::SW,       &VEmu::SW},
+		{IName::SD,       &VEmu::SD},
+		{IName::ADD,      &VEmu::ADD},
+		{IName::ADDW,     &VEmu::ADDW},
+		{IName::SUB,      &VEmu::SUB},
+		{IName::SUBW,     &VEmu::SUBW},
+		{IName::SLL,      &VEmu::SLL},
+		{IName::SLLW,     &VEmu::SLLW},
+		{IName::SLT,      &VEmu::SLT},
+		{IName::SLTU,     &VEmu::SLTU},
+		{IName::XOR,      &VEmu::XOR},
+		{IName::SRL,      &VEmu::SRL},
+		{IName::SRLW,     &VEmu::SRLW},
+		{IName::LUI,      &VEmu::LUI},
+		{IName::AUIPC,    &VEmu::AUIPC},
+		{IName::JAL,      &VEmu::JAL},
+		{IName::JALR,     &VEmu::JALR},
+		{IName::LRW,      &VEmu::LRW},
+		{IName::SCW,      &VEmu::SCW},
+		{IName::AMOSWAPW, &VEmu::AMOSWAPW},
+		{IName::AMOADDW,  &VEmu::AMOADDW},
+		{IName::AMOXORW,  &VEmu::AMOXORW},
+		{IName::AMOANDW,  &VEmu::AMOANDW},
+		{IName::AMOORW,   &VEmu::AMOORW},
+		{IName::AMOMINW,  &VEmu::AMOMINW},
+		{IName::AMOMAXW,  &VEmu::AMOMAXW},
+		{IName::AMOMINUW, &VEmu::AMOMINUW},
+		{IName::AMOMAXUW, &VEmu::AMOMAXUW},
+		{IName::LRD,      &VEmu::LRD},
+		{IName::SCD,      &VEmu::SCD},
+		{IName::XXX,      &VEmu::XXX},
 	};
 }
 
@@ -83,7 +92,8 @@ void VEmu::read_file()
 
 	uint64_t i = 0;
 	while (sz--) {
-		store(ADDR_BASE + i, static_cast<uint8_t>(ifs.get()), 8);
+		uint8_t c = static_cast<uint8_t>(ifs.get());
+		store(ADDR_BASE + i, c, 8);
 		i++;
 	}
 }
@@ -105,7 +115,7 @@ void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 		reservation_set.erase(addr);
 	}
 
-	store(addr, data, sz);
+	bus.store(addr, data, sz);
 }
 
 uint32_t VEmu::get_4byte_aligned_instr(uint32_t i) 
@@ -115,28 +125,19 @@ uint32_t VEmu::get_4byte_aligned_instr(uint32_t i)
 
 uint32_t VEmu::run()
 {
-	uint64_t msse = 0, mssd = 0;
 	for (; pc < ADDR_BASE + code_size; pc += 4) {
-		auto t1 = std::chrono::high_resolution_clock::now();
 		if (pc == 0x0) break;
-		uint32_t inst = get_4byte_aligned_instr(pc);
+		hex_instr = get_4byte_aligned_instr(pc);
 
-		curr_instr = InstructionDecoder::the().decode(inst);
+		curr_instr = InstructionDecoder::the().decode(hex_instr);
 		IName instr_iname = curr_instr.get_name();
-		auto t2 = std::chrono::high_resolution_clock::now();
 
 		(inst_funcs[instr_iname])(this);
-		auto t3 = std::chrono::high_resolution_clock::now();
-
-		msse += std::chrono::duration_cast<std::chrono::nanoseconds>(t3 - t2).count();
-		mssd += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count();
 	}
 
  	for (int i = 0; i < 32; i++)
  		std::cout << "regs[" << i << "] = " << regs[i] << '\n';
 
-	std::cout << "Decoding in: " << mssd << std::endl;
-	std::cout << "Exec in: " << msse << std::endl;
 	return 0;
 }
 
@@ -983,12 +984,179 @@ void VEmu::SCD()
 		if (rd == 0) return;
 		regs[rd] = 0;
 	} else {
+		if (rd == 0) return;
 		regs[rd] = 1;
 	}
+}
+
+void VEmu::AMOSWAPW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+
+	store(regs[rs1], static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF), 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOADDW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	int32_t res_32 = tmp + rs2_val;
+	uint64_t res = static_cast<uint64_t>(static_cast<uint32_t>(res_32));
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOANDW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	uint64_t res = tmp & rs2_val; 
+	res &= 0xFFFFFFFF;
+	
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOORW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	uint64_t res = (tmp | rs2_val);
+
+	res &= 0xFFFFFFFF;
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOXORW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	uint64_t res = (tmp ^ rs2_val);
+
+	res &= 0xFFFFFFFF;
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMINW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	uint64_t res = tmp < rs2_val ? 
+		static_cast<uint64_t>(static_cast<uint32_t>(tmp)) : 
+		static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMAXW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	uint64_t res = tmp > rs2_val ? 
+		static_cast<uint64_t>(static_cast<uint32_t>(tmp)) : 
+		static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMINUW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	uint32_t tmp = static_cast<uint32_t>(load(regs[rs1], 32));
+	uint32_t rs2_val = static_cast<uint32_t>(regs[rs2]);
+
+	uint64_t res = tmp < rs2_val ? 
+		static_cast<uint64_t>(tmp) : static_cast<uint64_t>(rs2_val);
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
+}
+
+void VEmu::AMOMAXUW() 
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+	int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+
+	uint64_t res = tmp > rs2_val ? 
+		static_cast<uint64_t>(static_cast<uint32_t>(tmp)) : 
+		static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
+
+	store(regs[rs1], res, 32);
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(tmp);
 }
 
 void VEmu::XXX()
 {
 	std::cout << "Faulty instruction.";
+	std::cout << std::hex << hex_instr << std::endl;
+
 	exit(EXIT_FAILURE);
 }
+

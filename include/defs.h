@@ -102,10 +102,21 @@ enum class IName : uint8_t {
     JALR,
     LUI,
     AUIPC,
-	// A-extension instructions
-	LRD,
+	// A32-extension instructions
 	LRW,
 	SCW,
+	AMOSWAPW,
+	AMOADDW,
+	AMOXORW,
+	AMOANDW,
+	AMOORW,
+	AMOMINW,
+	AMOMAXW,
+	AMOMINUW,
+	AMOMAXUW,
+
+	// A64-extension instructions
+	LRD,
 	SCD,
     XXX, // wrong instruction.
 };
