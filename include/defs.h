@@ -126,6 +126,9 @@ enum class IName : uint8_t {
 	AMOMAXD,
 	AMOMINUD,
 	AMOMAXUD,
+
+	SRET,
+	MRET,
     XXX, // wrong instruction.
 };
 
@@ -155,9 +158,9 @@ enum class IName : uint8_t {
 
 #define SATP 0x180
 
-
 enum class Mode : uint8_t {
 	User = 0b00,
 	Supervisor = 0b01,
 	Machine = 0b11
 };
+

@@ -7,8 +7,14 @@ VEmu::VEmu(std::string f_name) :
 	pc = 0x80000000;
 	bus = Bus{};
 	regs.fill(0);
+	csrs.fill(0);
 	regs[2] = ADDR_BASE + DRAM::RAM_SIZE;
 	read_file();
+	init_func_map();
+}
+
+void VEmu::init_func_map()
+{
 	inst_funcs = {
 		{IName::LB,       &VEmu::LB},
 		{IName::LH,       &VEmu::LH},
@@ -89,6 +95,9 @@ VEmu::VEmu(std::string f_name) :
 		{IName::LRD,      &VEmu::LRD},
 		{IName::SCD,      &VEmu::SCD},
 
+		{IName::MRET,      &VEmu::MRET},
+		{IName::SRET,      &VEmu::SRET},
+
 		{IName::XXX,      &VEmu::XXX},
 	};
 }
@@ -150,14 +159,18 @@ uint32_t VEmu::run()
 
 void VEmu::dump_regs() {
  	for (int i = 0; i < 32; i++) {
- 		std::cout << "{" << std::left 
+ 		std::cout << "{" 
+			<< std::left 
+			<< std::setfill(' ')
 			<< std::setw(3)
 			<< abi_map[i] 
 			<< "} " << "regs[" 
 			<< std::left 
 			<< std::setw(2) 
-			<< i << "] = "
-			<< regs[i] << '\n';
+			<< i << "] = " 
+			<< std::hex
+			<< regs[i] << 
+			std::dec << '\n';
 	}
 }
 
@@ -457,6 +470,7 @@ void VEmu::FENCEI()
 
 void VEmu::ECALL()
 {
+	std::cout << "IN ECALL: " << std::hex << pc << std::endl;
 }
 
 void VEmu::EBREAK()
@@ -474,6 +488,7 @@ void VEmu::CSRRW()
 	uint64_t csr_val = load_csr(csr_addr);
 	store_csr(csr_addr, regs[rs1]);
 
+	if (rd == 0) return;
 	regs[rd] = csr_val;
 }
 
@@ -923,10 +938,12 @@ void VEmu::LUI()
 void VEmu::AUIPC()
 {
 	// the full 32-bit U-imm
+	auto rd = curr_instr.get_fields().rd;
 	int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
 	int64_t imm = static_cast<int64_t>(imm_32);
 
-	this->pc += imm;
+	if (rd == 0) return;
+	regs[rd] = this->pc + imm;
 }
 
 void VEmu::LRW()
@@ -1279,15 +1296,22 @@ void VEmu::AMOMAXD()
 	auto rs2 = curr_instr.get_fields().rs2;
 	auto rd = curr_instr.get_fields().rd;
 
-	int64_t tmp = load(regs[rs1], 64);
+	uint64_t addr = regs[rs1];
+
+	if (addr % 8 != 0) {
+		std::cout << "unaligned address in AMOMAXD.";
+		exit(EXIT_FAILURE);
+	}
+
+	int64_t tmp = load(addr, 64);
 	int64_t rs2_val = regs[rs2] ;
 
-	uint64_t res = tmp > rs2_val ? tmp : rs2_val;
+	int64_t res = tmp > rs2_val ? tmp : rs2_val;
 
-	store(regs[rs1], res, 64);
+	store(addr, static_cast<uint64_t>(res), 64);
 
 	if (rd == 0) return;
-	regs[rd] = static_cast<int64_t>(tmp);
+	regs[rd] = tmp;
 }
 
 void VEmu::AMOMINUD()
@@ -1324,10 +1348,54 @@ void VEmu::AMOMAXUD()
 	regs[rd] = static_cast<int64_t>(tmp);
 }
 
+void VEmu::MRET()
+{
+	pc = load_csr(MEPC) - 4;
+
+	uint8_t mb = (load_csr(MSTATUS) >> 11) & 0b11;
+
+	if (mb == 0x00) mode = Mode::User;
+	else if (mb == 0x01) mode = Mode::Supervisor;
+	else if (mb == 0x11) mode = Mode::Machine;
+	else assert(false);
+
+	uint8_t MPIE = (load_csr(MSTATUS) >> 7) & 0b1;
+
+	// csr[MSTATUS][MPI] = csr[MSTATUS][MPIE];
+	if (MPIE) {
+		store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 3));
+	} else {
+		store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 3)));
+	}
+
+	// csr[MSTATUS][MPIE] = 1
+	store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 7));
+
+	// csr[MSTATUS][MPP] = 0
+
+	store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11 << 11)));
+}
+
+void VEmu::SRET()
+{
+	std::cout << "No yet implemented.\n";
+	exit(1);
+}
+
+
 void VEmu::XXX()
 {
-	std::cout << "Faulty instruction.";
-	std::cout << std::hex << hex_instr << std::endl;
+	std::ios_base::fmtflags ft { std::cout.flags() };
+	std::cout << "Faulty instruction: 0x";
+	std::cout << std::setw(8) 
+		<< std::setfill('0') 
+		<< std::hex 
+		<< hex_instr 
+		<< std::endl;
+
+	std::cout.flags(ft);
+
+	dump_regs();
 
 	exit(EXIT_FAILURE);
 }

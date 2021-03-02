@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <functional>
 #include <unordered_set>
+#include <cassert>
 
 #include "InstructionDecoder.h"
 #include "Bus.h"
@@ -22,6 +23,7 @@ public:
 	void dump_regs();
 
 private:
+	void init_func_map();
 	std::map<IName, std::function<void(VEmu *)>> inst_funcs;
 
     void LB();       void LH();      void LW();       void LBU();
@@ -48,6 +50,8 @@ private:
 	void AMOSWAPD(); void AMOADDD(); void AMOANDD();  void AMOXORD();
 	void AMOMIND();  void AMOMAXD(); void AMOMINUD(); void AMOMAXUD();
 	void AMOORD();
+
+	void SRET(); void MRET();
 
 private:
 	void read_file();

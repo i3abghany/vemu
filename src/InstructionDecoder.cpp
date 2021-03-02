@@ -1,5 +1,39 @@
 #include "../include/InstructionDecoder.h"
 
+InstructionDecoder::InstructionDecoder() {
+	init_fixed_instrs();
+}
+
+void InstructionDecoder::init_fixed_instrs() {
+	instr_cache[0x30200073] = Instruction(
+		Instruction::Type::R,
+		IName::MRET,
+		Fields {
+			.OPCode = 0b1110011,
+			.rd = 0b00000,
+			.funct3 = 0b000,
+			.rs1 = 0b00000,
+			.rs2 = 0b00010,
+			.funct7 = 0b0011000,
+		},
+		"MRET"
+	);
+
+	instr_cache[0x10200073] = Instruction{
+		Instruction::Type::R,
+		IName::SRET,
+		Fields {
+			.OPCode = 0b1110011,
+			.rd = 0b00000,
+			.funct3 = 0b000,
+			.rs1 = 0b00000,
+			.rs2 = 0b00010,
+			.funct7 = 0b0001000,
+		},
+		"SRET"
+	};
+}
+
 InstructionDecoder &InstructionDecoder::the() {
     static InstructionDecoder inst;
     return inst;
@@ -106,6 +140,8 @@ const std::map<IName, std::string> InstructionDecoder::inst_string_names = {
         {IName::AMOMAXUD, "AMOMAXUD"},
         {IName::LRD,           "LRD"},
         {IName::SCD,           "SCD"},
+		{IName::SRET,         "SRET"},
+		{IName::MRET,         "MRET"},
 		{IName::XXX,           "XXX"},
 };
 
@@ -337,7 +373,7 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::AMOANDD,  0b0110000}, 
         {IName::AMOORD,   0b0100000}, 
         {IName::AMOMIND,  0b1000000}, 
-        {IName::AMOMAXD,  0b1011100}, 
+        {IName::AMOMAXD,  0b1010000}, 
         {IName::AMOMINUD, 0b1100000}, 
         {IName::AMOMAXUD, 0b1110000}, 
 };

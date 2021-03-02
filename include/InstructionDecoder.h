@@ -12,7 +12,7 @@ public:
     static InstructionDecoder& the();
 
 private:
-    InstructionDecoder() = default;
+    InstructionDecoder();
 
 public:
     void operator=(const InstructionDecoder&) = delete;
@@ -30,7 +30,7 @@ private:
     Instruction::Type instr_type(uint32_t instr);
     Instruction::Type instr_type(uint8_t op);
 
-public:
+private:
     uint32_t get_immediate(uint32_t);
     uint32_t imm_i(uint32_t);
     uint32_t imm_s(uint32_t);
@@ -41,6 +41,8 @@ public:
 private:
 	const static std::map<IName, std::string> inst_string_names;
 	std::unordered_map<uint32_t, Instruction> instr_cache;
+
+	void init_fixed_instrs();
 	
     const static std::map<IName, uint8_t> i_opcodes;
     const static std::map<IName, uint8_t> j_opcodes;
