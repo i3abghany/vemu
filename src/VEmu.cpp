@@ -36,6 +36,8 @@ void VEmu::init_func_map()
 		{IName::SLLIW,    &VEmu::SLLIW},
 		{IName::SRLIW,    &VEmu::SRLIW},
 		{IName::SRAIW,    &VEmu::SRAIW},
+		{IName::SRAW,     &VEmu::SRAW},
+		{IName::SRLW,     &VEmu::SRLW},
 		{IName::FENCE,    &VEmu::FENCE},
 		{IName::FENCEI,   &VEmu::FENCEI},
 		{IName::ECALL,    &VEmu::ECALL},

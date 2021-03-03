@@ -3,7 +3,7 @@ RVCC=riscv64-unknown-linux-gnu-gcc
 OBJ_COPY=riscv64-unknown-linux-gnu-objcopy
 
 CC=g++
-CFLAGS=-std=c++17 -O3
+CFLAGS=-std=c++17 -ggdb
 
 emu: main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o 
 	$(CC) $(CFLAGS) -o emu main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o 
