@@ -15,6 +15,10 @@ void InstructionDecoder::init_fixed_instrs() {
 			.rs1 = 0b00000,
 			.rs2 = 0b00010,
 			.funct7 = 0b0011000,
+			.shamt32 = 0,
+			.shamt64 = 0,
+			.funct6 = 0,
+			.imm = 0,
 		},
 		"MRET"
 	);
@@ -29,6 +33,10 @@ void InstructionDecoder::init_fixed_instrs() {
 			.rs1 = 0b00000,
 			.rs2 = 0b00010,
 			.funct7 = 0b0001000,
+			.shamt32 = 0,
+			.shamt64 = 0,
+			.funct6 = 0,
+			.imm = 0,
 		},
 		"SRET"
 	};
@@ -465,7 +473,7 @@ uint8_t InstructionDecoder::get_opcode(IName name, Instruction::Type t) {
 		case Instruction::Type::B: return b_opcodes.at(name);
 		case Instruction::Type::U: return u_opcodes.at(name);
 		case Instruction::Type::J: return j_opcodes.at(name);
-		case Instruction::Type::WRONG: return UINT8_MAX;
+		case Instruction::Type::WRONG: default: return UINT8_MAX;
 	}
 
     return UINT8_MAX;
@@ -580,15 +588,15 @@ uint8_t InstructionDecoder::extract_opcode(uint32_t inst) {
 }
 
 uint8_t InstructionDecoder::extract_funct3(uint32_t inst) {
-    return (inst & FUNCT3_MASK) >> 12U;
+    return static_cast<uint8_t>((inst & FUNCT3_MASK) >> 12U);
 }
 
 uint8_t InstructionDecoder::extract_funct7(uint32_t inst) {
-    return (inst & FUNCT7_MASK) >> 25U;
+    return static_cast<uint8_t>((inst & FUNCT7_MASK) >> 25U);
 }
 
 uint8_t InstructionDecoder::extract_funct6(uint32_t inst) {
-    return (inst & FUNCT6_MASK) >> 26U;
+    return static_cast<uint8_t>((inst & FUNCT6_MASK) >> 26U);
 }
 
 uint8_t InstructionDecoder::extract_rd(uint32_t inst) {

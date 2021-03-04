@@ -33,8 +33,8 @@ public:
 
 public:
     Instruction() = default;
-    Instruction(Type t, IName i, Fields vals, std::string n)
-        : t(t), name(i), f(vals), str_name(n) {};
+    Instruction(Type type, IName i, Fields vals, std::string n)
+        : t(type), name(i), f(vals), str_name(n) {};
 
     Type get_type();
     Fields get_fields();

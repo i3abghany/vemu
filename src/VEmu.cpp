@@ -140,9 +140,9 @@ void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 	bus.store(addr, data, sz);
 }
 
-uint32_t VEmu::get_4byte_aligned_instr(uint32_t i) 
+uint32_t VEmu::get_4byte_aligned_instr(uint64_t i) 
 {
-	return bus.load(i, 32);
+	return static_cast<uint32_t>(bus.load(i, 32));
 }
 
 uint32_t VEmu::run()
@@ -202,7 +202,8 @@ void VEmu::LB()
 	auto rd = curr_instr.get_fields().rd;
 
 	if (rd == 0) return;
-	regs[rd] = static_cast<int64_t>(sext_byte(regs[rd]));
+	regs[rd] = static_cast<int64_t>(
+		sext_byte(static_cast<uint8_t>(regs[rd] & 0xFF)));
 }
 
 void VEmu::LW()
@@ -212,7 +213,8 @@ void VEmu::LW()
 	auto rd = curr_instr.get_fields().rd;
 
 	if (rd == 0) return;
-	regs[rd] = static_cast<int64_t>(sext_word(regs[rd]));
+	regs[rd] = static_cast<int64_t>(
+		sext_word(static_cast<uint32_t>(regs[rd] & 0xFFFFFFFF)));
 }
 
 void VEmu::LBU()
@@ -238,7 +240,8 @@ void VEmu::LH()
 	auto rd = curr_instr.get_fields().rd;
 
 	if (rd == 0) return;
-	regs[rd] = static_cast<int64_t>(sext_hword(regs[rd]));
+	regs[rd] = static_cast<int64_t>(
+		sext_word(static_cast<uint16_t>(regs[rd] & 0xFFFF)));
 }
 
 void VEmu::LHU()
