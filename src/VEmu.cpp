@@ -782,7 +782,7 @@ void VEmu::SLT()
 	auto rs2 = curr_instr.get_fields().rs2;
 	auto rd = curr_instr.get_fields().rd;
 
-
+	if (rd == 0) return;
 	regs[rd] = (regs[rs1] < regs[rs2]) ? 1 : 0;
 }
 
@@ -792,7 +792,7 @@ void VEmu::SLTU()
 	auto rs2 = curr_instr.get_fields().rs2;
 	auto rd = curr_instr.get_fields().rd;
 
-
+	if (rd == 0) return;
 	regs[rd] = 
 		(static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(regs[rs2])) ? 1 : 0;
 }
@@ -882,7 +882,6 @@ void VEmu::OR()
 	auto rd = curr_instr.get_fields().rd;
 
 	if (rd == 0) return;
-
 	regs[rd] = regs[rs1] | regs[rs2];
 }
 
@@ -893,7 +892,6 @@ void VEmu::AND()
 	auto rd = curr_instr.get_fields().rd;
 
 	if (rd == 0) return;
-
 	regs[rd] = regs[rs1] & regs[rs2];
 }
 
@@ -1001,6 +999,7 @@ void VEmu::SCW()
 		if (rd == 0) return;
 		regs[rd] = 0;
 	} else {
+		if (rd == 0) return;
 		regs[rd] = 1;
 	}
 }
