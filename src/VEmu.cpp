@@ -107,6 +107,10 @@ void VEmu::init_func_map()
 void VEmu::read_file()
 {
 	std::ifstream ifs(bin_file_name, std::ios_base::binary);
+	if (!ifs) {
+		std::cout << "Could not open the file.\n";
+		exit(EXIT_FAILURE);
+	}
 	std::filesystem::path file_path {bin_file_name};
 
 	auto sz = std::filesystem::file_size(file_path);
