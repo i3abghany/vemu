@@ -35,9 +35,6 @@
 #define B_INST_IMM_2 (uint32_t) 0x00000080
 #define B_INST_IMM_3 (uint32_t) 0x80000000
 
-#define FUNCT7_PRIMARY (uint8_t) 0b00000000
-#define FUNCT7_ALT     (uint8_t) 0b00100000
-
 #define ADDR_BASE (uint32_t) 0x8000'0000
 
 #define AM_OPCODE (uint8_t) 0b0101111
@@ -102,33 +99,47 @@ enum class IName : uint8_t {
     JALR,
     LUI,
     AUIPC,
+    // RV32/64M
+    MUL,
+    MULH,
+    MULHSU,
+    MULHU,
+    DIV,
+    DIVU,
+    REM,
+    REMU,
+    MULW,
+    DIVW,
+    DIVUW,
+    REMW,
+    REMUW,
 	// A32-extension instructions
-	LRW,
-	SCW,
-	AMOSWAPW,
-	AMOADDW,
-	AMOXORW,
-	AMOANDW,
-	AMOORW,
-	AMOMINW,
-	AMOMAXW,
-	AMOMINUW,
-	AMOMAXUW,
-	// A64-extension instructions
-	LRD,
-	SCD,
-	AMOSWAPD,
-	AMOADDD,
-	AMOXORD,
-	AMOANDD,
-	AMOORD,
-	AMOMIND,
-	AMOMAXD,
-	AMOMINUD,
-	AMOMAXUD,
-
-	SRET,
-	MRET,
+    LRW,
+    SCW,
+    AMOSWAPW,
+    AMOADDW,
+    AMOXORW,
+    AMOANDW,
+    AMOORW,
+    AMOMINW,
+    AMOMAXW,
+    AMOMINUW,
+    AMOMAXUW,
+    // A64-extension instructions
+    LRD,
+    SCD,
+    AMOSWAPD,
+    AMOADDD,
+    AMOXORD,
+    AMOANDD,
+    AMOORD,
+    AMOMIND,
+    AMOMAXD,
+    AMOMINUD,
+    AMOMAXUD,
+    
+    SRET,
+    MRET,
     XXX, // wrong instruction.
 };
 

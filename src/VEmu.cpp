@@ -16,91 +16,105 @@ VEmu::VEmu(std::string f_name) :
 void VEmu::init_func_map()
 {
 	inst_funcs = {
-		{IName::LB,       &VEmu::LB},
-		{IName::LH,       &VEmu::LH},
-		{IName::LW,       &VEmu::LW},
-		{IName::LBU,      &VEmu::LBU},
-		{IName::LHU,      &VEmu::LHU},
-		{IName::LD,       &VEmu::LD},
-		{IName::LWU,      &VEmu::LWU},
-		{IName::ADDI,     &VEmu::ADDI},
-		{IName::ADDIW,    &VEmu::ADDIW},
-		{IName::SLTI,     &VEmu::SLTI},
-		{IName::SLTIU,    &VEmu::SLTIU},
-		{IName::XORI,     &VEmu::XORI},
-		{IName::ORI,      &VEmu::ORI},
-		{IName::ANDI,     &VEmu::ANDI},
-		{IName::SLLI,     &VEmu::SLLI},
-		{IName::SRLI,     &VEmu::SRLI},
-		{IName::SRAI,     &VEmu::SRAI},
-		{IName::SLLIW,    &VEmu::SLLIW},
-		{IName::SRLIW,    &VEmu::SRLIW},
-		{IName::SRAIW,    &VEmu::SRAIW},
-		{IName::SRAW,     &VEmu::SRAW},
-		{IName::SRLW,     &VEmu::SRLW},
-		{IName::FENCE,    &VEmu::FENCE},
-		{IName::FENCEI,   &VEmu::FENCEI},
-		{IName::ECALL,    &VEmu::ECALL},
-		{IName::EBREAK,   &VEmu::EBREAK},
-		{IName::CSRRW,    &VEmu::CSRRW},
-		{IName::CSRRS,    &VEmu::CSRRS},
-		{IName::CSRRC,    &VEmu::CSRRC},
-		{IName::CSRRWI,   &VEmu::CSRRWI},
-		{IName::CSRRSI,   &VEmu::CSRRSI},
-		{IName::CSRRCI,   &VEmu::CSRRCI},
-		{IName::BEQ,      &VEmu::BEQ},
-		{IName::BNE,      &VEmu::BNE},
-		{IName::BLT,      &VEmu::BLT},
-		{IName::BGE,      &VEmu::BGE},
-		{IName::BLTU,     &VEmu::BLTU},
-		{IName::BGEU,     &VEmu::BGEU},
-		{IName::SB,       &VEmu::SB},
-		{IName::SH,       &VEmu::SH},
-		{IName::SW,       &VEmu::SW},
-		{IName::SD,       &VEmu::SD},
-		{IName::ADD,      &VEmu::ADD},
-		{IName::ADDW,     &VEmu::ADDW},
-		{IName::SUB,      &VEmu::SUB},
-		{IName::SUBW,     &VEmu::SUBW},
-		{IName::SLL,      &VEmu::SLL},
-		{IName::SLLW,     &VEmu::SLLW},
-		{IName::SLT,      &VEmu::SLT},
-		{IName::SLTU,     &VEmu::SLTU},
-		{IName::XOR,      &VEmu::XOR},
-		{IName::SRL,      &VEmu::SRL},
-		{IName::SRLW,     &VEmu::SRLW},
-		{IName::LUI,      &VEmu::LUI},
-		{IName::AUIPC,    &VEmu::AUIPC},
-		{IName::JAL,      &VEmu::JAL},
-		{IName::JALR,     &VEmu::JALR},
-		{IName::LRW,      &VEmu::LRW},
-		{IName::SCW,      &VEmu::SCW},
-		{IName::AMOSWAPW, &VEmu::AMOSWAPW},
-		{IName::AMOADDW,  &VEmu::AMOADDW},
-		{IName::AMOXORW,  &VEmu::AMOXORW},
-		{IName::AMOANDW,  &VEmu::AMOANDW},
-		{IName::AMOORW,   &VEmu::AMOORW},
-		{IName::AMOMINW,  &VEmu::AMOMINW},
-		{IName::AMOMAXW,  &VEmu::AMOMAXW},
-		{IName::AMOMINUW, &VEmu::AMOMINUW},
-		{IName::AMOMAXUW, &VEmu::AMOMAXUW},
+        {IName::LB,       &VEmu::LB},
+        {IName::LH,       &VEmu::LH},
+        {IName::LW,       &VEmu::LW},
+        {IName::LBU,      &VEmu::LBU},
+        {IName::LHU,      &VEmu::LHU},
+        {IName::LD,       &VEmu::LD},
+        {IName::LWU,      &VEmu::LWU},
+        {IName::ADDI,     &VEmu::ADDI},
+        {IName::ADDIW,    &VEmu::ADDIW},
+        {IName::SLTI,     &VEmu::SLTI},
+        {IName::SLTIU,    &VEmu::SLTIU},
+        {IName::XORI,     &VEmu::XORI},
+        {IName::ORI,      &VEmu::ORI},
+        {IName::ANDI,     &VEmu::ANDI},
+        {IName::SLLI,     &VEmu::SLLI},
+        {IName::SRLI,     &VEmu::SRLI},
+        {IName::SRAI,     &VEmu::SRAI},
+        {IName::SLLIW,    &VEmu::SLLIW},
+        {IName::SRLIW,    &VEmu::SRLIW},
+        {IName::SRAIW,    &VEmu::SRAIW},
+        {IName::SRAW,     &VEmu::SRAW},
+        {IName::SRLW,     &VEmu::SRLW},
+        {IName::FENCE,    &VEmu::FENCE},
+        {IName::FENCEI,   &VEmu::FENCEI},
+        {IName::ECALL,    &VEmu::ECALL},
+        {IName::EBREAK,   &VEmu::EBREAK},
+        {IName::CSRRW,    &VEmu::CSRRW},
+        {IName::CSRRS,    &VEmu::CSRRS},
+        {IName::CSRRC,    &VEmu::CSRRC},
+        {IName::CSRRWI,   &VEmu::CSRRWI},
+        {IName::CSRRSI,   &VEmu::CSRRSI},
+        {IName::CSRRCI,   &VEmu::CSRRCI},
+        {IName::BEQ,      &VEmu::BEQ},
+        {IName::BNE,      &VEmu::BNE},
+        {IName::BLT,      &VEmu::BLT},
+        {IName::BGE,      &VEmu::BGE},
+        {IName::BLTU,     &VEmu::BLTU},
+        {IName::BGEU,     &VEmu::BGEU},
+        {IName::SB,       &VEmu::SB},
+        {IName::SH,       &VEmu::SH},
+        {IName::SW,       &VEmu::SW},
+        {IName::SD,       &VEmu::SD},
+        {IName::ADD,      &VEmu::ADD},
+        {IName::ADDW,     &VEmu::ADDW},
+        {IName::SUB,      &VEmu::SUB},
+        {IName::SUBW,     &VEmu::SUBW},
+        {IName::SLL,      &VEmu::SLL},
+        {IName::SLLW,     &VEmu::SLLW},
+        {IName::SLT,      &VEmu::SLT},
+        {IName::SLTU,     &VEmu::SLTU},
+        {IName::XOR,      &VEmu::XOR},
+        {IName::SRL,      &VEmu::SRL},
+        {IName::SRLW,     &VEmu::SRLW},
+        {IName::LUI,      &VEmu::LUI},
+        {IName::AUIPC,    &VEmu::AUIPC},
+        {IName::JAL,      &VEmu::JAL},
+        {IName::JALR,     &VEmu::JALR},
+        {IName::MUL,      &VEmu::MUL},
+        {IName::MULH,     &VEmu::MULH},
+        {IName::MULHSU,   &VEmu::MULHSU},
+        {IName::MULHU,    &VEmu::MULHU},
+        {IName::DIV,      &VEmu::DIV},
+        {IName::DIVU,     &VEmu::DIVU},
+        {IName::REM,      &VEmu::REM},
+        {IName::REMU,     &VEmu::REMU},
+        {IName::MULW,     &VEmu::MULW},
+        {IName::DIVW,     &VEmu::DIVW},
+        {IName::DIVUW,    &VEmu::DIVUW},
+        {IName::REMW,     &VEmu::REMW},
+        {IName::REMUW,    &VEmu::REMUW},
 
-		{IName::AMOSWAPD, &VEmu::AMOSWAPD},
-		{IName::AMOADDD,  &VEmu::AMOADDD},
-		{IName::AMOXORD,  &VEmu::AMOXORD},
-		{IName::AMOANDD,  &VEmu::AMOANDD},
-		{IName::AMOORD,   &VEmu::AMOORD},
-		{IName::AMOMIND,  &VEmu::AMOMIND},
-		{IName::AMOMAXD,  &VEmu::AMOMAXD},
-		{IName::AMOMINUD, &VEmu::AMOMINUD},
-		{IName::AMOMAXUD, &VEmu::AMOMAXUD},
-		{IName::LRD,      &VEmu::LRD},
-		{IName::SCD,      &VEmu::SCD},
+        {IName::AMOSWAPW, &VEmu::AMOSWAPW},
+        {IName::AMOADDW,  &VEmu::AMOADDW},
+        {IName::AMOXORW,  &VEmu::AMOXORW},
+        {IName::AMOANDW,  &VEmu::AMOANDW},
+        {IName::AMOORW,   &VEmu::AMOORW},
+        {IName::AMOMINW,  &VEmu::AMOMINW},
+        {IName::AMOMAXW,  &VEmu::AMOMAXW},
+        {IName::AMOMINUW, &VEmu::AMOMINUW},
+        {IName::AMOMAXUW, &VEmu::AMOMAXUW},
+        {IName::LRW,      &VEmu::LRW},
+        {IName::SCW,      &VEmu::SCW},
 
-		{IName::MRET,      &VEmu::MRET},
-		{IName::SRET,      &VEmu::SRET},
-
-		{IName::XXX,      &VEmu::XXX},
+        {IName::AMOSWAPD, &VEmu::AMOSWAPD},
+        {IName::AMOADDD,  &VEmu::AMOADDD},
+        {IName::AMOXORD,  &VEmu::AMOXORD},
+        {IName::AMOANDD,  &VEmu::AMOANDD},
+        {IName::AMOORD,   &VEmu::AMOORD},
+        {IName::AMOMIND,  &VEmu::AMOMIND},
+        {IName::AMOMAXD,  &VEmu::AMOMAXD},
+        {IName::AMOMINUD, &VEmu::AMOMINUD},
+        {IName::AMOMAXUD, &VEmu::AMOMAXUD},
+        {IName::LRD,      &VEmu::LRD},
+        {IName::SCD,      &VEmu::SCD},
+        
+        {IName::MRET,      &VEmu::MRET},
+        {IName::SRET,      &VEmu::SRET},
+        
+        {IName::XXX,      &VEmu::XXX},
 	};
 }
 
@@ -812,6 +826,207 @@ void VEmu::XOR()
 
 	if (rd == 0) return;
 	regs[rd] = regs[rs1] ^ regs[rs2];
+}
+
+void VEmu::MUL()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+	regs[rd] = regs[rs1] * regs[rs2];
+}
+
+void VEmu::MULW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+	regs[rd] = 
+        static_cast<int32_t>(regs[rs1] & 0xFFFFFFFF) * static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+}
+
+void VEmu::MULH()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+	regs[rd] = static_cast<int64_t>(
+        ((__int128)regs[rs1] * (__int128)regs[rs2]) >> 64
+    );
+}
+
+void VEmu::MULHU()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+    uint64_t urs1 = static_cast<uint64_t>(regs[rs1]);
+    uint64_t urs2 = static_cast<uint64_t>(regs[rs2]);
+
+    regs[rd] = static_cast<int64_t>(
+        (static_cast<unsigned __int128>(urs1) * static_cast<unsigned __int128>(urs2)) >> 64
+    );
+}
+
+void VEmu::MULHSU()
+{
+	std::cout << "MULHSU not yet implemented.\n";
+    exit(EXIT_FAILURE);
+}
+
+void VEmu::DIV()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+    } else if (regs[rs1] == INT64_MIN && regs[rs2] == -1) {
+        regs[rd] = regs[rs1];
+    } else {
+        regs[rd] = regs[rs1] / regs[rs2];
+    }
+}
+
+void VEmu::DIVU()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+        return;
+    }
+
+	regs[rd] = static_cast<int64_t>( 
+        static_cast<uint64_t>(regs[rs1]) / static_cast<uint64_t>(regs[rs2])
+    );
+}
+
+void VEmu::DIVW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+        return;
+    }
+
+	regs[rd] = 
+        static_cast<int32_t>(regs[rs1] & 0xFFFFFFFF) / static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+}
+
+void VEmu::DIVUW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+        return;
+    }
+
+	regs[rd] = static_cast<int64_t>( 
+        static_cast<uint32_t>(regs[rs1] & 0xFFFFFFFF) / static_cast<uint32_t>(regs[rs2] & 0xFFFFFFFF)
+    );
+}
+
+void VEmu::REM()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    if (regs[rs2] == 0) {
+        regs[rd] = regs[rs1];
+    } else if (regs[rs1] == INT64_MIN && regs[rs2] == -1) {
+        regs[rd] = 0;
+    } else {
+        regs[rd] = regs[rs1] % regs[rs2];
+    }
+}
+
+void VEmu::REMU()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = regs[rs1];
+        return;
+    }
+
+	regs[rd] = static_cast<int64_t>( 
+        static_cast<uint64_t>(regs[rs1]) % static_cast<uint64_t>(regs[rs2])
+    );
+}
+
+void VEmu::REMW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(regs[rs2]));
+        return;
+    }
+
+	regs[rd] = 
+        static_cast<int32_t>(regs[rs1]) % static_cast<int32_t>(regs[rs2]);
+}
+
+void VEmu::REMUW()
+{
+	auto rs1 = curr_instr.get_fields().rs1;
+	auto rs2 = curr_instr.get_fields().rs2;
+	auto rd = curr_instr.get_fields().rd;
+
+	if (rd == 0) return;
+
+    // FIXME
+    if (regs[rs2] == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+        return;
+    }
+
+	regs[rd] = static_cast<int64_t>( 
+        static_cast<uint32_t>(regs[rs1] & 0xFFFFFFFF) % static_cast<uint32_t>(regs[rs2] & 0xFFFFFFFF)
+    );
 }
 
 void VEmu::SRL()

@@ -41,6 +41,13 @@ private:
 	void XOR();      void SRL();     void SRLW();     void SRA();   
 	void SRAW();     void OR();      void AND();      void JAL();   
 	void JALR();     void LUI();     void AUIPC();    void XXX(); 
+
+    void MUL();      void MULH();    void MULHSU();   void MULHU();
+    void DIV();      void DIVU();    void REM();      void REMU(); 
+
+    void MULW();     void DIVW();    void DIVUW();    void REMW();
+    void REMUW();
+
 	void LRW();      void LRD();     void SCW();      void SCD(); 
 
 	void AMOSWAPW(); void AMOADDW(); void AMOANDW();  void AMOXORW();
