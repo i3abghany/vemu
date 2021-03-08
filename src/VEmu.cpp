@@ -927,14 +927,17 @@ void VEmu::DIVW()
 
 	if (rd == 0) return;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
-        return;
-    }
+    int32_t rs1_32 = static_cast<int32_t>(regs[rs1]);
+    int32_t rs2_32 = static_cast<int32_t>(regs[rs2]);
 
-	regs[rd] = 
-        static_cast<int32_t>(regs[rs1] & 0xFFFFFFFF) / static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    if (rs2_32 == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+    } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
+        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
+    }
+    else {
+        regs[rd] = static_cast<int64_t>(rs1_32 / rs2_32);
+    }
 }
 
 void VEmu::DIVUW()
@@ -945,15 +948,15 @@ void VEmu::DIVUW()
 
 	if (rd == 0) return;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
-        return;
-    }
+    uint32_t rs1_32 = static_cast<uint32_t>(regs[rs1]);
+    uint32_t rs2_32 = static_cast<uint32_t>(regs[rs2]);
 
-	regs[rd] = static_cast<int64_t>( 
-        static_cast<uint32_t>(regs[rs1] & 0xFFFFFFFF) / static_cast<uint32_t>(regs[rs2] & 0xFFFFFFFF)
-    );
+    if (rs2_32 == 0) {
+        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+    }
+    else {
+        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32 / rs2_32));
+    }
 }
 
 void VEmu::REM()
@@ -1000,14 +1003,19 @@ void VEmu::REMW()
 
 	if (rd == 0) return;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(regs[rs2]));
+    int32_t rs1_32 = static_cast<int32_t>(regs[rs1]);
+    int32_t rs2_32 = static_cast<int32_t>(regs[rs2]);
+
+    if (rs2_32 == 0) {
+        regs[rd] = static_cast<int64_t>(rs1_32);
         return;
+    } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
+        regs[rd] = 0;
+    } else {
+        regs[rd] = 
+            static_cast<int32_t>(regs[rs1]) % static_cast<int32_t>(regs[rs2]);
     }
 
-	regs[rd] = 
-        static_cast<int32_t>(regs[rs1]) % static_cast<int32_t>(regs[rs2]);
 }
 
 void VEmu::REMUW()
@@ -1018,15 +1026,14 @@ void VEmu::REMUW()
 
 	if (rd == 0) return;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
-        return;
-    }
+    uint32_t rs1_32 = static_cast<uint32_t>(regs[rs1]);
+    uint32_t rs2_32 = static_cast<uint32_t>(regs[rs2]);
 
-	regs[rd] = static_cast<int64_t>( 
-        static_cast<uint32_t>(regs[rs1] & 0xFFFFFFFF) % static_cast<uint32_t>(regs[rs2] & 0xFFFFFFFF)
-    );
+    if (rs2_32 == 0) {
+        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
+    } else {
+        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32 % rs2_32));
+    }
 }
 
 void VEmu::SRL()
