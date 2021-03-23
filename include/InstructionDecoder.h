@@ -39,11 +39,11 @@ private:
     uint32_t imm_j(uint32_t);
 
 private:
-	const static std::map<IName, std::string> inst_string_names;
-	std::unordered_map<uint32_t, Instruction> instr_cache;
+    const static std::map<IName, std::string> inst_string_names;
+    std::unordered_map<uint32_t, Instruction> instr_cache;
 
-	void init_fixed_instrs();
-	
+    void init_fixed_instrs();
+
     const static std::map<IName, uint8_t> i_opcodes;
     const static std::map<IName, uint8_t> j_opcodes;
     const static std::map<IName, uint8_t> u_opcodes;
