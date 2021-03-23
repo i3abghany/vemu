@@ -1398,7 +1398,7 @@ void VEmu::AMOMINUW()
     store(regs[rs1], res, 32);
 
     if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    regs[rd] = sext_word(tmp);
 }
 
 void VEmu::AMOMAXUW()
@@ -1407,17 +1407,15 @@ void VEmu::AMOMAXUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    uint32_t tmp = static_cast<uint32_t>(load(regs[rs1], 32));
+    uint32_t rs2_val = static_cast<uint32_t>(regs[rs2]);
 
-    uint64_t res = tmp > rs2_val ?
-        static_cast<uint64_t>(static_cast<uint32_t>(tmp)) :
-        static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
+    uint32_t res = tmp > rs2_val ? tmp : rs2_val;
 
     store(regs[rs1], res, 32);
 
     if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    regs[rd] = sext_word(tmp);
 }
 
 
@@ -1478,7 +1476,7 @@ void VEmu::AMOANDD()
     uint64_t tmp = load(regs[rs1], 64);
     uint64_t rs2_val = regs[rs2] ;
 
-    uint64_t res = tmp ^ rs2_val;
+    uint64_t res = tmp & rs2_val;
 
     store(regs[rs1], res, 64);
 
