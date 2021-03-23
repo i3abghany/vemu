@@ -1606,8 +1606,27 @@ void VEmu::MRET()
 
 void VEmu::SRET()
 {
-    std::cout << "No yet implemented.\n";
-    exit(1);
+    pc = load_csr(SEPC) - 4;
+
+    uint8_t mb = (load_csr(SSTATUS) >> 8) & 0b1;
+
+    if (mb == 0x0) mode = Mode::User;
+    else mode = Mode::Supervisor;
+
+    uint8_t SPIE = (load_csr(SSTATUS) >> 5) & 1;
+
+    // SSTATUS[SIE] = SSTATUS[SPIE]
+    if (SPIE) {
+        store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 1));
+    } else {
+        store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 1)));
+    }
+
+    // SSTATUS[SPIE] = 1
+    store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 5));
+
+    // SSTATUS[SPP] = 0
+    store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 8)));
 }
 
 
