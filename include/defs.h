@@ -140,34 +140,33 @@ enum class IName : uint8_t {
     
     SRET,
     MRET,
-    XXX, // wrong instruction.
+
+    XXX, 
 };
 
-#define MSTATUS 0x300
-#define SSTATUS 0x100
+#define MHARTID    0xf14
+#define MSTATUS    0x300
+#define MTVEC      0x305
+#define MEDELEG    0x302
+#define MIDELEG    0x303
+#define MIP        0x344
+#define MIE        0x304
+#define MEPC       0x341 
+#define MCAUSE     0x342
+#define MTVAL      0x343
+#define MCOUNTEREN 0x306
+#define MSCRATCH   0x340
 
-#define MTVEC 0x305
-#define STVEC 0x105
+#define SSTATUS    0x100
+#define SSCRATCH   0x140
+#define STVEC      0x105
+#define SIP        0x144
+#define SIE        0x104
+#define SEPC       0x141
+#define SCAUSE     0x142
+#define STVAL      0x143
+#define SATP       0x180
 
-#define MEDELEG 0x302
-#define MIDELEG 0x303
-
-#define MIP 0x344
-#define MIE 0x304
-
-#define SIP 0x144
-#define SIE 0x104
-
-#define MEPC 0x341 
-#define SEPC 0x141
-
-#define MCAUSE 0x342
-#define SCAUSE 0x142
-
-#define MTVAL 0x343
-#define STVAL 0x143
-
-#define SATP 0x180
 
 enum class Mode : uint8_t {
 	User = 0b00,
