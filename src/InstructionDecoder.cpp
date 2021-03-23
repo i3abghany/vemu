@@ -425,7 +425,7 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::AMOANDW,  0b0110000},
         {IName::AMOORW,   0b0100000},
         {IName::AMOMINW,  0b1000000},
-        {IName::AMOMAXW,  0b1011100},
+        {IName::AMOMAXW,  0b1010000},
         {IName::AMOMINUW, 0b1100000},
         {IName::AMOMAXUW, 0b1110000},
 
