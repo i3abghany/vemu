@@ -99,5 +99,9 @@ private:
 
 private:
     std::unordered_set<uint64_t> reservation_set;
+
+private:
+    void trap(Exception e);
+    bool is_fatal(Exception e);
 };
 

@@ -1647,3 +1647,103 @@ void VEmu::XXX()
     exit(EXIT_FAILURE);
 }
 
+void VEmu::trap(Exception e)
+{
+    uint64_t exception_pc = pc;
+    uint8_t cause = static_cast<uint8_t>(e);
+    Mode prev_mode = mode;
+
+    /* Exceptions are handled usually in the Machine mode
+       privilege level. However, some exceptions can be
+       marked to be done at a lower privilege level. This marking
+       is saved in the MEDELEG control and status register. When
+       the current mode is user-mode, the exception is handled
+    */
+    bool do_deleg = (load_csr(MEDELEG) >> cause) & 1;
+
+    if (prev_mode == Mode::User && do_deleg) {
+        mode = Mode::Supervisor;
+
+        pc = load_csr(STVEC) & (~(0b11)); 
+
+        store_csr(SEPC, exception_pc & (~1));
+
+        store_csr(SCAUSE, cause);
+        
+        store_csr(STVAL, 0);
+
+        // set previous interrupt enable to the current global
+        // interrupt enable.
+        uint8_t sie = (load_csr(SSTATUS) >> 1) & 1;
+        if (sie) {
+            store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 5));
+        } else {
+            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 5)));
+        }
+
+        // set global interrupt bit to 0.
+        store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 1)));
+
+        // SSP is set to 0 if previous mode is User mode, 
+        // 1 otherwise.
+        if (prev_mode == Mode::User) {
+            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 8)));
+        } else {
+            store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 8));
+        }
+    } else {
+        mode = Mode::Machine;
+
+        pc = load_csr(MTVEC) & (~(0b11));
+
+        store_csr(MEPC, exception_pc & (~1));
+
+        store_csr(MCAUSE, cause);
+        
+        store_csr(MTVAL, 0);
+
+        // set previous interrupt enable to the current global
+        // interrupt enable.
+        uint8_t mie = (load_csr(MSTATUS) >> 3) & 1;
+        if (mie) {
+            store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 7));
+        } else {
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 7)));
+        }
+
+        // set global interrupt bit to 0.
+        store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 3)));
+
+        // SSP is set to 0 if previous mode is User mode, 
+        // 1 otherwise.
+        if (prev_mode == Mode::User) {
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 8)));
+        } else {
+            store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 8));
+        }
+
+        switch (prev_mode) {
+            case Mode::User: 
+                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11 << 11)));
+                break;
+            case Mode::Supervisor:
+                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1 << 12)));
+                store_csr(MSTATUS, load_csr(MSTATUS) | (0b1 << 11));
+                break;
+            case Mode::Machine:
+                store_csr(MSTATUS, load_csr(MSTATUS) | (0b11 << 11));
+                break;
+            default:
+                std::cout << "Unsupported(?) privilege mode.\n";
+                assert(false);
+        }
+    }
+}
+
+bool VEmu::is_fatal(Exception e) {
+    return e == Exception::LoadAccessFault ||
+           e == Exception::InstructionAccessFault ||
+           e == Exception::InstructionAddressMisaligned ||
+           e == Exception::StoreAMOAddressMisaligned ||
+           e == Exception::StoreAMOAccessFault;
+}
