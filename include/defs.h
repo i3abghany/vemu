@@ -174,3 +174,20 @@ enum class Mode : uint8_t {
 	Machine = 0b11
 };
 
+enum class Exception : uint8_t {
+    InstructionAddressMisaligned = 0,
+    InstructionAccessFault = 1,
+    IllegalInstruction = 2,
+    InstructionAddressBreakpoint = 3,
+    LoadAddressMisaligned = 4,
+    LoadAccessFault = 5,
+    StoreAMOAddressMisaligned = 6,
+    StoreAMOAccessFault = 7,
+    EnvironmentCallFromUserMode = 8,
+    EnvironmentCallFromSupervisorMode = 9,
+    EnvironmentCallFromMachineMode = 11,
+    InstructionPageFault = 12,
+    LoadPageFault = 13,
+    StoreAMOPageFault = 15,
+};
+
