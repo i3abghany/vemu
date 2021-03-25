@@ -878,8 +878,20 @@ void VEmu::MULHU()
 
 void VEmu::MULHSU()
 {
-    std::cout << "MULHSU not yet implemented.\n";
-    exit(EXIT_FAILURE);
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    if (rd == 0) return;
+    int64_t irs1 = regs[rs1];
+    uint64_t urs2 = static_cast<uint64_t>(regs[rs2]);
+
+    unsigned __int128 rs1_val =
+        static_cast<unsigned __int128>(static_cast<__int128>(irs1));
+    unsigned __int128 rs2_val =
+        static_cast<unsigned __int128>(urs2);
+
+    regs[rd] = static_cast<int64_t>((rs1_val * rs2_val) >> 64);
 }
 
 void VEmu::DIV()
