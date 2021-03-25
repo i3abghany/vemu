@@ -1,10 +1,12 @@
 #include "../include/InstructionDecoder.h"
 
-InstructionDecoder::InstructionDecoder() {
+InstructionDecoder::InstructionDecoder()
+{
     init_fixed_instrs();
 }
 
-void InstructionDecoder::init_fixed_instrs() {
+void InstructionDecoder::init_fixed_instrs()
+{
     instr_cache[0x30200073] = Instruction(
         Instruction::Type::R,
         IName::MRET,
@@ -23,7 +25,7 @@ void InstructionDecoder::init_fixed_instrs() {
         "MRET"
     );
 
-    instr_cache[0x10200073] = Instruction{
+    instr_cache[0x10200073] = Instruction {
         Instruction::Type::R,
         IName::SRET,
         Fields {
@@ -42,12 +44,14 @@ void InstructionDecoder::init_fixed_instrs() {
     };
 }
 
-InstructionDecoder &InstructionDecoder::the() {
+InstructionDecoder &InstructionDecoder::the()
+{
     static InstructionDecoder inst;
     return inst;
 }
 
-Instruction InstructionDecoder::decode(const uint32_t inst) {
+Instruction InstructionDecoder::decode(const uint32_t inst)
+{
     if (instr_cache.find(inst) != instr_cache.end())
         return instr_cache.at(inst);
 
@@ -280,7 +284,7 @@ const std::map<IName, uint8_t> InstructionDecoder::u_opcodes = {
         {IName::AUIPC, 0b0010111},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
+const std::map<IName, uint8_t> InstructionDecoder::i_funct3 = {
         {IName::LB,     0b000},
         {IName::LH,     0b001},
         {IName::LW,     0b010},
@@ -314,7 +318,7 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct3{
         {IName::JALR,   0b000},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
+const std::map<IName, uint8_t> InstructionDecoder::r_funct3 = {
         {IName::ADD,      0b000},
         {IName::ADDW,     0b000},
         {IName::SUB,      0b000},
@@ -368,7 +372,7 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct3{
         {IName::SCD,      0b011},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::b_funct3{
+const std::map<IName, uint8_t> InstructionDecoder::b_funct3 = {
         {IName::BEQ,  0b000},
         {IName::BNE,  0b001},
         {IName::BLT,  0b100},
@@ -377,14 +381,14 @@ const std::map<IName, uint8_t> InstructionDecoder::b_funct3{
         {IName::BGEU, 0b111},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::s_funct3{
+const std::map<IName, uint8_t> InstructionDecoder::s_funct3 = {
         {IName::SB, 0b000},
         {IName::SH, 0b001},
         {IName::SW, 0b010},
         {IName::SD, 0b011},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
+const std::map<IName, uint8_t> InstructionDecoder::r_funct7 = {
         {IName::ADD,      0b0000000},
         {IName::ADDW,     0b0000000},
         {IName::SUB,      0b0010000},
@@ -444,7 +448,7 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 {
         {IName::AMOMAXUD, 0b1110000},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::i_funct7 {
+const std::map<IName, uint8_t> InstructionDecoder::i_funct7 = {
         {IName::SLLI,  0b0000000},
         {IName::SRLI,  0b0000000},
         {IName::SRAI,  0b0010000},
@@ -453,13 +457,14 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct7 {
         {IName::SRAIW, 0b0010000},
 };
 
-const std::map<IName, uint8_t> InstructionDecoder::i_funct6 {
+const std::map<IName, uint8_t> InstructionDecoder::i_funct6 = {
         {IName::SLLI,  0b000000},
         {IName::SRLI,  0b000000},
         {IName::SRAI,  0b010000},
 };
 
-Instruction::Type InstructionDecoder::instr_type(uint8_t op) {
+Instruction::Type InstructionDecoder::instr_type(uint8_t op)
+{
     for (const auto& [k, v] : i_opcodes) {
         if (op == v) return Instruction::Type::I;
     }
@@ -487,12 +492,14 @@ Instruction::Type InstructionDecoder::instr_type(uint8_t op) {
     return Instruction::Type::WRONG;
 }
 
-Instruction::Type InstructionDecoder::instr_type(uint32_t inst) {
+Instruction::Type InstructionDecoder::instr_type(uint32_t inst)
+{
     uint8_t op = extract_opcode(inst);
     return instr_type(op);
 }
 
-Fields InstructionDecoder::get_fields(uint32_t inst) {
+Fields InstructionDecoder::get_fields(uint32_t inst)
+{
     uint8_t funct3 = extract_funct3(inst);
     uint8_t funct7 = extract_funct7(inst);
     uint8_t funct6 = extract_funct6(inst);
@@ -518,7 +525,8 @@ Fields InstructionDecoder::get_fields(uint32_t inst) {
     };
 }
 
-uint8_t InstructionDecoder::get_opcode(IName name, Instruction::Type t) {
+uint8_t InstructionDecoder::get_opcode(IName name, Instruction::Type t)
+{
     switch (t) {
         case Instruction::Type::R: return r_opcodes.at(name);
         case Instruction::Type::I: return i_opcodes.at(name);
@@ -532,11 +540,13 @@ uint8_t InstructionDecoder::get_opcode(IName name, Instruction::Type t) {
     return UINT8_MAX;
 }
 
-std::string InstructionDecoder::get_string_name(IName ins) {
+std::string InstructionDecoder::get_string_name(IName ins)
+{
     return inst_string_names.at(ins);
 }
 
-uint8_t InstructionDecoder::get_i_funct7(IName n) {
+uint8_t InstructionDecoder::get_i_funct7(IName n)
+{
     if (n == IName::XXX) {
         return UINT8_MAX;
     } else {
@@ -544,7 +554,8 @@ uint8_t InstructionDecoder::get_i_funct7(IName n) {
     }
 }
 
-uint8_t InstructionDecoder::get_i_funct6(IName n) {
+uint8_t InstructionDecoder::get_i_funct6(IName n)
+{
     if (n == IName::XXX) {
         return UINT8_MAX;
     } else {
@@ -552,7 +563,8 @@ uint8_t InstructionDecoder::get_i_funct6(IName n) {
     }
 }
 
-Instruction InstructionDecoder::decode_r(uint32_t inst) {
+Instruction InstructionDecoder::decode_r(uint32_t inst)
+{
     Fields f = get_fields(inst);
     for (auto &[ins, f3] : r_funct3) {
         auto ins_opcode = get_opcode(ins, Instruction::Type::R);
@@ -575,7 +587,8 @@ Instruction InstructionDecoder::decode_r(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
-Instruction InstructionDecoder::decode_i(uint32_t inst) {
+Instruction InstructionDecoder::decode_i(uint32_t inst)
+{
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : i_funct3) {
         if (get_opcode(ins, Instruction::Type::I) == f.OPCode && f3 == f.funct3 && !is_shift_imm_32_instruction(ins)
@@ -596,7 +609,8 @@ Instruction InstructionDecoder::decode_i(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
-Instruction InstructionDecoder::decode_b(uint32_t inst) {
+Instruction InstructionDecoder::decode_b(uint32_t inst)
+{
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : b_funct3) {
         if (f.OPCode == get_opcode(ins, Instruction::Type::B) && f3 == f.funct3) {
@@ -606,7 +620,8 @@ Instruction InstructionDecoder::decode_b(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
-Instruction InstructionDecoder::decode_s(uint32_t inst) {
+Instruction InstructionDecoder::decode_s(uint32_t inst)
+{
     Fields f = get_fields(inst);
     for (const auto &[ins, f3] : s_funct3) {
         if (f.OPCode == get_opcode(ins, Instruction::Type::S) && f3 == f.funct3) {
@@ -616,7 +631,8 @@ Instruction InstructionDecoder::decode_s(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
-Instruction InstructionDecoder::decode_j(uint32_t inst) {
+Instruction InstructionDecoder::decode_j(uint32_t inst)
+{
     Fields f = get_fields(inst);
     for (const auto &[ins, op] : j_opcodes) {
         if (op == f.OPCode) {
@@ -626,7 +642,8 @@ Instruction InstructionDecoder::decode_j(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
-Instruction InstructionDecoder::decode_u(uint32_t inst) {
+Instruction InstructionDecoder::decode_u(uint32_t inst)
+{
     Fields f = get_fields(inst);
     for (const auto &[ins, op] : u_opcodes) {
         if (op == f.OPCode) {
@@ -636,84 +653,84 @@ Instruction InstructionDecoder::decode_u(uint32_t inst) {
     return Instruction(Instruction::Type::WRONG, IName::XXX, f, "XXX");
 }
 
-uint8_t InstructionDecoder::extract_opcode(uint32_t inst) {
+uint8_t InstructionDecoder::extract_opcode(uint32_t inst)
+{
     return inst & OPCODE_MASK;
 }
 
-uint8_t InstructionDecoder::extract_funct3(uint32_t inst) {
+uint8_t InstructionDecoder::extract_funct3(uint32_t inst)
+{
     return static_cast<uint8_t>((inst & FUNCT3_MASK) >> 12U);
 }
 
-uint8_t InstructionDecoder::extract_funct7(uint32_t inst) {
+uint8_t InstructionDecoder::extract_funct7(uint32_t inst)
+{
     return static_cast<uint8_t>((inst & FUNCT7_MASK) >> 25U);
 }
 
-uint8_t InstructionDecoder::extract_funct6(uint32_t inst) {
+uint8_t InstructionDecoder::extract_funct6(uint32_t inst)
+{
     return static_cast<uint8_t>((inst & FUNCT6_MASK) >> 26U);
 }
 
-uint8_t InstructionDecoder::extract_rd(uint32_t inst) {
+uint8_t InstructionDecoder::extract_rd(uint32_t inst)
+{
     return (inst & RD_MASK) >> 7U;
 }
 
-uint8_t InstructionDecoder::extract_rs1(uint32_t inst) {
+uint8_t InstructionDecoder::extract_rs1(uint32_t inst)
+{
     return (inst & RS1_MASK) >> 15U;
 }
 
-uint8_t InstructionDecoder::extract_rs2(uint32_t inst) {
+uint8_t InstructionDecoder::extract_rs2(uint32_t inst)
+{
     return (inst & RS2_MASK) >> 20U;
 }
 
-uint8_t InstructionDecoder::extract_shamt32(uint32_t inst) {
+uint8_t InstructionDecoder::extract_shamt32(uint32_t inst)
+{
     return (inst & SHAMT32_MASK) >> 20U;
 }
 
-uint8_t InstructionDecoder::extract_shamt64(uint32_t inst) {
+uint8_t InstructionDecoder::extract_shamt64(uint32_t inst)
+{
     return (inst & SHAMT64_MASK) >> 20U;
 }
 
-uint32_t InstructionDecoder::get_immediate(uint32_t inst) {
-     auto t = instr_type(inst);
-
-     if (t == Instruction::Type::WRONG) {
-         return 0;
-     }
-
-     if (t == Instruction::Type::R) {
-         return 0;
-     }
-
-     if (t == Instruction::Type::I) {
-         return imm_i(inst);
-     }
-
-     if (t == Instruction::Type::J) {
-         return imm_j(inst);
-     }
-
-     if (t == Instruction::Type::B) {
-         return imm_b(inst);
-     }
-
-     if (t == Instruction::Type::S) {
-         return imm_s(inst);
-     }
-
-     if (t == Instruction::Type::U) {
-         return imm_u(inst);
-     }
-
-     return 0;
+uint32_t InstructionDecoder::get_immediate(uint32_t inst)
+{
+    auto t = instr_type(inst);
+    switch (t) {
+        case Instruction::Type::WRONG:
+        case Instruction::Type::R:
+            return 0;
+        case Instruction::Type::I:
+            return imm_i(inst);
+        case Instruction::Type::J:
+            return imm_j(inst);
+        case Instruction::Type::B:
+            return imm_b(inst);
+        case Instruction::Type::S:
+            return imm_s(inst);
+        case Instruction::Type::U:
+            return imm_u(inst);
+        default:
+            exit(EXIT_FAILURE);
+    }
+    return 0;
 }
 
-uint32_t InstructionDecoder::imm_i(uint32_t inst) {
+uint32_t InstructionDecoder::imm_i(uint32_t inst)
+{
     int32_t imm = 0;
     imm = inst & IMM12_MASK;
 
     return static_cast<uint32_t>(imm >> 20);
 }
 
-uint32_t InstructionDecoder::imm_s(uint32_t inst) {
+uint32_t InstructionDecoder::imm_s(uint32_t inst)
+{
     int32_t imm = 0;
     imm |= extract_rd(inst);
     imm |= (static_cast<int32_t>(inst) & FUNCT7_MASK) >> 20;
@@ -723,7 +740,8 @@ uint32_t InstructionDecoder::imm_s(uint32_t inst) {
     return static_cast<uint32_t>(imm);
 }
 
-uint32_t InstructionDecoder::imm_b(uint32_t inst) {
+uint32_t InstructionDecoder::imm_b(uint32_t inst)
+{
     int32_t imm = 0;
     imm |= ((static_cast<int32_t>(inst) & B_INST_IMM_0) >> 7) & B_IMM_0;
     imm |= ((static_cast<int32_t>(inst) & B_INST_IMM_1) >> 20) & B_IMM_1;
@@ -735,11 +753,13 @@ uint32_t InstructionDecoder::imm_b(uint32_t inst) {
     return static_cast<uint32_t>(imm);
 }
 
-uint32_t InstructionDecoder::imm_u(uint32_t inst) {
+uint32_t InstructionDecoder::imm_u(uint32_t inst)
+{
     return static_cast<uint32_t>(inst & IMM20_MASK);
 }
 
-uint32_t InstructionDecoder::imm_j(uint32_t inst) {
+uint32_t InstructionDecoder::imm_j(uint32_t inst)
+{
     int32_t imm = 0;
     imm |= ((static_cast<int32_t>(inst) & J_INST_IMM_0) >> 20) & J_IMM_0;
     imm |= ((static_cast<int32_t>(inst) & J_INST_IMM_1) >> 20) & J_IMM_1;
@@ -752,12 +772,14 @@ uint32_t InstructionDecoder::imm_j(uint32_t inst) {
     return static_cast<uint32_t>(imm);
 }
 
-bool InstructionDecoder::is_shift_imm_32_instruction(IName n) {
-    return n == IName::SLLIW ||
-           n == IName::SRLIW || n == IName::SRAIW;
+bool InstructionDecoder::is_shift_imm_32_instruction(IName n)
+{
+    return n == IName::SLLIW || n == IName::SRLIW || 
+           n == IName::SRAIW;
 }
 
-bool InstructionDecoder::is_shift_imm_64_instruction(IName n) {
+bool InstructionDecoder::is_shift_imm_64_instruction(IName n)
+{
     return n == IName::SLLI || n == IName::SRLI ||
            n == IName::SRAI;
 }
