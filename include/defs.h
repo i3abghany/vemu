@@ -137,11 +137,11 @@ enum class IName : uint8_t {
     AMOMAXD,
     AMOMINUD,
     AMOMAXUD,
-    
+
     SRET,
     MRET,
 
-    XXX, 
+    XXX,
 };
 
 #define MHARTID    0xf14
@@ -151,7 +151,7 @@ enum class IName : uint8_t {
 #define MIDELEG    0x303
 #define MIP        0x344
 #define MIE        0x304
-#define MEPC       0x341 
+#define MEPC       0x341
 #define MCAUSE     0x342
 #define MTVAL      0x343
 #define MCOUNTEREN 0x306
@@ -174,7 +174,7 @@ enum class Mode : uint8_t {
 	Machine = 0b11
 };
 
-enum class Exception : uint8_t {
+enum class ReturnException : uint8_t {
     InstructionAddressMisaligned = 0,
     InstructionAccessFault = 1,
     IllegalInstruction = 2,
@@ -189,5 +189,6 @@ enum class Exception : uint8_t {
     InstructionPageFault = 12,
     LoadPageFault = 13,
     StoreAMOPageFault = 15,
+    NormalExecutionReturn = 255,
 };
 

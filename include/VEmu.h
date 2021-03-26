@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <functional>
 #include <unordered_set>
+#include <type_traits>
 #include <cassert>
 
 #include "InstructionDecoder.h"
@@ -25,41 +26,111 @@ public:
 
 private:
     void init_func_map();
-    std::map<IName, std::function<void(VEmu *)>> inst_funcs;
+    std::map<IName, std::function<ReturnException(VEmu *)>> inst_funcs;
 
-    void LB();       void LH();      void LW();       void LBU();
-    void LHU();      void LD();      void LWU();      void ADDI();
-    void ADDIW();    void SLTI();    void SLTIU();    void XORI();
-    void ORI();      void ANDI();    void SLLI();     void SRLI();
-    void SRAI();     void SLLIW();   void SRLIW();    void SRAIW();
-    void FENCE();    void FENCEI();  void ECALL();    void EBREAK();
-    void CSRRW();    void CSRRS();   void CSRRC();    void CSRRWI();
-    void CSRRSI();   void CSRRCI();  void BEQ();      void BNE();
-    void BLT();      void BGE();     void BLTU();     void BGEU();
-    void SB();       void SH();      void SW();       void SD();
-    void ADD();      void ADDW();    void SUB();      void SUBW();
-    void SLL();      void SLLW();    void SLT();      void SLTU();
-    void XOR();      void SRL();     void SRLW();     void SRA();
-    void SRAW();     void OR();      void AND();      void JAL();
-    void JALR();     void LUI();     void AUIPC();    void XXX();
+    ReturnException LB();
+    ReturnException LH();
+    ReturnException LW();
+    ReturnException LBU();
+    ReturnException LHU();
+    ReturnException LD();
+    ReturnException LWU();
+    ReturnException ADDI();
+    ReturnException ADDIW();
+    ReturnException SLTI();
+    ReturnException SLTIU();
+    ReturnException XORI();
+    ReturnException ORI();
+    ReturnException ANDI();
+    ReturnException SLLI();
+    ReturnException SRLI();
+    ReturnException SRAI();
+    ReturnException SLLIW();
+    ReturnException SRLIW();
+    ReturnException SRAIW();
+    ReturnException FENCE();
+    ReturnException FENCEI();
+    ReturnException ECALL();
+    ReturnException EBREAK();
+    ReturnException CSRRW();
+    ReturnException CSRRS();
+    ReturnException CSRRC();
+    ReturnException CSRRWI();
+    ReturnException CSRRSI();
+    ReturnException CSRRCI();
+    ReturnException BEQ();
+    ReturnException BNE();
+    ReturnException BLT();
+    ReturnException BGE();
+    ReturnException BLTU();
+    ReturnException BGEU();
+    ReturnException SB();
+    ReturnException SH();
+    ReturnException SW();
+    ReturnException SD();
+    ReturnException ADD();
+    ReturnException ADDW();
+    ReturnException SUB();
+    ReturnException SUBW();
+    ReturnException SLL();
+    ReturnException SLLW();
+    ReturnException SLT();
+    ReturnException SLTU();
+    ReturnException XOR();
+    ReturnException SRL();
+    ReturnException SRLW();
+    ReturnException SRA();
+    ReturnException SRAW();
+    ReturnException OR();
+    ReturnException AND();
+    ReturnException JAL();
+    ReturnException JALR();
+    ReturnException LUI();
+    ReturnException AUIPC();
+    ReturnException XXX();
 
-    void MUL();      void MULH();    void MULHSU();   void MULHU();
-    void DIV();      void DIVU();    void REM();      void REMU();
+    ReturnException MUL();
+    ReturnException MULH();
+    ReturnException MULHSU();
+    ReturnException MULHU();
+    ReturnException DIV();
+    ReturnException DIVU();
+    ReturnException REM();
+    ReturnException REMU();
 
-    void MULW();     void DIVW();    void DIVUW();    void REMW();
-    void REMUW();
+    ReturnException MULW();
+    ReturnException DIVW();
+    ReturnException DIVUW();
+    ReturnException REMW();
+    ReturnException REMUW();
 
-    void LRW();      void LRD();     void SCW();      void SCD();
+    ReturnException LRW();
+    ReturnException LRD();
+    ReturnException SCW();
+    ReturnException SCD();
 
-    void AMOSWAPW(); void AMOADDW(); void AMOANDW();  void AMOXORW();
-    void AMOMINW();  void AMOMAXW(); void AMOMINUW(); void AMOMAXUW();
-    void AMOORW();
+    ReturnException AMOSWAPW();
+    ReturnException AMOADDW();
+    ReturnException AMOANDW();
+    ReturnException AMOXORW();
+    ReturnException AMOMINW();
+    ReturnException AMOMAXW();
+    ReturnException AMOMINUW();
+    ReturnException AMOMAXUW();
+    ReturnException AMOORW();
 
-    void AMOSWAPD(); void AMOADDD(); void AMOANDD();  void AMOXORD();
-    void AMOMIND();  void AMOMAXD(); void AMOMINUD(); void AMOMAXUD();
-    void AMOORD();
+    ReturnException AMOSWAPD();
+    ReturnException AMOADDD();
+    ReturnException AMOANDD();
+    ReturnException AMOXORD();
+    ReturnException AMOMIND();
+    ReturnException AMOMAXD();
+    ReturnException AMOMINUD();
+    ReturnException AMOMAXUD();
+    ReturnException AMOORD();
 
-    void SRET(); void MRET();
+    ReturnException SRET();
+    ReturnException MRET();
 
 private:
     void read_file();
@@ -74,9 +145,7 @@ private:
 private:
     Mode mode;
 
-    // constexpr static size_t REGS_NUM = 32;
-    // std::array<int64_t, REGS_NUM> regs;
-
+private:
     RegFile rf;
 
 private:
@@ -85,6 +154,8 @@ private:
 
     uint64_t load_csr(uint64_t);
     void store_csr(uint64_t, uint64_t);
+
+    void dump_csrs();
 
 private:
     Bus bus;
@@ -97,7 +168,9 @@ private:
     std::unordered_set<uint64_t> reservation_set;
 
 private:
-    void trap(Exception e);
-    bool is_fatal(Exception e);
+    void trap(ReturnException e);
+    bool is_fatal(ReturnException e);
+    void exit_fatally(ReturnException e);
+    std::string stringify_exception(ReturnException e);
 };
 

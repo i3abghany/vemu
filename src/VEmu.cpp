@@ -177,8 +177,13 @@ uint32_t VEmu::run()
         curr_instr = InstructionDecoder::the().decode(hex_instr);
         IName instr_iname = curr_instr.get_name();
 
-        (inst_funcs[instr_iname])(this);
+        auto ret = (inst_funcs[instr_iname])(this);
+        if (ret != ReturnException::NormalExecutionReturn)
+            trap(ret);
+        if (is_fatal(ret))
+            exit_fatally(ret);
     }
+    dump_csrs();
     return 0;
 }
 
@@ -201,7 +206,21 @@ void VEmu::store_csr(uint64_t addr, uint64_t val)
     }
 }
 
-void VEmu::LB()
+void VEmu::dump_csrs()
+{
+    std::cout << std::hex;
+    std::cout << "mstatus: " << load_csr(MSTATUS) << std::endl;
+    std::cout << "mtvec: " << load_csr(MTVEC) << std::endl;
+    std::cout << "mepc: " << load_csr(MEPC) << std::endl;
+    std::cout << "mcause: " << load_csr(MCAUSE) << std::endl;
+
+    std::cout << "sstatus: " << load_csr(SSTATUS) << std::endl;
+    std::cout << "stvec: " << load_csr(STVEC) << std::endl;
+    std::cout << "sepc: " << load_csr(SEPC) << std::endl;
+    std::cout << "scause: " << load_csr(SCAUSE) << std::endl;
+}
+
+ReturnException VEmu::LB()
 {
     LBU();
 
@@ -210,9 +229,11 @@ void VEmu::LB()
     auto res = static_cast<int64_t>(
         sext_byte(static_cast<uint8_t>(rf.load_reg(rd) & 0xFF)));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LW()
+ReturnException VEmu::LW()
 {
     LWU();
 
@@ -221,9 +242,11 @@ void VEmu::LW()
     auto res = static_cast<int64_t>(
         sext_word(static_cast<uint32_t>(rf.load_reg(rd) & 0xFFFFFFFF)));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LBU()
+ReturnException VEmu::LBU()
 {
     auto base_reg = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -237,9 +260,11 @@ void VEmu::LBU()
 
     auto res = static_cast<int64_t>(bus.load(mem_addr, 8));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LH()
+ReturnException VEmu::LH()
 {
     LHU();
 
@@ -248,9 +273,11 @@ void VEmu::LH()
     auto res = static_cast<int64_t>(
         sext_word(static_cast<uint16_t>(rf.load_reg(rd) & 0xFFFF)));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LHU()
+ReturnException VEmu::LHU()
 {
     auto base_reg = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -264,9 +291,11 @@ void VEmu::LHU()
 
     auto res = static_cast<int64_t>(bus.load(mem_addr, 16));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LD()
+ReturnException VEmu::LD()
 {
     auto base_reg = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -280,9 +309,11 @@ void VEmu::LD()
 
     auto res = static_cast<int64_t>(bus.load(mem_addr, 64));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LWU()
+ReturnException VEmu::LWU()
 {
     auto base_reg = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -296,9 +327,11 @@ void VEmu::LWU()
 
     auto res = static_cast<int64_t>(bus.load(mem_addr, 32));
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ADDI()
+ReturnException VEmu::ADDI()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -307,9 +340,11 @@ void VEmu::ADDI()
 
     auto res = rf.load_reg(rs1) + imm;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ADDIW()
+ReturnException VEmu::ADDIW()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -322,9 +357,11 @@ void VEmu::ADDIW()
 
     auto res = static_cast<int64_t>(res_32);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLTI()
+ReturnException VEmu::SLTI()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -334,12 +371,14 @@ void VEmu::SLTI()
 
     auto res = (rf.load_reg(rs1) < imm) ? 1 : 0;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
 // SLTIU rd, rs1, 1 sets rd to 1
 // if rs1 == 0, otherwise it sets
 // it to 0.
-void VEmu::SLTIU()
+ReturnException VEmu::SLTIU()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -350,9 +389,11 @@ void VEmu::SLTIU()
     auto res = (static_cast<uint64_t>(rf.load_reg(rs1)) < static_cast<uint64_t>(imm)) ?
             1 : 0;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::XORI()
+ReturnException VEmu::XORI()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -361,9 +402,11 @@ void VEmu::XORI()
 
     auto res = rf.load_reg(rs1) ^ imm;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ORI()
+ReturnException VEmu::ORI()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -372,9 +415,11 @@ void VEmu::ORI()
 
     auto res = rf.load_reg(rs1) | imm;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ANDI()
+ReturnException VEmu::ANDI()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -383,9 +428,11 @@ void VEmu::ANDI()
 
     auto res = rf.load_reg(rs1) & imm;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLLI()
+ReturnException VEmu::SLLI()
 {
     uint8_t shamt =
         static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
@@ -397,9 +444,11 @@ void VEmu::SLLI()
 
     auto res = static_cast<int64_t>(op);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRLI()
+ReturnException VEmu::SRLI()
 {
     uint8_t shamt =
         static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
@@ -411,9 +460,11 @@ void VEmu::SRLI()
 
     auto res = static_cast<int64_t>(op);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRAI()
+ReturnException VEmu::SRAI()
 {
     uint8_t shamt =
         static_cast<uint8_t>(curr_instr.get_fields().imm & 0x3F);
@@ -422,9 +473,11 @@ void VEmu::SRAI()
 
     auto res = static_cast<int64_t>(rf.load_reg(rs1) >> shamt);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLLIW()
+ReturnException VEmu::SLLIW()
 {
     uint8_t shamt =
         static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
@@ -438,9 +491,11 @@ void VEmu::SLLIW()
         static_cast<int32_t>(op)
     );
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRLIW()
+ReturnException VEmu::SRLIW()
 {
     uint8_t shamt =
         static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
@@ -454,9 +509,11 @@ void VEmu::SRLIW()
         static_cast<int32_t>(op)
     );
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRAIW()
+ReturnException VEmu::SRAIW()
 {
     uint8_t shamt =
         static_cast<uint8_t>(curr_instr.get_fields().imm & 0x1F);
@@ -468,26 +525,45 @@ void VEmu::SRAIW()
 
     auto res = static_cast<int64_t>(op);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::FENCE()
+ReturnException VEmu::FENCE()
 {
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::FENCEI()
+ReturnException VEmu::FENCEI()
 {
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ECALL()
+ReturnException VEmu::ECALL()
 {
-    std::cout << "IN ECALL: " << std::hex << pc << std::endl;
+    switch(mode) {
+        case Mode::User:
+            return ReturnException::EnvironmentCallFromUserMode;
+        case Mode::Supervisor:
+            return ReturnException::EnvironmentCallFromSupervisorMode;
+        case Mode::Machine:
+            return ReturnException::EnvironmentCallFromMachineMode;
+        default:
+            exit(EXIT_FAILURE);
+    }
+
+    exit(EXIT_FAILURE);
 }
 
-void VEmu::EBREAK()
+ReturnException VEmu::EBREAK()
 {
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::CSRRW()
+ReturnException VEmu::CSRRW()
 {
     auto rd = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
@@ -500,9 +576,11 @@ void VEmu::CSRRW()
 
     auto res = csr_val;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::CSRRS()
+ReturnException VEmu::CSRRS()
 {
     auto rd = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
@@ -515,9 +593,11 @@ void VEmu::CSRRS()
 
     auto res = csr_val;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::CSRRC()
+ReturnException VEmu::CSRRC()
 {
     auto rd = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
@@ -531,9 +611,11 @@ void VEmu::CSRRC()
 
     auto res = csr_val;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::CSRRWI()
+ReturnException VEmu::CSRRWI()
 {
     uint64_t uimm = static_cast<uint64_t>(curr_instr.get_fields().rs1);
     auto rd = curr_instr.get_fields().rd;
@@ -546,9 +628,11 @@ void VEmu::CSRRWI()
 
     auto res = csr_val;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::CSRRSI()
+ReturnException VEmu::CSRRSI()
 {
     uint64_t uimm = static_cast<uint64_t>(curr_instr.get_fields().rs1);
     auto rd = curr_instr.get_fields().rd;
@@ -561,9 +645,11 @@ void VEmu::CSRRSI()
 
     auto res = csr_val;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::CSRRCI()
+ReturnException VEmu::CSRRCI()
 {
     uint64_t uimm = static_cast<uint64_t>(curr_instr.get_fields().rs1);
     auto rd = curr_instr.get_fields().rd;
@@ -576,9 +662,11 @@ void VEmu::CSRRCI()
 
     auto res = csr_val;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::BEQ()
+ReturnException VEmu::BEQ()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -591,9 +679,11 @@ void VEmu::BEQ()
         this->pc -= 4;
     }
 
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::BNE()
+ReturnException VEmu::BNE()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -605,9 +695,11 @@ void VEmu::BNE()
         this->pc += imm;
         this->pc -= 4;
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::BLT()
+ReturnException VEmu::BLT()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -619,9 +711,11 @@ void VEmu::BLT()
         this->pc += imm;
         this->pc -= 4;
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::BGE()
+ReturnException VEmu::BGE()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -633,9 +727,11 @@ void VEmu::BGE()
         this->pc += imm;
         this->pc -= 4;
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::BLTU()
+ReturnException VEmu::BLTU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -647,9 +743,11 @@ void VEmu::BLTU()
         this->pc += imm;
         this->pc -= 4;
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::BGEU()
+ReturnException VEmu::BGEU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -661,9 +759,11 @@ void VEmu::BGEU()
         this->pc += imm;
         this->pc -= 4;
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SB()
+ReturnException VEmu::SB()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -671,9 +771,11 @@ void VEmu::SB()
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFF;
     store(rf.load_reg(rs1) + offset, data, 8);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SH()
+ReturnException VEmu::SH()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -681,9 +783,11 @@ void VEmu::SH()
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFFFF;
     store(rf.load_reg(rs1) + offset, data, 16);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SW()
+ReturnException VEmu::SW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -691,9 +795,11 @@ void VEmu::SW()
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFFFFFFFF;
     store(rf.load_reg(rs1) + offset, data, 32);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SD()
+ReturnException VEmu::SD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -701,9 +807,11 @@ void VEmu::SD()
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2));
     store(rf.load_reg(rs1) + offset, data, 64);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ADD()
+ReturnException VEmu::ADD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -711,9 +819,11 @@ void VEmu::ADD()
 
     auto res = rf.load_reg(rs1) + rf.load_reg(rs2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::ADDW()
+ReturnException VEmu::ADDW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -724,9 +834,11 @@ void VEmu::ADDW()
 
     auto res = static_cast<int64_t>(op1 + op2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SUB()
+ReturnException VEmu::SUB()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -734,9 +846,11 @@ void VEmu::SUB()
 
     auto res = rf.load_reg(rs1) - rf.load_reg(rs2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SUBW()
+ReturnException VEmu::SUBW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -747,9 +861,11 @@ void VEmu::SUBW()
 
     auto res = static_cast<int64_t>(op1 - op2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLL()
+ReturnException VEmu::SLL()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -762,9 +878,11 @@ void VEmu::SLL()
     );
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLLW()
+ReturnException VEmu::SLLW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -784,9 +902,11 @@ void VEmu::SLLW()
     );
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLT()
+ReturnException VEmu::SLT()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -794,21 +914,25 @@ void VEmu::SLT()
 
     auto res = (rf.load_reg(rs1) < rf.load_reg(rs2)) ? 1 : 0;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SLTU()
+ReturnException VEmu::SLTU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    auto res = 
+    auto res =
         (static_cast<uint64_t>(rf.load_reg(rs1)) < static_cast<uint64_t>(rf.load_reg(rs2))) ?
             1 : 0;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::XOR()
+ReturnException VEmu::XOR()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -816,9 +940,11 @@ void VEmu::XOR()
 
     auto res = rf.load_reg(rs1) ^ rf.load_reg(rs2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::MUL()
+ReturnException VEmu::MUL()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -826,21 +952,25 @@ void VEmu::MUL()
 
     auto res = rf.load_reg(rs1) * rf.load_reg(rs2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::MULW()
+ReturnException VEmu::MULW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    auto res = 
+    auto res =
         static_cast<int32_t>(rf.load_reg(rs1) & 0xFFFFFFFF) * static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
     rf.store_reg(rd, res);
 
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::MULH()
+ReturnException VEmu::MULH()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -851,9 +981,11 @@ void VEmu::MULH()
     );
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::MULHU()
+ReturnException VEmu::MULHU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -867,9 +999,11 @@ void VEmu::MULHU()
     );
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::MULHSU()
+ReturnException VEmu::MULHSU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -886,9 +1020,11 @@ void VEmu::MULHSU()
     auto res = static_cast<int64_t>((rs1_val * rs2_val) >> 64);
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::DIV()
+ReturnException VEmu::DIV()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -905,9 +1041,11 @@ void VEmu::DIV()
     }
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::DIVU()
+ReturnException VEmu::DIVU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -918,17 +1056,17 @@ void VEmu::DIVU()
     if (rf.load_reg(rs2) == 0) {
         res = 0xFFFFFFFF'FFFFFFFF;
         rf.store_reg(rd, res);
-        return;
+    } else {
+        res = static_cast<int64_t>(
+            static_cast<uint64_t>(rf.load_reg(rs1)) / static_cast<uint64_t>(rf.load_reg(rs2))
+        );
+        rf.store_reg(rd, res);
     }
 
-    res = static_cast<int64_t>(
-        static_cast<uint64_t>(rf.load_reg(rs1)) / static_cast<uint64_t>(rf.load_reg(rs2))
-    );
-
-    rf.store_reg(rd, res);
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::DIVW()
+ReturnException VEmu::DIVW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -949,9 +1087,11 @@ void VEmu::DIVW()
     }
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::DIVUW()
+ReturnException VEmu::DIVUW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -970,9 +1110,11 @@ void VEmu::DIVUW()
     }
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::REM()
+ReturnException VEmu::REM()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -988,9 +1130,11 @@ void VEmu::REM()
         res = rf.load_reg(rs1) % rf.load_reg(rs2);
     }
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::REMU()
+ReturnException VEmu::REMU()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1001,16 +1145,17 @@ void VEmu::REMU()
     if (rf.load_reg(rs2) == 0) {
         res = rf.load_reg(rs1);
         rf.store_reg(rd, res);
-        return;
+    } else {
+        res = static_cast<int64_t>(
+            static_cast<uint64_t>(rf.load_reg(rs1)) % static_cast<uint64_t>(rf.load_reg(rs2))
+        );
+        rf.store_reg(rd, res);
     }
 
-    res = static_cast<int64_t>(
-        static_cast<uint64_t>(rf.load_reg(rs1)) % static_cast<uint64_t>(rf.load_reg(rs2))
-    );
-    rf.store_reg(rd, res);
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::REMW()
+ReturnException VEmu::REMW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1030,9 +1175,11 @@ void VEmu::REMW()
             static_cast<int32_t>(rf.load_reg(rs1)) % static_cast<int32_t>(rf.load_reg(rs2));
     }
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::REMUW()
+ReturnException VEmu::REMUW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1050,9 +1197,11 @@ void VEmu::REMUW()
     }
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRL()
+ReturnException VEmu::SRL()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1064,9 +1213,11 @@ void VEmu::SRL()
         static_cast<uint64_t>(rf.load_reg(rs1)) >> shamt
     );
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRLW()
+ReturnException VEmu::SRLW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1083,9 +1234,11 @@ void VEmu::SRLW()
     );
 
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRA()
+ReturnException VEmu::SRA()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1097,9 +1250,11 @@ void VEmu::SRA()
         rf.load_reg(rs1) >> shamt
     );
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRAW()
+ReturnException VEmu::SRAW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1113,9 +1268,11 @@ void VEmu::SRAW()
 
     auto res = static_cast<int64_t>(op);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::OR()
+ReturnException VEmu::OR()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1123,9 +1280,11 @@ void VEmu::OR()
 
     auto res = rf.load_reg(rs1) | rf.load_reg(rs2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AND()
+ReturnException VEmu::AND()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1133,9 +1292,11 @@ void VEmu::AND()
 
     auto res = rf.load_reg(rs1) & rf.load_reg(rs2);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::JAL()
+ReturnException VEmu::JAL()
 {
     auto rd = curr_instr.get_fields().rd;
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
@@ -1146,9 +1307,11 @@ void VEmu::JAL()
 
     this->pc += imm;
     this->pc -= 4;
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::JALR()
+ReturnException VEmu::JALR()
 {
     auto rd = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
@@ -1161,9 +1324,11 @@ void VEmu::JALR()
     this->pc = static_cast<uint64_t>(rf.load_reg(rs1) + imm);
     this->pc &= ~(0x1);
     this->pc -= 4;
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LUI()
+ReturnException VEmu::LUI()
 {
     // the full 32-bit U-imm
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
@@ -1171,9 +1336,11 @@ void VEmu::LUI()
 
     auto res = static_cast<int64_t>(imm_32);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AUIPC()
+ReturnException VEmu::AUIPC()
 {
     // the full 32-bit U-imm
     auto rd = curr_instr.get_fields().rd;
@@ -1182,9 +1349,11 @@ void VEmu::AUIPC()
 
     auto res = this->pc + imm;
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LRW()
+ReturnException VEmu::LRW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -1199,9 +1368,11 @@ void VEmu::LRW()
 
     auto res = bus.load(addr, 32);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::LRD()
+ReturnException VEmu::LRD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -1216,9 +1387,11 @@ void VEmu::LRD()
 
     auto res = bus.load(addr, 64);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SCW()
+ReturnException VEmu::SCW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1237,9 +1410,11 @@ void VEmu::SCW()
     } else {
         rf.store_reg(rd, 1);
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SCD()
+ReturnException VEmu::SCD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1258,9 +1433,11 @@ void VEmu::SCD()
     } else {
         rf.store_reg(rd, 1);
     }
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOSWAPW()
+ReturnException VEmu::AMOSWAPW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1272,9 +1449,11 @@ void VEmu::AMOSWAPW()
 
     auto res = static_cast<int64_t>(tmp);
     rf.store_reg(rd, res);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOADDW()
+ReturnException VEmu::AMOADDW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1289,9 +1468,11 @@ void VEmu::AMOADDW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOANDW()
+ReturnException VEmu::AMOANDW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1306,9 +1487,11 @@ void VEmu::AMOANDW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOORW()
+ReturnException VEmu::AMOORW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1324,9 +1507,11 @@ void VEmu::AMOORW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOXORW()
+ReturnException VEmu::AMOXORW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1342,9 +1527,11 @@ void VEmu::AMOXORW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMINW()
+ReturnException VEmu::AMOMINW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1360,9 +1547,11 @@ void VEmu::AMOMINW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMAXW()
+ReturnException VEmu::AMOMAXW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1378,9 +1567,11 @@ void VEmu::AMOMAXW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMINUW()
+ReturnException VEmu::AMOMINUW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1395,9 +1586,11 @@ void VEmu::AMOMINUW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, sext_word(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMAXUW()
+ReturnException VEmu::AMOMAXUW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1411,10 +1604,12 @@ void VEmu::AMOMAXUW()
     store(rf.load_reg(rs1), res, 32);
 
     rf.store_reg(rd, sext_word(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
 
-void VEmu::AMOSWAPD()
+ReturnException VEmu::AMOSWAPD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1425,9 +1620,11 @@ void VEmu::AMOSWAPD()
     store(rf.load_reg(rs1), rf.load_reg(rs2), 64);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOADDD()
+ReturnException VEmu::AMOADDD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1441,9 +1638,11 @@ void VEmu::AMOADDD()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, tmp);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOXORD()
+ReturnException VEmu::AMOXORD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1457,9 +1656,11 @@ void VEmu::AMOXORD()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOANDD()
+ReturnException VEmu::AMOANDD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1473,9 +1674,11 @@ void VEmu::AMOANDD()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOORD()
+ReturnException VEmu::AMOORD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1489,9 +1692,11 @@ void VEmu::AMOORD()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMIND()
+ReturnException VEmu::AMOMIND()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1505,9 +1710,11 @@ void VEmu::AMOMIND()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, tmp);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMAXD()
+ReturnException VEmu::AMOMAXD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1528,9 +1735,11 @@ void VEmu::AMOMAXD()
     store(addr, static_cast<uint64_t>(res), 64);
 
     rf.store_reg(rd, tmp);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMINUD()
+ReturnException VEmu::AMOMINUD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1544,9 +1753,11 @@ void VEmu::AMOMINUD()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::AMOMAXUD()
+ReturnException VEmu::AMOMAXUD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
@@ -1560,9 +1771,11 @@ void VEmu::AMOMAXUD()
     store(rf.load_reg(rs1), res, 64);
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::MRET()
+ReturnException VEmu::MRET()
 {
     pc = load_csr(MEPC) - 4;
 
@@ -1588,9 +1801,11 @@ void VEmu::MRET()
     // csr[MSTATUS][MPP] = 0
 
     store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11 << 11)));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-void VEmu::SRET()
+ReturnException VEmu::SRET()
 {
     pc = load_csr(SEPC) - 4;
 
@@ -1613,10 +1828,12 @@ void VEmu::SRET()
 
     // SSTATUS[SPP] = 0
     store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 8)));
+
+    return ReturnException::NormalExecutionReturn;
 }
 
 
-void VEmu::XXX()
+ReturnException VEmu::XXX()
 {
     std::ios_base::fmtflags ft { std::cout.flags() };
     std::cout << "Faulty instruction: 0x";
@@ -1627,13 +1844,10 @@ void VEmu::XXX()
         << std::endl;
 
     std::cout.flags(ft);
-
-    dump_regs();
-
-    exit(EXIT_FAILURE);
+    return ReturnException::IllegalInstruction;
 }
 
-void VEmu::trap(Exception e)
+void VEmu::trap(ReturnException e)
 {
     uint64_t exception_pc = pc;
     uint8_t cause = static_cast<uint8_t>(e);
@@ -1650,12 +1864,13 @@ void VEmu::trap(Exception e)
     if (prev_mode == Mode::User && do_deleg) {
         mode = Mode::Supervisor;
 
-        pc = load_csr(STVEC) & (~(0b11)); 
+        pc = load_csr(STVEC) & (~(0b11));
+        pc -= 4;
 
         store_csr(SEPC, exception_pc & (~1));
 
         store_csr(SCAUSE, cause);
-        
+
         store_csr(STVAL, 0);
 
         // set previous interrupt enable to the current global
@@ -1670,7 +1885,7 @@ void VEmu::trap(Exception e)
         // set global interrupt bit to 0.
         store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 1)));
 
-        // SSP is set to 0 if previous mode is User mode, 
+        // SPP is set to 0 if previous mode is User mode,
         // 1 otherwise.
         if (prev_mode == Mode::User) {
             store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 8)));
@@ -1681,17 +1896,18 @@ void VEmu::trap(Exception e)
         mode = Mode::Machine;
 
         pc = load_csr(MTVEC) & (~(0b11));
+        pc -= 4;
 
         store_csr(MEPC, exception_pc & (~1));
 
         store_csr(MCAUSE, cause);
-        
+
         store_csr(MTVAL, 0);
 
         // set previous interrupt enable to the current global
         // interrupt enable.
         uint8_t mie = (load_csr(MSTATUS) >> 3) & 1;
-        if (mie) {
+        if (mie == 1) {
             store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 7));
         } else {
             store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 7)));
@@ -1700,16 +1916,8 @@ void VEmu::trap(Exception e)
         // set global interrupt bit to 0.
         store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 3)));
 
-        // SSP is set to 0 if previous mode is User mode, 
-        // 1 otherwise.
-        if (prev_mode == Mode::User) {
-            store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 8)));
-        } else {
-            store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 8));
-        }
-
         switch (prev_mode) {
-            case Mode::User: 
+            case Mode::User:
                 store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11 << 11)));
                 break;
             case Mode::Supervisor:
@@ -1721,15 +1929,34 @@ void VEmu::trap(Exception e)
                 break;
             default:
                 std::cout << "Unsupported(?) privilege mode.\n";
-                assert(false);
+                exit(EXIT_FAILURE);
         }
     }
 }
 
-bool VEmu::is_fatal(Exception e) {
-    return e == Exception::LoadAccessFault ||
-           e == Exception::InstructionAccessFault ||
-           e == Exception::InstructionAddressMisaligned ||
-           e == Exception::StoreAMOAddressMisaligned ||
-           e == Exception::StoreAMOAccessFault;
+bool VEmu::is_fatal(ReturnException e)
+{
+    return e == ReturnException::LoadAccessFault ||
+           e == ReturnException::InstructionAccessFault ||
+           e == ReturnException::InstructionAddressMisaligned ||
+           e == ReturnException::StoreAMOAddressMisaligned ||
+           e == ReturnException::StoreAMOAccessFault;
+}
+
+void VEmu::exit_fatally(ReturnException e)
+{
+    std::cout << "Exit on exception: " << stringify_exception(e);
+    std::cout << "\n" << std::hex << pc << std::endl;
+
+    dump_regs();
+
+    exit(EXIT_FAILURE);
+}
+
+std::string VEmu::stringify_exception(ReturnException e)
+{
+    if (e == ReturnException::EnvironmentCallFromUserMode)
+        return "EnvironmentCallFromUserMode";
+    else
+        return "Exception";
 }
