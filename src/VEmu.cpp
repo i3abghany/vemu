@@ -6,9 +6,9 @@ VEmu::VEmu(std::string f_name) :
     mode = Mode::Machine;
     pc = 0x80000000;
     bus = Bus{};
-    regs.fill(0);
+    rf = RegFile{};
     csrs.fill(0);
-    regs[2] = ADDR_BASE + DRAM::RAM_SIZE;
+    rf.store_reg(2, ADDR_BASE + DRAM::RAM_SIZE);
     read_file();
     init_func_map();
 }
@@ -143,6 +143,11 @@ uint64_t VEmu::load(uint64_t addr, size_t sz)
     return bus.load(addr, sz);
 }
 
+void VEmu::dump_regs()
+{
+    rf.dump_regs();
+}
+
 void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 {
     // FIXME: only checks on aligned addresses
@@ -177,24 +182,6 @@ uint32_t VEmu::run()
     return 0;
 }
 
-void VEmu::dump_regs() {
-    for (int i = 0; i < 32; i++) {
-        std::cout << "{"
-            << std::left
-            << std::setfill(' ')
-            << std::setw(3)
-            << abi_map[i]
-            << "} " << "regs["
-            << std::left
-            << std::setw(2)
-            << i << "] = "
-            << std::hex
-            << regs[i] <<
-            std::dec << '\n';
-    }
-}
-
-
 uint64_t VEmu::load_csr(uint64_t addr)
 {
     if (addr == SIE) {
@@ -204,7 +191,8 @@ uint64_t VEmu::load_csr(uint64_t addr)
     }
 }
 
-void VEmu::store_csr(uint64_t addr, uint64_t val) {
+void VEmu::store_csr(uint64_t addr, uint64_t val)
+{
     if (addr == SIE) {
         csrs[MIE] &= !csrs[MIDELEG];
         csrs[MIE] |= (val & csrs[MIDELEG]);
@@ -219,9 +207,9 @@ void VEmu::LB()
 
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        sext_byte(static_cast<uint8_t>(regs[rd] & 0xFF)));
+    auto res = static_cast<int64_t>(
+        sext_byte(static_cast<uint8_t>(rf.load_reg(rd) & 0xFF)));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LW()
@@ -230,9 +218,9 @@ void VEmu::LW()
 
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        sext_word(static_cast<uint32_t>(regs[rd] & 0xFFFFFFFF)));
+    auto res = static_cast<int64_t>(
+        sext_word(static_cast<uint32_t>(rf.load_reg(rd) & 0xFFFFFFFF)));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LBU()
@@ -245,10 +233,10 @@ void VEmu::LBU()
 
     // add as signed then convert to unsigned.
     uint64_t mem_addr =
-        static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+        static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(bus.load(mem_addr, 8));
+    auto res = static_cast<int64_t>(bus.load(mem_addr, 8));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LH()
@@ -257,9 +245,9 @@ void VEmu::LH()
 
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        sext_word(static_cast<uint16_t>(regs[rd] & 0xFFFF)));
+    auto res = static_cast<int64_t>(
+        sext_word(static_cast<uint16_t>(rf.load_reg(rd) & 0xFFFF)));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LHU()
@@ -272,10 +260,10 @@ void VEmu::LHU()
 
     // add as signed then convert to unsigned.
     uint64_t mem_addr =
-        static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+        static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(bus.load(mem_addr, 16));
+    auto res = static_cast<int64_t>(bus.load(mem_addr, 16));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LD()
@@ -288,10 +276,10 @@ void VEmu::LD()
 
     // add as signed then convert to unsigned.
     uint64_t mem_addr =
-        static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+        static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(bus.load(mem_addr, 64));
+    auto res = static_cast<int64_t>(bus.load(mem_addr, 64));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LWU()
@@ -304,10 +292,10 @@ void VEmu::LWU()
 
     // add as signed then convert to unsigned.
     uint64_t mem_addr =
-        static_cast<uint64_t>(static_cast<int64_t>(regs[base_reg]) + imm);
+        static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(bus.load(mem_addr, 32));
+    auto res = static_cast<int64_t>(bus.load(mem_addr, 32));
+    rf.store_reg(rd, res);
 }
 
 void VEmu::ADDI()
@@ -317,8 +305,8 @@ void VEmu::ADDI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] + imm;
+    auto res = rf.load_reg(rs1) + imm;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::ADDIW()
@@ -328,12 +316,12 @@ void VEmu::ADDIW()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    int64_t op = regs[rs1];
+    int64_t op = rf.load_reg(rs1);
 
-    int32_t res = static_cast<int32_t>((op + imm) & 0xFFFFFFFF);
+    int32_t res_32 = static_cast<int32_t>((op + imm) & 0xFFFFFFFF);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(res);
+    auto res = static_cast<int64_t>(res_32);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLTI()
@@ -344,8 +332,8 @@ void VEmu::SLTI()
     auto rd  = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
 
-    if (rd == 0) return;
-    regs[rd] = (regs[rs1] < imm) ? 1 : 0;
+    auto res = (rf.load_reg(rs1) < imm) ? 1 : 0;
+    rf.store_reg(rd, res);
 }
 
 // SLTIU rd, rs1, 1 sets rd to 1
@@ -359,10 +347,9 @@ void VEmu::SLTIU()
     auto rd  = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
 
-    if (rd == 0) return;
-    regs[rd] =
-        (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(imm)) ?
+    auto res = (static_cast<uint64_t>(rf.load_reg(rs1)) < static_cast<uint64_t>(imm)) ?
             1 : 0;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::XORI()
@@ -372,8 +359,8 @@ void VEmu::XORI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] ^ imm;
+    auto res = rf.load_reg(rs1) ^ imm;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::ORI()
@@ -383,8 +370,8 @@ void VEmu::ORI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] | imm;
+    auto res = rf.load_reg(rs1) | imm;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::ANDI()
@@ -394,8 +381,8 @@ void VEmu::ANDI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] & imm;
+    auto res = rf.load_reg(rs1) & imm;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLLI()
@@ -405,11 +392,11 @@ void VEmu::SLLI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t op = static_cast<uint64_t>(regs[rs1]);
+    uint64_t op = static_cast<uint64_t>(rf.load_reg(rs1));
     op <<= shamt;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(op);
+    auto res = static_cast<int64_t>(op);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRLI()
@@ -419,11 +406,11 @@ void VEmu::SRLI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t op = static_cast<uint64_t>(regs[rs1]);
+    uint64_t op = static_cast<uint64_t>(rf.load_reg(rs1));
     op >>= shamt;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(op);
+    auto res = static_cast<int64_t>(op);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRAI()
@@ -433,8 +420,8 @@ void VEmu::SRAI()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(regs[rs1] >>= shamt);
+    auto res = static_cast<int64_t>(rf.load_reg(rs1) >> shamt);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLLIW()
@@ -444,13 +431,13 @@ void VEmu::SLLIW()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    uint32_t op = static_cast<uint32_t>(regs[rs1]);
+    uint32_t op = static_cast<uint32_t>(rf.load_reg(rs1));
     op <<= shamt;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
+    auto res = static_cast<int64_t>(
         static_cast<int32_t>(op)
     );
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRLIW()
@@ -460,13 +447,13 @@ void VEmu::SRLIW()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    uint32_t op = static_cast<uint32_t>(regs[rs1]);
+    uint32_t op = static_cast<uint32_t>(rf.load_reg(rs1));
     op >>= shamt;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
+    auto res = static_cast<int64_t>(
         static_cast<int32_t>(op)
     );
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRAIW()
@@ -476,11 +463,11 @@ void VEmu::SRAIW()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t op = static_cast<int32_t>(regs[rs1]);
+    int32_t op = static_cast<int32_t>(rf.load_reg(rs1));
     op >>= shamt;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(op);
+    auto res = static_cast<int64_t>(op);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::FENCE()
@@ -509,10 +496,10 @@ void VEmu::CSRRW()
     csr_addr &= 0xFFF;
 
     uint64_t csr_val = load_csr(csr_addr);
-    store_csr(csr_addr, regs[rs1]);
+    store_csr(csr_addr, rf.load_reg(rs1));
 
-    if (rd == 0) return;
-    regs[rd] = csr_val;
+    auto res = csr_val;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::CSRRS()
@@ -524,10 +511,10 @@ void VEmu::CSRRS()
     csr_addr &= 0xFFF;
 
     uint64_t csr_val = load_csr(csr_addr);
-    store_csr(csr_addr, csr_val | regs[rs1]);
+    store_csr(csr_addr, csr_val | rf.load_reg(rs1));
 
-    if (rd == 0) return;
-    regs[rd] = csr_val;
+    auto res = csr_val;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::CSRRC()
@@ -540,10 +527,10 @@ void VEmu::CSRRC()
 
     uint64_t csr_val = load_csr(csr_addr);
 
-    store_csr(csr_addr, csr_val & (!regs[rs1]));
+    store_csr(csr_addr, csr_val & (!rf.load_reg(rs1)));
 
-    if (rd == 0) return;
-    regs[rd] = csr_val;
+    auto res = csr_val;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::CSRRWI()
@@ -557,8 +544,8 @@ void VEmu::CSRRWI()
     uint64_t csr_val = load_csr(csr_addr);
     store_csr(csr_addr, uimm);
 
-    if (rd == 0) return;
-    regs[rd] = csr_val;
+    auto res = csr_val;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::CSRRSI()
@@ -572,8 +559,8 @@ void VEmu::CSRRSI()
     uint64_t csr_val = load_csr(csr_addr);
     store_csr(csr_addr, csr_val | uimm);
 
-    if (rd == 0) return;
-    regs[rd] = csr_val;
+    auto res = csr_val;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::CSRRCI()
@@ -587,8 +574,8 @@ void VEmu::CSRRCI()
     uint64_t csr_val = load_csr(csr_addr);
     store_csr(csr_addr, csr_val & (!uimm));
 
-    if (rd == 0) return;
-    regs[rd] = csr_val;
+    auto res = csr_val;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::BEQ()
@@ -599,7 +586,7 @@ void VEmu::BEQ()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (regs[rs1] == regs[rs2]) {
+    if (rf.load_reg(rs1) == rf.load_reg(rs2)) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -614,7 +601,7 @@ void VEmu::BNE()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (regs[rs1] != regs[rs2]) {
+    if (rf.load_reg(rs1) != rf.load_reg(rs2)) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -628,7 +615,7 @@ void VEmu::BLT()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (regs[rs1] < regs[rs2]) {
+    if (rf.load_reg(rs1) < rf.load_reg(rs2)) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -642,7 +629,7 @@ void VEmu::BGE()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (regs[rs1] >= regs[rs2]) {
+    if (rf.load_reg(rs1) >= rf.load_reg(rs2)) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -656,7 +643,7 @@ void VEmu::BLTU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(regs[rs2])) {
+    if (static_cast<uint64_t>(rf.load_reg(rs1)) < static_cast<uint64_t>(rf.load_reg(rs2))) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -670,7 +657,7 @@ void VEmu::BGEU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (static_cast<uint64_t>(regs[rs1]) >= static_cast<uint64_t>(regs[rs2])) {
+    if (static_cast<uint64_t>(rf.load_reg(rs1)) >= static_cast<uint64_t>(rf.load_reg(rs2))) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -682,8 +669,8 @@ void VEmu::SB()
     auto rs2 = curr_instr.get_fields().rs2;
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
-    uint64_t data = static_cast<uint64_t>(regs[rs2]) & 0xFF;
-    store(regs[rs1] + offset, data, 8);
+    uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFF;
+    store(rf.load_reg(rs1) + offset, data, 8);
 }
 
 void VEmu::SH()
@@ -692,8 +679,8 @@ void VEmu::SH()
     auto rs2 = curr_instr.get_fields().rs2;
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
-    uint64_t data = static_cast<uint64_t>(regs[rs2]) & 0xFFFF;
-    store(regs[rs1] + offset, data, 16);
+    uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFFFF;
+    store(rf.load_reg(rs1) + offset, data, 16);
 }
 
 void VEmu::SW()
@@ -702,8 +689,8 @@ void VEmu::SW()
     auto rs2 = curr_instr.get_fields().rs2;
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
-    uint64_t data = static_cast<uint64_t>(regs[rs2]) & 0xFFFFFFFF;
-    store(regs[rs1] + offset, data, 32);
+    uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFFFFFFFF;
+    store(rf.load_reg(rs1) + offset, data, 32);
 }
 
 void VEmu::SD()
@@ -712,8 +699,8 @@ void VEmu::SD()
     auto rs2 = curr_instr.get_fields().rs2;
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
-    uint64_t data = static_cast<uint64_t>(regs[rs2]);
-    store(regs[rs1] + offset, data, 64);
+    uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2));
+    store(rf.load_reg(rs1) + offset, data, 64);
 }
 
 void VEmu::ADD()
@@ -722,8 +709,8 @@ void VEmu::ADD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] + regs[rs2];
+    auto res = rf.load_reg(rs1) + rf.load_reg(rs2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::ADDW()
@@ -732,11 +719,11 @@ void VEmu::ADDW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t op1 = static_cast<int32_t>(regs[rs1]);
-    int32_t op2 = static_cast<int32_t>(regs[rs2]);
+    int32_t op1 = static_cast<int32_t>(rf.load_reg(rs1));
+    int32_t op2 = static_cast<int32_t>(rf.load_reg(rs2));
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(op1 + op2);
+    auto res = static_cast<int64_t>(op1 + op2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SUB()
@@ -745,8 +732,8 @@ void VEmu::SUB()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] - regs[rs2];
+    auto res = rf.load_reg(rs1) - rf.load_reg(rs2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SUBW()
@@ -755,11 +742,11 @@ void VEmu::SUBW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t op1 = static_cast<int32_t>(regs[rs1]);
-    int32_t op2 = static_cast<int32_t>(regs[rs2]);
+    int32_t op1 = static_cast<int32_t>(rf.load_reg(rs1));
+    int32_t op2 = static_cast<int32_t>(rf.load_reg(rs2));
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(op1 - op2);
+    auto res = static_cast<int64_t>(op1 - op2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLL()
@@ -768,12 +755,13 @@ void VEmu::SLL()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint8_t shamt = static_cast<uint64_t>(regs[rs2]) & 0x3F;
+    uint8_t shamt = static_cast<uint64_t>(rf.load_reg(rs2)) & 0x3F;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        static_cast<uint64_t>(regs[rs1]) << shamt
+    auto res = static_cast<int64_t>(
+        static_cast<uint64_t>(rf.load_reg(rs1)) << shamt
     );
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLLW()
@@ -782,19 +770,20 @@ void VEmu::SLLW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint8_t shamt = static_cast<uint64_t>(regs[rs2]) & 0x1F;
+    uint8_t shamt = static_cast<uint64_t>(rf.load_reg(rs2)) & 0x1F;
 
-    uint32_t op =  static_cast<uint32_t>(regs[rs1]);
+    uint32_t op =  static_cast<uint32_t>(rf.load_reg(rs1));
 
     op <<= shamt;
 
-    if (rd == 0) return;
     // FIXME: This works only if the 32-bit value is sign-extended
     // and then put to the register.
     // (I'll have to zero extend the signed 32-bit value if not so.)
-    regs[rd] = static_cast<int64_t>(
+    auto res = static_cast<int64_t>(
         static_cast<int32_t>(op)
     );
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLT()
@@ -803,8 +792,8 @@ void VEmu::SLT()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = (regs[rs1] < regs[rs2]) ? 1 : 0;
+    auto res = (rf.load_reg(rs1) < rf.load_reg(rs2)) ? 1 : 0;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SLTU()
@@ -813,9 +802,10 @@ void VEmu::SLTU()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] =
-        (static_cast<uint64_t>(regs[rs1]) < static_cast<uint64_t>(regs[rs2])) ? 1 : 0;
+    auto res = 
+        (static_cast<uint64_t>(rf.load_reg(rs1)) < static_cast<uint64_t>(rf.load_reg(rs2))) ?
+            1 : 0;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::XOR()
@@ -824,8 +814,8 @@ void VEmu::XOR()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] ^ regs[rs2];
+    auto res = rf.load_reg(rs1) ^ rf.load_reg(rs2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::MUL()
@@ -834,8 +824,8 @@ void VEmu::MUL()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] * regs[rs2];
+    auto res = rf.load_reg(rs1) * rf.load_reg(rs2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::MULW()
@@ -844,9 +834,10 @@ void VEmu::MULW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] =
-        static_cast<int32_t>(regs[rs1] & 0xFFFFFFFF) * static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    auto res = 
+        static_cast<int32_t>(rf.load_reg(rs1) & 0xFFFFFFFF) * static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
+    rf.store_reg(rd, res);
+
 }
 
 void VEmu::MULH()
@@ -855,10 +846,11 @@ void VEmu::MULH()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        ((__int128)regs[rs1] * (__int128)regs[rs2]) >> 64
+    auto res = static_cast<int64_t>(
+        ((__int128)rf.load_reg(rs1) * (__int128)rf.load_reg(rs2)) >> 64
     );
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::MULHU()
@@ -867,13 +859,14 @@ void VEmu::MULHU()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    uint64_t urs1 = static_cast<uint64_t>(regs[rs1]);
-    uint64_t urs2 = static_cast<uint64_t>(regs[rs2]);
+    uint64_t urs1 = static_cast<uint64_t>(rf.load_reg(rs1));
+    uint64_t urs2 = static_cast<uint64_t>(rf.load_reg(rs2));
 
-    regs[rd] = static_cast<int64_t>(
+    auto res = static_cast<int64_t>(
         (static_cast<unsigned __int128>(urs1) * static_cast<unsigned __int128>(urs2)) >> 64
     );
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::MULHSU()
@@ -882,16 +875,17 @@ void VEmu::MULHSU()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    int64_t irs1 = regs[rs1];
-    uint64_t urs2 = static_cast<uint64_t>(regs[rs2]);
+    int64_t irs1 = rf.load_reg(rs1);
+    uint64_t urs2 = static_cast<uint64_t>(rf.load_reg(rs2));
 
     unsigned __int128 rs1_val =
         static_cast<unsigned __int128>(static_cast<__int128>(irs1));
     unsigned __int128 rs2_val =
         static_cast<unsigned __int128>(urs2);
 
-    regs[rd] = static_cast<int64_t>((rs1_val * rs2_val) >> 64);
+    auto res = static_cast<int64_t>((rs1_val * rs2_val) >> 64);
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::DIV()
@@ -900,16 +894,17 @@ void VEmu::DIV()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    int64_t res;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
-    } else if (regs[rs1] == INT64_MIN && regs[rs2] == -1) {
-        regs[rd] = regs[rs1];
+    if (rf.load_reg(rs2) == 0) {
+        res = 0xFFFFFFFF'FFFFFFFF;
+    } else if (rf.load_reg(rs1) == INT64_MIN && rf.load_reg(rs2) == -1) {
+        res = rf.load_reg(rs1);
     } else {
-        regs[rd] = regs[rs1] / regs[rs2];
+        res = rf.load_reg(rs1) / rf.load_reg(rs2);
     }
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::DIVU()
@@ -918,17 +913,19 @@ void VEmu::DIVU()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    int64_t res;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+    if (rf.load_reg(rs2) == 0) {
+        res = 0xFFFFFFFF'FFFFFFFF;
+        rf.store_reg(rd, res);
         return;
     }
 
-    regs[rd] = static_cast<int64_t>(
-        static_cast<uint64_t>(regs[rs1]) / static_cast<uint64_t>(regs[rs2])
+    res = static_cast<int64_t>(
+        static_cast<uint64_t>(rf.load_reg(rs1)) / static_cast<uint64_t>(rf.load_reg(rs2))
     );
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::DIVW()
@@ -937,19 +934,21 @@ void VEmu::DIVW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    int32_t rs1_32 = static_cast<int32_t>(rf.load_reg(rs1));
+    int32_t rs2_32 = static_cast<int32_t>(rf.load_reg(rs2));
 
-    int32_t rs1_32 = static_cast<int32_t>(regs[rs1]);
-    int32_t rs2_32 = static_cast<int32_t>(regs[rs2]);
+    int64_t res;
 
     if (rs2_32 == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+        res = 0xFFFFFFFF'FFFFFFFF;
     } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
-        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
+        res = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
     }
     else {
-        regs[rd] = static_cast<int64_t>(rs1_32 / rs2_32);
+        res = static_cast<int64_t>(rs1_32 / rs2_32);
     }
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::DIVUW()
@@ -958,17 +957,19 @@ void VEmu::DIVUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    uint32_t rs1_32 = static_cast<uint32_t>(rf.load_reg(rs1));
+    uint32_t rs2_32 = static_cast<uint32_t>(rf.load_reg(rs2));
 
-    uint32_t rs1_32 = static_cast<uint32_t>(regs[rs1]);
-    uint32_t rs2_32 = static_cast<uint32_t>(regs[rs2]);
+    int64_t res;
 
     if (rs2_32 == 0) {
-        regs[rd] = 0xFFFFFFFF'FFFFFFFF;
+        res = 0xFFFFFFFF'FFFFFFFF;
     }
     else {
-        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32 / rs2_32));
+        res = static_cast<int64_t>(static_cast<int32_t>(rs1_32 / rs2_32));
     }
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::REM()
@@ -977,15 +978,16 @@ void VEmu::REM()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    int64_t res;
 
-    if (regs[rs2] == 0) {
-        regs[rd] = regs[rs1];
-    } else if (regs[rs1] == INT64_MIN && regs[rs2] == -1) {
-        regs[rd] = 0;
+    if (rf.load_reg(rs2) == 0) {
+        res = rf.load_reg(rs1);
+    } else if (rf.load_reg(rs1) == INT64_MIN && rf.load_reg(rs2) == -1) {
+        res = 0;
     } else {
-        regs[rd] = regs[rs1] % regs[rs2];
+        res = rf.load_reg(rs1) % rf.load_reg(rs2);
     }
+    rf.store_reg(rd, res);
 }
 
 void VEmu::REMU()
@@ -994,17 +996,18 @@ void VEmu::REMU()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    int64_t res;
 
-    // FIXME
-    if (regs[rs2] == 0) {
-        regs[rd] = regs[rs1];
+    if (rf.load_reg(rs2) == 0) {
+        res = rf.load_reg(rs1);
+        rf.store_reg(rd, res);
         return;
     }
 
-    regs[rd] = static_cast<int64_t>(
-        static_cast<uint64_t>(regs[rs1]) % static_cast<uint64_t>(regs[rs2])
+    res = static_cast<int64_t>(
+        static_cast<uint64_t>(rf.load_reg(rs1)) % static_cast<uint64_t>(rf.load_reg(rs2))
     );
+    rf.store_reg(rd, res);
 }
 
 void VEmu::REMW()
@@ -1013,21 +1016,20 @@ void VEmu::REMW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    int32_t rs1_32 = static_cast<int32_t>(rf.load_reg(rs1));
+    int32_t rs2_32 = static_cast<int32_t>(rf.load_reg(rs2));
 
-    int32_t rs1_32 = static_cast<int32_t>(regs[rs1]);
-    int32_t rs2_32 = static_cast<int32_t>(regs[rs2]);
+    int64_t res;
 
     if (rs2_32 == 0) {
-        regs[rd] = static_cast<int64_t>(rs1_32);
-        return;
+        res = static_cast<int64_t>(rs1_32);
     } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
-        regs[rd] = 0;
+        res = 0;
     } else {
-        regs[rd] =
-            static_cast<int32_t>(regs[rs1]) % static_cast<int32_t>(regs[rs2]);
+        res =
+            static_cast<int32_t>(rf.load_reg(rs1)) % static_cast<int32_t>(rf.load_reg(rs2));
     }
-
+    rf.store_reg(rd, res);
 }
 
 void VEmu::REMUW()
@@ -1036,16 +1038,18 @@ void VEmu::REMUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
+    uint32_t rs1_32 = static_cast<uint32_t>(rf.load_reg(rs1));
+    uint32_t rs2_32 = static_cast<uint32_t>(rf.load_reg(rs2));
 
-    uint32_t rs1_32 = static_cast<uint32_t>(regs[rs1]);
-    uint32_t rs2_32 = static_cast<uint32_t>(regs[rs2]);
+    int64_t res;
 
     if (rs2_32 == 0) {
-        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
+        res = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
     } else {
-        regs[rd] = static_cast<int64_t>(static_cast<int32_t>(rs1_32 % rs2_32));
+        res = static_cast<int64_t>(static_cast<int32_t>(rs1_32 % rs2_32));
     }
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRL()
@@ -1054,12 +1058,12 @@ void VEmu::SRL()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint8_t shamt = static_cast<uint64_t>(regs[rs2]) & 0x3F;
+    uint8_t shamt = static_cast<uint64_t>(rf.load_reg(rs2)) & 0x3F;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        static_cast<uint64_t>(regs[rs1]) >> shamt
+    auto res = static_cast<int64_t>(
+        static_cast<uint64_t>(rf.load_reg(rs1)) >> shamt
     );
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRLW()
@@ -1068,18 +1072,17 @@ void VEmu::SRLW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint8_t shamt = static_cast<uint64_t>(regs[rs2]) & 0x1F;
+    uint8_t shamt = static_cast<uint64_t>(rf.load_reg(rs2)) & 0x1F;
 
-    uint32_t op =  static_cast<uint32_t>(regs[rs1]);
+    uint32_t op =  static_cast<uint32_t>(rf.load_reg(rs1));
 
     op >>= shamt;
 
-    // FIXME: This works only if the 32-bit value is sign-extended
-    // and then put to the register.
-    // (I'll have to zero extend the signed 32-bit value if not so.)
-    regs[rd] = static_cast<int64_t>(
+    auto res = static_cast<int64_t>(
         static_cast<int32_t>(op)
     );
+
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRA()
@@ -1088,12 +1091,12 @@ void VEmu::SRA()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint8_t shamt = static_cast<uint64_t>(regs[rs2]) & 0x3F;
+    uint8_t shamt = static_cast<uint64_t>(rf.load_reg(rs2)) & 0x3F;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(
-        regs[rs1] >> shamt
+    auto res = static_cast<int64_t>(
+        rf.load_reg(rs1) >> shamt
     );
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SRAW()
@@ -1102,18 +1105,14 @@ void VEmu::SRAW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint8_t shamt = static_cast<uint64_t>(regs[rs2]) & 0x1F;
+    uint8_t shamt = static_cast<uint64_t>(rf.load_reg(rs2)) & 0x1F;
 
-    int32_t op =  static_cast<int32_t>(regs[rs1]);
+    int32_t op =  static_cast<int32_t>(rf.load_reg(rs1));
 
     op >>= shamt;
 
-    if (rd == 0) return;
-
-    // FIXME: This works only if the 32-bit value is sign-extended
-    // and then put to the register.
-    // (I'll have to zero extend the signed 32-bit value if not so.)
-    regs[rd] = static_cast<int64_t>(op);
+    auto res = static_cast<int64_t>(op);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::OR()
@@ -1122,8 +1121,8 @@ void VEmu::OR()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] | regs[rs2];
+    auto res = rf.load_reg(rs1) | rf.load_reg(rs2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::AND()
@@ -1132,8 +1131,8 @@ void VEmu::AND()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = regs[rs1] & regs[rs2];
+    auto res = rf.load_reg(rs1) & rf.load_reg(rs2);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::JAL()
@@ -1142,9 +1141,8 @@ void VEmu::JAL()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (rd != 0) {
-        regs[rd] = static_cast<int64_t>(this->pc + 4);
-    }
+    auto res = static_cast<int64_t>(this->pc + 4);
+    rf.store_reg(rd, res);
 
     this->pc += imm;
     this->pc -= 4;
@@ -1157,11 +1155,10 @@ void VEmu::JALR()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (rd != 0) {
-        regs[rd] = static_cast<int64_t>(this->pc + 4);
-    }
+    auto res = static_cast<int64_t>(this->pc + 4);
+    rf.store_reg(rd, res);
 
-    this->pc = static_cast<uint64_t>(regs[rs1] + imm);
+    this->pc = static_cast<uint64_t>(rf.load_reg(rs1) + imm);
     this->pc &= ~(0x1);
     this->pc -= 4;
 }
@@ -1172,8 +1169,8 @@ void VEmu::LUI()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     auto rd = curr_instr.get_fields().rd;
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(imm_32);
+    auto res = static_cast<int64_t>(imm_32);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::AUIPC()
@@ -1183,15 +1180,15 @@ void VEmu::AUIPC()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (rd == 0) return;
-    regs[rd] = this->pc + imm;
+    auto res = this->pc + imm;
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LRW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
-    uint64_t addr = regs[rs1];
+    uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 4 != 0) {
         std::cout << "Unaligned access in LRW.";
@@ -1200,15 +1197,15 @@ void VEmu::LRW()
 
     reservation_set.insert(addr);
 
-    if (rd == 0) return;
-    regs[rd] = bus.load(addr, 32);
+    auto res = bus.load(addr, 32);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::LRD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
-    uint64_t addr = regs[rs1];
+    uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 8 != 0) {
         std::cout << "Unaligned access in LRD.";
@@ -1217,8 +1214,8 @@ void VEmu::LRD()
 
     reservation_set.insert(addr);
 
-    if (rd == 0) return;
-    regs[rd] = bus.load(addr, 64);
+    auto res = bus.load(addr, 64);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::SCW()
@@ -1226,7 +1223,7 @@ void VEmu::SCW()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
-    uint64_t addr = regs[rs1];
+    uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 4 != 0) {
         std::cout << "Unaligned access in SCW.";
@@ -1235,13 +1232,10 @@ void VEmu::SCW()
 
     if (!reservation_set.count(addr)) {
         reservation_set.erase(addr);
-        store(addr, regs[rs2], 32);
-
-        if (rd == 0) return;
-        regs[rd] = 0;
+        store(addr, rf.load_reg(rs2), 32);
+        rf.store_reg(rd, 0);
     } else {
-        if (rd == 0) return;
-        regs[rd] = 1;
+        rf.store_reg(rd, 1);
     }
 }
 
@@ -1250,7 +1244,7 @@ void VEmu::SCD()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
-    uint64_t addr = regs[rs1];
+    uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 8 != 0) {
         std::cout << "Unaligned access in SCD.";
@@ -1259,13 +1253,10 @@ void VEmu::SCD()
 
     if (!reservation_set.count(addr)) {
         reservation_set.erase(addr);
-        store(addr, regs[rs2], 64);
-
-        if (rd == 0) return;
-        regs[rd] = 0;
+        store(addr, rf.load_reg(rs2), 64);
+        rf.store_reg(rd, 0);
     } else {
-        if (rd == 0) return;
-        regs[rd] = 1;
+        rf.store_reg(rd, 1);
     }
 }
 
@@ -1275,12 +1266,12 @@ void VEmu::AMOSWAPW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
 
-    store(regs[rs1], static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF), 32);
+    store(rf.load_reg(rs1), static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF), 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    auto res = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, res);
 }
 
 void VEmu::AMOADDW()
@@ -1289,16 +1280,15 @@ void VEmu::AMOADDW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     int32_t res_32 = tmp + rs2_val;
     uint64_t res = static_cast<uint64_t>(static_cast<uint32_t>(res_32));
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOANDW()
@@ -1307,16 +1297,15 @@ void VEmu::AMOANDW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = tmp & rs2_val;
     res &= 0xFFFFFFFF;
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOORW()
@@ -1325,17 +1314,16 @@ void VEmu::AMOORW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = (tmp | rs2_val);
 
     res &= 0xFFFFFFFF;
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOXORW()
@@ -1344,17 +1332,16 @@ void VEmu::AMOXORW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = (tmp ^ rs2_val);
 
     res &= 0xFFFFFFFF;
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOMINW()
@@ -1363,17 +1350,16 @@ void VEmu::AMOMINW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = tmp < rs2_val ?
         static_cast<uint64_t>(static_cast<uint32_t>(tmp)) :
         static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOMAXW()
@@ -1382,17 +1368,16 @@ void VEmu::AMOMAXW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(regs[rs1], 32) & 0xFFFFFFFF);
-    int32_t rs2_val = static_cast<int32_t>(regs[rs2] & 0xFFFFFFFF);
+    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = tmp > rs2_val ?
         static_cast<uint64_t>(static_cast<uint32_t>(tmp)) :
         static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOMINUW()
@@ -1401,16 +1386,15 @@ void VEmu::AMOMINUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint32_t tmp = static_cast<uint32_t>(load(regs[rs1], 32));
-    uint32_t rs2_val = static_cast<uint32_t>(regs[rs2]);
+    uint32_t tmp = static_cast<uint32_t>(load(rf.load_reg(rs1), 32));
+    uint32_t rs2_val = static_cast<uint32_t>(rf.load_reg(rs2));
 
     uint64_t res = tmp < rs2_val ?
         static_cast<uint64_t>(tmp) : static_cast<uint64_t>(rs2_val);
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = sext_word(tmp);
+    rf.store_reg(rd, sext_word(tmp));
 }
 
 void VEmu::AMOMAXUW()
@@ -1419,15 +1403,14 @@ void VEmu::AMOMAXUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint32_t tmp = static_cast<uint32_t>(load(regs[rs1], 32));
-    uint32_t rs2_val = static_cast<uint32_t>(regs[rs2]);
+    uint32_t tmp = static_cast<uint32_t>(load(rf.load_reg(rs1), 32));
+    uint32_t rs2_val = static_cast<uint32_t>(rf.load_reg(rs2));
 
     uint32_t res = tmp > rs2_val ? tmp : rs2_val;
 
-    store(regs[rs1], res, 32);
+    store(rf.load_reg(rs1), res, 32);
 
-    if (rd == 0) return;
-    regs[rd] = sext_word(tmp);
+    rf.store_reg(rd, sext_word(tmp));
 }
 
 
@@ -1437,12 +1420,11 @@ void VEmu::AMOSWAPD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(regs[rs1], 64);
+    uint64_t tmp = load(rf.load_reg(rs1), 64);
 
-    store(regs[rs1], regs[rs2], 64);
+    store(rf.load_reg(rs1), rf.load_reg(rs2), 64);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOADDD()
@@ -1451,15 +1433,14 @@ void VEmu::AMOADDD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int64_t tmp = load(regs[rs1], 64);
-    int64_t rs2_val = regs[rs2] ;
+    int64_t tmp = load(rf.load_reg(rs1), 64);
+    int64_t rs2_val = rf.load_reg(rs2) ;
 
     int64_t res = tmp + rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = tmp;
+    rf.store_reg(rd, tmp);
 }
 
 void VEmu::AMOXORD()
@@ -1468,15 +1449,14 @@ void VEmu::AMOXORD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(regs[rs1], 64);
-    uint64_t rs2_val = regs[rs2] ;
+    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp ^ rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOANDD()
@@ -1485,15 +1465,14 @@ void VEmu::AMOANDD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(regs[rs1], 64);
-    uint64_t rs2_val = regs[rs2] ;
+    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp & rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOORD()
@@ -1502,15 +1481,14 @@ void VEmu::AMOORD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(regs[rs1], 64);
-    uint64_t rs2_val = regs[rs2] ;
+    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp | rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOMIND()
@@ -1519,15 +1497,14 @@ void VEmu::AMOMIND()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int64_t tmp = load(regs[rs1], 64);
-    int64_t rs2_val = regs[rs2];
+    int64_t tmp = load(rf.load_reg(rs1), 64);
+    int64_t rs2_val = rf.load_reg(rs2);
 
     uint64_t res = tmp < rs2_val ? tmp : rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = tmp;
+    rf.store_reg(rd, tmp);
 }
 
 void VEmu::AMOMAXD()
@@ -1536,7 +1513,7 @@ void VEmu::AMOMAXD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t addr = regs[rs1];
+    uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 8 != 0) {
         std::cout << "unaligned address in AMOMAXD.";
@@ -1544,14 +1521,13 @@ void VEmu::AMOMAXD()
     }
 
     int64_t tmp = load(addr, 64);
-    int64_t rs2_val = regs[rs2] ;
+    int64_t rs2_val = rf.load_reg(rs2) ;
 
     int64_t res = tmp > rs2_val ? tmp : rs2_val;
 
     store(addr, static_cast<uint64_t>(res), 64);
 
-    if (rd == 0) return;
-    regs[rd] = tmp;
+    rf.store_reg(rd, tmp);
 }
 
 void VEmu::AMOMINUD()
@@ -1560,15 +1536,14 @@ void VEmu::AMOMINUD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(regs[rs1], 64);
-    uint64_t rs2_val = regs[rs2] ;
+    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp < rs2_val ? tmp : rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::AMOMAXUD()
@@ -1577,15 +1552,14 @@ void VEmu::AMOMAXUD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(regs[rs1], 64);
-    uint64_t rs2_val = regs[rs2] ;
+    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp > rs2_val ? tmp : rs2_val;
 
-    store(regs[rs1], res, 64);
+    store(rf.load_reg(rs1), res, 64);
 
-    if (rd == 0) return;
-    regs[rd] = static_cast<int64_t>(tmp);
+    rf.store_reg(rd, static_cast<int64_t>(tmp));
 }
 
 void VEmu::MRET()

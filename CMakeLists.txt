@@ -18,4 +18,6 @@ add_executable(emu
     include/DRAM.h
     src/Bus.cpp
     include/Bus.h
+    src/RegFile.cpp
+    include/RegFile.h
 )

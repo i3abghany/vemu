@@ -5,8 +5,8 @@ OBJ_COPY=riscv64-unknown-linux-gnu-objcopy
 CC=g++
 CFLAGS=-std=c++17 -ggdb -Wall -Werror -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code 
 
-emu: main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o 
-	$(CC) $(CFLAGS) -o emu main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o 
+emu: main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o RegFile.o
+	$(CC) $(CFLAGS) -o emu main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o RegFile.o
 
 Instruction.o DRAM.o: ../include/defs.h
 
@@ -30,6 +30,9 @@ DRAM.o: DRAM.cpp ../include/DRAM.h
 
 util.o: util.cpp ../include/util.h 
 	$(CC) $(CFLAGS) -c util.cpp 
+
+RegFile.o: RegFile.cpp ../include/RegFile.h 
+	$(CC) $(CFLAGS) -c RegFile.cpp 
 
 code.bin: code
 	$(OBJ_COPY) -O binary code code.bin
