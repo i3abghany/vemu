@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <functional>
 #include <unordered_set>
-#include <type_traits>
+#include <utility>
 #include <cassert>
 
 #include "InstructionDecoder.h"
@@ -159,10 +159,10 @@ private:
 
 private:
     Bus bus;
-    uint32_t get_4byte_aligned_instr(uint64_t);
+    std::pair<uint32_t, ReturnException> get_4byte_aligned_instr(uint64_t);
 
-    uint64_t load(uint64_t, size_t);
-    void store(uint64_t, uint64_t, size_t);
+    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
+    ReturnException store(uint64_t, uint64_t, size_t);
 
 private:
     std::unordered_set<uint64_t> reservation_set;

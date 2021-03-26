@@ -138,9 +138,13 @@ void VEmu::read_file()
     }
 }
 
-uint64_t VEmu::load(uint64_t addr, size_t sz)
+std::pair<uint64_t, ReturnException> VEmu::load(uint64_t addr, size_t sz)
 {
-    return bus.load(addr, sz);
+    if (addr < ADDR_BASE) {
+        return {0, ReturnException::LoadAccessFault};
+    } else { 
+        return {bus.load(addr, sz), ReturnException::NormalExecutionReturn};
+    }
 }
 
 void VEmu::dump_regs()
@@ -148,7 +152,7 @@ void VEmu::dump_regs()
     rf.dump_regs();
 }
 
-void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
+ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 {
     // FIXME: only checks on aligned addresses
     // Will have to check for individual bytes.
@@ -156,23 +160,46 @@ void VEmu::store(uint64_t addr, uint64_t data, size_t sz)
     // is in the reservation set, storing in
     // the address 0x810000001 will not
     // mark the word as not reserved.
+    if (addr < ADDR_BASE) {
+        return ReturnException::StoreAMOAccessFault;
+    }
     if (reservation_set.count(addr)) {
         reservation_set.erase(addr);
     }
 
     bus.store(addr, data, sz);
+
+    return ReturnException::NormalExecutionReturn;
 }
 
-uint32_t VEmu::get_4byte_aligned_instr(uint64_t i)
+std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 {
-    return static_cast<uint32_t>(bus.load(i, 32));
+    auto load_ret = load(i, 32);
+    if (load_ret.second == ReturnException::NormalExecutionReturn) {
+        return {
+            static_cast<uint32_t>(load_ret.first),
+            ReturnException::NormalExecutionReturn
+        };
+    } else {
+        return {
+            0,
+            ReturnException::InstructionAccessFault
+        };
+    }
 }
 
 uint32_t VEmu::run()
 {
     for (; pc < ADDR_BASE + code_size; pc += 4) {
         if (pc == 0x0) break;
-        hex_instr = get_4byte_aligned_instr(pc);
+
+        auto aligned_instr = get_4byte_aligned_instr(pc); 
+        if (aligned_instr.second != ReturnException::NormalExecutionReturn)
+            trap(aligned_instr.second);
+        if (is_fatal(aligned_instr.second))
+            exit_fatally(aligned_instr.second);
+
+        hex_instr = aligned_instr.first;
 
         curr_instr = InstructionDecoder::the().decode(hex_instr);
         IName instr_iname = curr_instr.get_name();
@@ -254,11 +281,15 @@ ReturnException VEmu::LBU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    // add as signed then convert to unsigned.
     uint64_t mem_addr =
         static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    auto res = static_cast<int64_t>(bus.load(mem_addr, 8));
+    auto load_ret = load(mem_addr, 8);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    auto res = static_cast<int64_t>(load_ret.first);
     rf.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -285,11 +316,15 @@ ReturnException VEmu::LHU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    // add as signed then convert to unsigned.
     uint64_t mem_addr =
         static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    auto res = static_cast<int64_t>(bus.load(mem_addr, 16));
+    auto load_ret = load(mem_addr, 16);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    auto res = static_cast<int64_t>(load_ret.first);
     rf.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -303,11 +338,15 @@ ReturnException VEmu::LD()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    // add as signed then convert to unsigned.
     uint64_t mem_addr =
         static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    auto res = static_cast<int64_t>(bus.load(mem_addr, 64));
+    auto load_ret = load(mem_addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    auto res = static_cast<int64_t>(load_ret.first);
     rf.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -321,11 +360,15 @@ ReturnException VEmu::LWU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    // add as signed then convert to unsigned.
     uint64_t mem_addr =
         static_cast<uint64_t>(static_cast<int64_t>(rf.load_reg(base_reg)) + imm);
 
-    auto res = static_cast<int64_t>(bus.load(mem_addr, 32));
+    auto load_ret = load(mem_addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    auto res = static_cast<int64_t>(load_ret.first);
     rf.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -560,7 +603,7 @@ ReturnException VEmu::ECALL()
 ReturnException VEmu::EBREAK()
 {
 
-    return ReturnException::NormalExecutionReturn;
+    return ReturnException::InstructionAddressBreakpoint;
 }
 
 ReturnException VEmu::CSRRW()
@@ -770,9 +813,9 @@ ReturnException VEmu::SB()
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFF;
-    store(rf.load_reg(rs1) + offset, data, 8);
+    auto store_ret = store(rf.load_reg(rs1) + offset, data, 8);
 
-    return ReturnException::NormalExecutionReturn;
+    return store_ret;
 }
 
 ReturnException VEmu::SH()
@@ -782,9 +825,9 @@ ReturnException VEmu::SH()
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFFFF;
-    store(rf.load_reg(rs1) + offset, data, 16);
+    auto store_ret = store(rf.load_reg(rs1) + offset, data, 16);
 
-    return ReturnException::NormalExecutionReturn;
+    return store_ret;
 }
 
 ReturnException VEmu::SW()
@@ -794,9 +837,9 @@ ReturnException VEmu::SW()
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2)) & 0xFFFFFFFF;
-    store(rf.load_reg(rs1) + offset, data, 32);
+    auto store_ret = store(rf.load_reg(rs1) + offset, data, 32);
 
-    return ReturnException::NormalExecutionReturn;
+    return store_ret;
 }
 
 ReturnException VEmu::SD()
@@ -806,9 +849,9 @@ ReturnException VEmu::SD()
     int32_t offset = static_cast<int32_t>(curr_instr.get_fields().imm);
 
     uint64_t data = static_cast<uint64_t>(rf.load_reg(rs2));
-    store(rf.load_reg(rs1) + offset, data, 64);
+    auto store_ret = store(rf.load_reg(rs1) + offset, data, 64);
 
-    return ReturnException::NormalExecutionReturn;
+    return store_ret;
 }
 
 ReturnException VEmu::ADD()
@@ -1357,17 +1400,20 @@ ReturnException VEmu::LRW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
-    uint64_t addr = rf.load_reg(rs1);
 
+    auto addr = rf.load_reg(rs1);
     if (addr % 4 != 0) {
-        std::cout << "Unaligned access in LRW.";
-        exit(EXIT_FAILURE);
+        return ReturnException::LoadAddressMisaligned;
     }
 
     reservation_set.insert(addr);
 
-    auto res = bus.load(addr, 32);
-    rf.store_reg(rd, res);
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    rf.store_reg(rd, load_ret.first);
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -1376,17 +1422,19 @@ ReturnException VEmu::LRD()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
-    uint64_t addr = rf.load_reg(rs1);
 
+    auto addr = rf.load_reg(rs1);
     if (addr % 8 != 0) {
-        std::cout << "Unaligned access in LRD.";
-        exit(EXIT_FAILURE);
+        return ReturnException::LoadAddressMisaligned;
     }
 
     reservation_set.insert(addr);
 
-    auto res = bus.load(addr, 64);
-    rf.store_reg(rd, res);
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+    rf.store_reg(rd, load_ret.first);
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -1399,19 +1447,18 @@ ReturnException VEmu::SCW()
     uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 4 != 0) {
-        std::cout << "Unaligned access in SCW.";
-        exit(EXIT_FAILURE);
+        return ReturnException::StoreAMOAddressMisaligned;
     }
 
     if (!reservation_set.count(addr)) {
         reservation_set.erase(addr);
-        store(addr, rf.load_reg(rs2), 32);
+        auto store_ret = store(addr, rf.load_reg(rs2), 32);
         rf.store_reg(rd, 0);
+        return store_ret;
     } else {
         rf.store_reg(rd, 1);
+        return ReturnException::NormalExecutionReturn;
     }
-
-    return ReturnException::NormalExecutionReturn;
 }
 
 ReturnException VEmu::SCD()
@@ -1422,19 +1469,18 @@ ReturnException VEmu::SCD()
     uint64_t addr = rf.load_reg(rs1);
 
     if (addr % 8 != 0) {
-        std::cout << "Unaligned access in SCD.";
-        exit(EXIT_FAILURE);
+        return ReturnException::StoreAMOAddressMisaligned;
     }
 
     if (!reservation_set.count(addr)) {
         reservation_set.erase(addr);
-        store(addr, rf.load_reg(rs2), 64);
+        auto store_ret = store(addr, rf.load_reg(rs2), 64);
         rf.store_reg(rd, 0);
+        return store_ret;
     } else {
         rf.store_reg(rd, 1);
+        return ReturnException::NormalExecutionReturn;
     }
-
-    return ReturnException::NormalExecutionReturn;
 }
 
 ReturnException VEmu::AMOSWAPW()
@@ -1443,9 +1489,22 @@ ReturnException VEmu::AMOSWAPW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
 
-    store(rf.load_reg(rs1), static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF), 32);
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
+    
+    auto store_ret = store(addr, static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF), 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     auto res = static_cast<int64_t>(tmp);
     rf.store_reg(rd, res);
@@ -1459,13 +1518,26 @@ ReturnException VEmu::AMOADDW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     int32_t res_32 = tmp + rs2_val;
     uint64_t res = static_cast<uint64_t>(static_cast<uint32_t>(res_32));
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1478,13 +1550,26 @@ ReturnException VEmu::AMOANDW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = tmp & rs2_val;
     res &= 0xFFFFFFFF;
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1497,14 +1582,27 @@ ReturnException VEmu::AMOORW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = (tmp | rs2_val);
 
     res &= 0xFFFFFFFF;
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1517,14 +1615,27 @@ ReturnException VEmu::AMOXORW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = (tmp ^ rs2_val);
 
     res &= 0xFFFFFFFF;
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1537,14 +1648,27 @@ ReturnException VEmu::AMOMINW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = tmp < rs2_val ?
         static_cast<uint64_t>(static_cast<uint32_t>(tmp)) :
         static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1557,14 +1681,27 @@ ReturnException VEmu::AMOMAXW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int32_t tmp = static_cast<int32_t>(load(rf.load_reg(rs1), 32) & 0xFFFFFFFF);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(rf.load_reg(rs2) & 0xFFFFFFFF);
 
     uint64_t res = tmp > rs2_val ?
         static_cast<uint64_t>(static_cast<uint32_t>(tmp)) :
         static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1577,13 +1714,26 @@ ReturnException VEmu::AMOMINUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint32_t tmp = static_cast<uint32_t>(load(rf.load_reg(rs1), 32));
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint32_t tmp = static_cast<uint32_t>(load_ret.first);
     uint32_t rs2_val = static_cast<uint32_t>(rf.load_reg(rs2));
 
     uint64_t res = tmp < rs2_val ?
         static_cast<uint64_t>(tmp) : static_cast<uint64_t>(rs2_val);
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, sext_word(tmp));
 
@@ -1596,12 +1746,25 @@ ReturnException VEmu::AMOMAXUW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint32_t tmp = static_cast<uint32_t>(load(rf.load_reg(rs1), 32));
+    auto addr = rf.load_reg(rs1);
+    if (addr % 4 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 32);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint32_t tmp = static_cast<uint32_t>(load_ret.first);
     uint32_t rs2_val = static_cast<uint32_t>(rf.load_reg(rs2));
 
     uint32_t res = tmp > rs2_val ? tmp : rs2_val;
 
-    store(rf.load_reg(rs1), res, 32);
+    auto store_ret = store(addr, res, 32);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, sext_word(tmp));
 
@@ -1615,11 +1778,22 @@ ReturnException VEmu::AMOSWAPD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
 
-    store(rf.load_reg(rs1), rf.load_reg(rs2), 64);
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
 
-    rf.store_reg(rd, static_cast<int64_t>(tmp));
+    auto store_ret = store(addr, rf.load_reg(rs2), 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
+
+    rf.store_reg(rd, static_cast<int64_t>(load_ret.first));
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -1630,12 +1804,25 @@ ReturnException VEmu::AMOADDD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int64_t tmp = static_cast<int64_t>(load_ret.first);
     int64_t rs2_val = rf.load_reg(rs2) ;
 
     int64_t res = tmp + rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(addr, res, 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, tmp);
 
@@ -1648,12 +1835,25 @@ ReturnException VEmu::AMOXORD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint64_t tmp = load_ret.first;
     uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp ^ rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(addr, res, 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1666,12 +1866,25 @@ ReturnException VEmu::AMOANDD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint64_t tmp = load_ret.first;
     uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp & rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(addr, res, 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1684,12 +1897,25 @@ ReturnException VEmu::AMOORD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint64_t tmp = load_ret.first;
     uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp | rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(addr, res, 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1702,12 +1928,25 @@ ReturnException VEmu::AMOMIND()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    int64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int64_t tmp = static_cast<int64_t>(load_ret.first);
     int64_t rs2_val = rf.load_reg(rs2);
 
     uint64_t res = tmp < rs2_val ? tmp : rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(addr, res, 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, tmp);
 
@@ -1720,19 +1959,25 @@ ReturnException VEmu::AMOMAXD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t addr = rf.load_reg(rs1);
-
+    auto addr = rf.load_reg(rs1);
     if (addr % 8 != 0) {
-        std::cout << "unaligned address in AMOMAXD.";
-        exit(EXIT_FAILURE);
+        return ReturnException::LoadAddressMisaligned;
     }
 
-    int64_t tmp = load(addr, 64);
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    int64_t tmp = static_cast<int64_t>(load_ret.first);
     int64_t rs2_val = rf.load_reg(rs2) ;
 
     int64_t res = tmp > rs2_val ? tmp : rs2_val;
 
-    store(addr, static_cast<uint64_t>(res), 64);
+    auto store_ret = store(addr, static_cast<uint64_t>(res), 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, tmp);
 
@@ -1745,12 +1990,25 @@ ReturnException VEmu::AMOMINUD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint64_t tmp = load_ret.first;
     uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp < rs2_val ? tmp : rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(addr, static_cast<uint64_t>(res), 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
@@ -1763,12 +2021,25 @@ ReturnException VEmu::AMOMAXUD()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    uint64_t tmp = load(rf.load_reg(rs1), 64);
+    auto addr = rf.load_reg(rs1);
+    if (addr % 8 != 0) {
+        return ReturnException::LoadAddressMisaligned;
+    }
+
+    auto load_ret = load(addr, 64);
+    if (load_ret.second != ReturnException::NormalExecutionReturn) {
+        return load_ret.second;
+    }
+
+    uint64_t tmp = load_ret.first;
     uint64_t rs2_val = rf.load_reg(rs2) ;
 
     uint64_t res = tmp > rs2_val ? tmp : rs2_val;
 
-    store(rf.load_reg(rs1), res, 64);
+    auto store_ret = store(rf.load_reg(rs1), res, 64);
+    if (store_ret != ReturnException::NormalExecutionReturn) {
+        return store_ret;
+    }
 
     rf.store_reg(rd, static_cast<int64_t>(tmp));
 
