@@ -391,8 +391,8 @@ const std::map<IName, uint8_t> InstructionDecoder::s_funct3 = {
 const std::map<IName, uint8_t> InstructionDecoder::r_funct7 = {
         {IName::ADD,      0b0000000},
         {IName::ADDW,     0b0000000},
-        {IName::SUB,      0b0010000},
-        {IName::SUBW,     0b0010000},
+        {IName::SUB,      0b0100000},
+        {IName::SUBW,     0b0100000},
         {IName::SLL,      0b0000000},
         {IName::SLLW,     0b0000000},
         {IName::SLT,      0b0000000},
@@ -400,8 +400,8 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 = {
         {IName::XOR,      0b0000000},
         {IName::SRL,      0b0000000},
         {IName::SRLW,     0b0000000},
-        {IName::SRA,      0b0010000},
-        {IName::SRAW,     0b0010000},
+        {IName::SRA,      0b0100000},
+        {IName::SRAW,     0b0100000},
         {IName::OR,       0b0000000},
         {IName::AND,      0b0000000},
 
@@ -451,10 +451,10 @@ const std::map<IName, uint8_t> InstructionDecoder::r_funct7 = {
 const std::map<IName, uint8_t> InstructionDecoder::i_funct7 = {
         {IName::SLLI,  0b0000000},
         {IName::SRLI,  0b0000000},
-        {IName::SRAI,  0b0010000},
+        {IName::SRAI,  0b0100000},
         {IName::SLLIW, 0b0000000},
         {IName::SRLIW, 0b0000000},
-        {IName::SRAIW, 0b0010000},
+        {IName::SRAIW, 0b0100000},
 };
 
 const std::map<IName, uint8_t> InstructionDecoder::i_funct6 = {
