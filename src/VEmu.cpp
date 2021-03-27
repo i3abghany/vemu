@@ -11,6 +11,9 @@ VEmu::VEmu(std::string f_name) :
     rf.store_reg(2, ADDR_BASE + DRAM::RAM_SIZE);
     read_file();
     init_func_map();
+#ifdef TEST_ENV
+    test_flag_done = false;
+#endif
 }
 
 void VEmu::init_func_map()
@@ -193,6 +196,9 @@ uint32_t VEmu::run()
     for (; pc < ADDR_BASE + code_size; pc += 4) {
         if (pc == 0x0) break;
 
+#ifdef TEST_ENV
+        if (test_flag_done) return 0;
+#endif
         auto aligned_instr = get_4byte_aligned_instr(pc); 
         if (aligned_instr.second != ReturnException::NormalExecutionReturn)
             trap(aligned_instr.second);
@@ -302,7 +308,7 @@ ReturnException VEmu::LH()
     auto rd = curr_instr.get_fields().rd;
 
     auto res = static_cast<int64_t>(
-        sext_word(static_cast<uint16_t>(rf.load_reg(rd) & 0xFFFF)));
+        sext_hword(static_cast<uint16_t>(rf.load_reg(rd) & 0xFFFF)));
     rf.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -584,6 +590,7 @@ ReturnException VEmu::FENCEI()
     return ReturnException::NormalExecutionReturn;
 }
 
+#ifndef TEST_ENV
 ReturnException VEmu::ECALL()
 {
     switch(mode) {
@@ -599,6 +606,20 @@ ReturnException VEmu::ECALL()
 
     exit(EXIT_FAILURE);
 }
+#else
+ReturnException VEmu::ECALL()
+{
+    if (pc == pass_pc) {
+        std::cout << "Passed test: " << bin_file_name << '\n';
+    }
+    else {
+        std::cout << "Failed test: " << bin_file_name << "PC: " << 
+            std:: hex << pc << '\n';
+    }
+    test_flag_done = true;
+    return ReturnException::NormalExecutionReturn;
+}
+#endif
 
 ReturnException VEmu::EBREAK()
 {

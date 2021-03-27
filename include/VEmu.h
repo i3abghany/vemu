@@ -172,5 +172,16 @@ private:
     bool is_fatal(ReturnException e);
     void exit_fatally(ReturnException e);
     std::string stringify_exception(ReturnException e);
+
+#ifdef TEST_ENV
+private:
+    uint64_t pass_pc;
+
+public:
+    void set_pass_pc(uint64_t p) {
+        pass_pc = p;
+    }
+    bool test_flag_done;
+#endif
 };
 
