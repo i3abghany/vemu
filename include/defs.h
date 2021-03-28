@@ -167,6 +167,7 @@ enum class IName : uint8_t {
 #define STVAL      0x143
 #define SATP       0x180
 
+#define FCSR       0x003
 
 enum class Mode : uint8_t {
 	User = 0b00,
