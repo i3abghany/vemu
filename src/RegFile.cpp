@@ -4,7 +4,7 @@ RegFile::RegFile()
     data.fill(0);
 }
 
-void RegFile::store_reg(size_t idx, uint64_t value)
+void RegFile::store_reg(size_t idx, int64_t value)
 {
     if (idx == 0) return;
     data[idx] = value;

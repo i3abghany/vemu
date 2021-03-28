@@ -8,7 +8,7 @@ class RegFile {
 public:
     RegFile();
 public:
-    void store_reg(size_t idx, uint64_t value);
+    void store_reg(size_t idx, int64_t value);
     int64_t load_reg(size_t idx);
     void dump_regs();
 
