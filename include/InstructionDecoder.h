@@ -48,6 +48,7 @@ private:
     const static std::map<IName, uint8_t> j_opcodes;
     const static std::map<IName, uint8_t> u_opcodes;
     const static std::map<IName, uint8_t> r_opcodes;
+    const static std::map<IName, uint8_t> r4_opcodes;
     const static std::map<IName, uint8_t> b_opcodes;
     const static std::map<IName, uint8_t> s_opcodes;
 
@@ -60,14 +61,25 @@ private:
     const static std::map<IName, uint8_t> i_funct7;
     const static std::map<IName, uint8_t> i_funct6;
 
+    const static std::map<IName, uint8_t> r4_funct2;
+
     Instruction decode_i(uint32_t);
     Instruction decode_r(uint32_t);
+    Instruction decode_r4(uint32_t);
     Instruction decode_b(uint32_t);
     Instruction decode_s(uint32_t);
     Instruction decode_j(uint32_t);
     Instruction decode_u(uint32_t);
+    
+    bool is_fp_instr(uint32_t);
+    Instruction decode_fp(uint32_t);
+    bool ignore_f3(uint32_t inst);
+    Instruction decode_fp_without_f3(uint32_t inst);
+    Instruction decode_fp_with_f3(uint32_t inst);
+    bool decode_with_rs2(uint32_t inst);
 
     uint8_t extract_opcode(uint32_t);
+    uint8_t extract_funct2(uint32_t);
     uint8_t extract_funct3(uint32_t);
     uint8_t extract_funct7(uint32_t);
     uint8_t extract_funct6(uint32_t);
@@ -76,6 +88,7 @@ private:
     uint8_t extract_rd(uint32_t);
     uint8_t extract_rs1(uint32_t);
     uint8_t extract_rs2(uint32_t);
+    uint8_t extract_rs3(uint32_t);
 
     Fields get_fields(uint32_t inst);
 

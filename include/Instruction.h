@@ -17,12 +17,15 @@ struct Fields {
     uint8_t shamt64;
     uint8_t funct6;
     uint32_t imm;
+    uint8_t funct2;
+    uint8_t rs3;
 };
 
 class Instruction {
 public:
     enum class Type {
         R,
+        R4,
         I,
         S,
         B,

@@ -2,11 +2,13 @@
 
 #define OPCODE_MASK (uint32_t) 0x0000007F
 #define FUNCT3_MASK (uint32_t) 0x00007000
+#define FUNCT2_MASK (uint32_t) 0x06000000
 #define FUNCT7_MASK (uint32_t) 0xFE000000
 #define FUNCT6_MASK (uint32_t) 0xFC000000
 #define RD_MASK     (uint32_t) 0x00000F80
 #define RS1_MASK    (uint32_t) 0x000F8000
 #define RS2_MASK    (uint32_t) 0x01F00000
+#define RS3_MASK    (uint32_t) 0xF1000000
 #define IMM12_MASK  (uint32_t) 0xFFF00000
 #define IMM20_MASK  (uint32_t) 0xFFFFF000
 
@@ -38,6 +40,8 @@
 #define ADDR_BASE (uint32_t) 0x8000'0000
 
 #define AM_OPCODE (uint8_t) 0b0101111
+
+#define FP_R_OPCODE (uint8_t) 0b1010011
 
 enum class IName : uint8_t {
     LB,
@@ -140,6 +144,38 @@ enum class IName : uint8_t {
 
     SRET,
     MRET,
+
+    FLW,
+    FSW,
+    FMADDS,
+    FMSUBS,
+    FNMSUBS,
+    FNMADDS,
+    FADDS,
+    FSUBS,
+    FMULS,
+    FDIVS,
+    FSQRTS,
+    FSGNJS,
+    FSGNJNS,
+    FSGNJXS,
+    FMINS,
+    FMAXS,
+    FCVTWS,
+    FCVTWUS,
+    FMVXW,
+    FEQS,
+    FLTS,
+    FLES,
+    FCLASSS,
+    FCVTSW,
+    FCVTSWU,
+    FMVWX,
+
+    FCVTLS,
+    FCVTLUS,
+    FCVTSL,
+    FCVTSLU, 
 
     XXX,
 };
