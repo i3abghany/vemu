@@ -3,21 +3,23 @@ project(EMU-V)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(emu
-    src/main.cpp
-    src/InstructionDecoder.cpp
-    include/InstructionDecoder.h
-    src/VEmu.cpp
-    include/VEmu.h
-    src/Instruction.cpp
-    include/Instruction.h
-    include/defs.h
-    src/util.cpp
-    include/util.h
+set(SRC_FILES 
+    src/main.cpp 
+    src/InstructionDecoder.cpp 
+    src/VEmu.cpp 
+    src/Instruction.cpp 
+    src/util.cpp 
     src/DRAM.cpp
-    include/DRAM.h
-    src/Bus.cpp
-    include/Bus.h
+    src/Bus.cpp 
     src/RegFile.cpp
-    include/RegFile.h
 )
+
+add_executable(emu ${SRC_FILES})
+
+add_executable(test_emu
+    ${SRC_FILES} src/Tester.cpp
+)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Wall -Werror -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code")
+
+target_compile_definitions(test_emu PRIVATE -DTEST_ENV)
