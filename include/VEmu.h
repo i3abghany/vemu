@@ -179,8 +179,7 @@ private:
     Mode mode;
 
 private:
-    RegFile rf;
-
+    RegFile iregs;
     FRegFile fregs;
 private:
     constexpr static size_t CSR_NUM = 4096;
