@@ -16,6 +16,7 @@
 #include "RegFile.h"
 #include "Bus.h"
 #include "util.h"
+#include "FRegFile.h"
 
 class VEmu {
 public:
@@ -180,6 +181,7 @@ private:
 private:
     RegFile rf;
 
+    FRegFile fregs;
 private:
     constexpr static size_t CSR_NUM = 4096;
     std::array<uint64_t, CSR_NUM> csrs;
