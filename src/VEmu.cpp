@@ -119,6 +119,18 @@ void VEmu::init_func_map()
 
         {IName::FLW,      &VEmu::FLW},
         {IName::FSW,      &VEmu::FSW},
+        {IName::FADDS,    &VEmu::FADDS},
+        {IName::FMADDS,   &VEmu::FMADDS},
+        {IName::FMSUBS,   &VEmu::FMSUBS},
+        {IName::FNMSUBS,  &VEmu::FNMSUBS},
+        {IName::FNMADDS,  &VEmu::FNMADDS},
+        {IName::FADDS,    &VEmu::FADDS},
+        {IName::FSUBS,    &VEmu::FSUBS},
+        {IName::FMULS,    &VEmu::FMULS},
+        {IName::FDIVS,    &VEmu::FDIVS},
+        {IName::FSGNJS,   &VEmu::FSGNJS},
+        {IName::FSGNJNS,  &VEmu::FSGNJNS},
+        {IName::FSGNJXS,  &VEmu::FSGNJXS},
 
         {IName::XXX,      &VEmu::XXX},
     };
@@ -2136,7 +2148,10 @@ ReturnException VEmu::XXX()
         << std::setfill('0')
         << std::hex
         << hex_instr
+        << "PC: "
+        << pc
         << std::endl;
+
 
     std::cout.flags(ft);
     return ReturnException::IllegalInstruction;
@@ -2292,3 +2307,205 @@ ReturnException VEmu::FSW()
     return store_res;
 }
 
+ReturnException VEmu::FMADDS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rs3 = curr_instr.get_fields().rs3;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+    float op3 = static_cast<float>(fregs.load_reg(rs3));
+
+    float res = std::fma(op1, op2, op3);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FMSUBS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rs3 = curr_instr.get_fields().rs3;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+    float op3 = static_cast<float>(fregs.load_reg(rs3));
+
+    float res = std::fma(op1, op2, -op3);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FNMSUBS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rs3 = curr_instr.get_fields().rs3;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+    float op3 = static_cast<float>(fregs.load_reg(rs3));
+
+    float res = std::fma(-op1, op2, -op3);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FNMADDS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rs3 = curr_instr.get_fields().rs3;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+    float op3 = static_cast<float>(fregs.load_reg(rs3));
+
+    float res = std::fma(-op1, op2, op3);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FADDS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    float res = op1 + op2;
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FSUBS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    float res = op1 - op2;
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FMULS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    float res = op1 * op2;
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FDIVS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    float res = op1 / op2;
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FSQRTS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op = static_cast<float>(fregs.load_reg(rs1));
+
+    float res = std::sqrt(op);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FSGNJS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    float res = copysignf(op1, op2);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FSGNJNS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    float res = copysignf(op1, -op2);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FSGNJXS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    bool s1 = (op1 < 0.0);
+    bool s2 = (op2 < 0.0);
+
+    float tmp = (s1 ^ s2) ? -1.0f : 1.0f;
+
+    float res = copysignf(op1, tmp);
+
+    fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}

@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <utility>
 #include <cassert>
+#include <cmath>
 
 #include "InstructionDecoder.h"
 #include "RegFile.h"
