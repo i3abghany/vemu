@@ -778,7 +778,8 @@ Instruction InstructionDecoder::decode_fp_without_f3(uint32_t inst)
         }
     } else {
         for (const auto& [iname, f7] : r_funct7) {
-            if (f7 == f.funct7) {
+            auto opc = get_opcode(iname, Instruction::Type::R);
+            if (f7 == f.funct7 && opc == f.OPCode) {
                 ins = iname;
                 break;
             }
