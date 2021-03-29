@@ -12,6 +12,7 @@ set(SRC_FILES
     src/DRAM.cpp
     src/Bus.cpp 
     src/RegFile.cpp
+    src/FRegFile.cpp
 )
 
 add_executable(emu ${SRC_FILES})
