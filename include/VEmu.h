@@ -132,6 +132,38 @@ private:
     ReturnException SRET();
     ReturnException MRET();
 
+    ReturnException FLW();
+    ReturnException FSW();
+    ReturnException FMADDS();
+    ReturnException FMSUBS();
+    ReturnException FNMSUBS();
+    ReturnException FNMADDS();
+    ReturnException FADDS();
+    ReturnException FSUBS();
+    ReturnException FMULS();
+    ReturnException FDIVS();
+    ReturnException FSQRTS();
+    ReturnException FSGNJS();
+    ReturnException FSGNJNS();
+    ReturnException FSGNJXS();
+    ReturnException FMINS();
+    ReturnException FMAXS();
+    ReturnException FCVTWS();
+    ReturnException FCVTWUS();
+    ReturnException FMVXW();
+    ReturnException FEQS();
+    ReturnException FLTS();
+    ReturnException FLES();
+    ReturnException FCLASSS();
+    ReturnException FCVTSW();
+    ReturnException FCVTSWU();
+    ReturnException FMVWX();
+
+    ReturnException FCVTLS();
+    ReturnException FCVTLUS();
+    ReturnException FCVTSL();
+    ReturnException FCVTSLU();
+
 private:
     void read_file();
     std::string bin_file_name;
