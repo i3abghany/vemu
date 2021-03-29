@@ -114,8 +114,11 @@ void VEmu::init_func_map()
         {IName::LRD,      &VEmu::LRD},
         {IName::SCD,      &VEmu::SCD},
 
-        {IName::MRET,      &VEmu::MRET},
-        {IName::SRET,      &VEmu::SRET},
+        {IName::MRET,     &VEmu::MRET},
+        {IName::SRET,     &VEmu::SRET},
+
+        {IName::FLW,      &VEmu::FLW},
+        {IName::FSW,      &VEmu::FSW},
 
         {IName::XXX,      &VEmu::XXX},
     };
@@ -2252,3 +2255,40 @@ std::string VEmu::stringify_exception(ReturnException e)
     else
         return "Exception";
 }
+
+ReturnException VEmu::FLW()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    auto load_res = load(iregs.load_reg(rs1), 32);
+    if (load_res.second != ReturnException::NormalExecutionReturn)
+        return load_res.second;
+
+    union {
+        uint32_t i;
+        float s;
+    } a{};
+    a.i = static_cast<uint32_t>(load_res.first);
+
+    fregs.store_reg(rd, static_cast<double>(a.s));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FSW()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+
+    union {
+        uint32_t i;
+        float s;
+    } a{};
+
+    a.s = static_cast<float>(fregs.load_reg(rs2));
+    auto store_res = store(iregs.load_reg(rs1), static_cast<uint64_t>(a.i), 32);
+
+    return store_res;
+}
+
