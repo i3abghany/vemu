@@ -167,6 +167,10 @@ private:
     ReturnException FCVTSLU();
 
 private:
+    bool is_negative_zero(double);
+    bool is_positive_zero(double);
+
+private:
     void read_file();
     std::string bin_file_name;
 

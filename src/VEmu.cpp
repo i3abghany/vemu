@@ -131,6 +131,8 @@ void VEmu::init_func_map()
         {IName::FSGNJS,   &VEmu::FSGNJS},
         {IName::FSGNJNS,  &VEmu::FSGNJNS},
         {IName::FSGNJXS,  &VEmu::FSGNJXS},
+        {IName::FMINS,    &VEmu::FMINS},
+        {IName::FMAXS,    &VEmu::FMAXS},
 
         {IName::XXX,      &VEmu::XXX},
     };
@@ -2506,6 +2508,70 @@ ReturnException VEmu::FSGNJXS()
     float res = copysignf(op1, tmp);
 
     fregs.store_reg(rd, static_cast<double>(res));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+bool VEmu::is_negative_zero(double d)
+{
+    return d == 0.0 && *((int *)(&d)) != 0;
+}
+
+bool VEmu::is_positive_zero(double d)
+{
+    return d == 0.0 && *((int *)(&d)) == 0;
+}
+
+ReturnException VEmu::FMINS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    bool op1_positive_zero = is_positive_zero(static_cast<double>(op1));
+    bool op2_positive_zero = is_positive_zero(static_cast<double>(op2));
+
+    bool op1_negative_zero = is_negative_zero(static_cast<double>(op1));
+    bool op2_negative_zero = is_negative_zero(static_cast<double>(op2));
+
+    if (op1_positive_zero && op2_negative_zero) {
+        fregs.store_reg(rd, static_cast<double>(op2));
+    } else if (op1_negative_zero && op2_positive_zero) {
+        fregs.store_reg(rd, static_cast<double>(op1));
+    } else {
+        float res = std::fminf(op1, op2);
+        fregs.store_reg(rd, static_cast<double>(res));
+    }
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FMAXS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    bool op1_positive_zero = is_positive_zero(static_cast<double>(op1));
+    bool op2_positive_zero = is_positive_zero(static_cast<double>(op2));
+
+    bool op1_negative_zero = is_negative_zero(static_cast<double>(op1));
+    bool op2_negative_zero = is_negative_zero(static_cast<double>(op2));
+
+    if (op1_positive_zero && op2_negative_zero) {
+        fregs.store_reg(rd, static_cast<double>(op1));
+    } else if (op1_negative_zero && op2_positive_zero) {
+        fregs.store_reg(rd, static_cast<double>(op2));
+    } else {
+        float res = std::fmaxf(op1, op2);
+        fregs.store_reg(rd, static_cast<double>(res));
+    }
 
     return ReturnException::NormalExecutionReturn;
 }
