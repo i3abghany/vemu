@@ -136,6 +136,9 @@ void VEmu::init_func_map()
         {IName::FCVTWS,   &VEmu::FCVTWS},
         {IName::FCVTWUS,  &VEmu::FCVTWUS},
         {IName::FMVXW,    &VEmu::FMVXW},
+        {IName::FEQS,     &VEmu::FEQS},
+        {IName::FLTS,     &VEmu::FLTS},
+        {IName::FLES,     &VEmu::FLES},
 
         {IName::XXX,      &VEmu::XXX},
     };
@@ -2619,6 +2622,48 @@ ReturnException VEmu::FMVXW()
 
     iregs.store_reg(rd, static_cast<int64_t>(a.i));
 
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FEQS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    iregs.store_reg(rd, (op1 == op2) ? 1 : 0);
+    
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FLTS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    iregs.store_reg(rd, (op1 < op2) ? 1 : 0);
+    
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FLES()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rs2 = curr_instr.get_fields().rs2;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+
+    iregs.store_reg(rd, (op1 <= op2) ? 1 : 0);
+    
     return ReturnException::NormalExecutionReturn;
 }
 
