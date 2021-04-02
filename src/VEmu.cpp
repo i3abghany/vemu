@@ -139,7 +139,13 @@ void VEmu::init_func_map()
         {IName::FEQS,     &VEmu::FEQS},
         {IName::FLTS,     &VEmu::FLTS},
         {IName::FLES,     &VEmu::FLES},
-
+        {IName::FCVTSW,   &VEmu::FCVTSW},
+        {IName::FCVTSWU,  &VEmu::FCVTSWU},
+        {IName::FMVWX,    &VEmu::FMVWX},
+        {IName::FCVTLS,   &VEmu::FCVTLS},
+        {IName::FCVTLUS,  &VEmu::FCVTLUS},
+        {IName::FCVTSL,   &VEmu::FCVTSL},
+        {IName::FCVTSLU,  &VEmu::FCVTSLU},
         {IName::XXX,      &VEmu::XXX},
     };
 }
@@ -2667,3 +2673,92 @@ ReturnException VEmu::FLES()
     return ReturnException::NormalExecutionReturn;
 }
 
+ReturnException VEmu::FCVTSW()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    int32_t op = static_cast<int32_t>(iregs.load_reg(rs1));
+
+    fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCVTSWU()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    uint32_t op = static_cast<uint32_t>(iregs.load_reg(rs1));
+
+    fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FMVWX()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    union {
+        uint32_t i;
+        float s;
+    } a{};
+
+    a.i = static_cast<uint32_t>(iregs.load_reg(rs1));
+
+    fregs.store_reg(rd, static_cast<double>(a.s));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCVTLS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op = static_cast<float>(fregs.load_reg(rs1));
+    op = std::round(op);
+
+    iregs.store_reg(rd, static_cast<int64_t>(op));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCVTLUS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op = static_cast<float>(fregs.load_reg(rs1));
+    op = std::round(op);
+
+    iregs.store_reg(rd, static_cast<int64_t>(static_cast<uint64_t>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCVTSL()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    int32_t op = static_cast<int32_t>(iregs.load_reg(rs1));
+    fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCVTSLU()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    uint32_t op = static_cast<uint32_t>(iregs.load_reg(rs1));
+
+    fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
