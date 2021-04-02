@@ -133,6 +133,9 @@ void VEmu::init_func_map()
         {IName::FSGNJXS,  &VEmu::FSGNJXS},
         {IName::FMINS,    &VEmu::FMINS},
         {IName::FMAXS,    &VEmu::FMAXS},
+        {IName::FCVTWS,   &VEmu::FCVTWS},
+        {IName::FCVTWUS,  &VEmu::FCVTWUS},
+        {IName::FMVXW,    &VEmu::FMVXW},
 
         {IName::XXX,      &VEmu::XXX},
     };
@@ -2575,3 +2578,47 @@ ReturnException VEmu::FMAXS()
 
     return ReturnException::NormalExecutionReturn;
 }
+
+ReturnException VEmu::FCVTWS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op = static_cast<float>(fregs.load_reg(rs1));
+    op = std::round(op);
+
+    iregs.store_reg(rd, static_cast<int64_t>(static_cast<int32_t>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCVTWUS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op = static_cast<float>(fregs.load_reg(rs1));
+    op = std::round(op);
+
+    iregs.store_reg(rd, static_cast<uint64_t>((op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FMVXW()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    union {
+        int32_t i;
+        float s;
+    } a{};
+
+    a.s = static_cast<float>(fregs.load_reg(rs1));
+
+    iregs.store_reg(rd, static_cast<int64_t>(a.i));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
