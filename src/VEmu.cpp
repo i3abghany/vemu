@@ -2291,8 +2291,11 @@ ReturnException VEmu::FLW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
+    auto offs = curr_instr.get_fields().imm;
 
-    auto load_res = load(iregs.load_reg(rs1), 32);
+    auto addr = iregs.load_reg(rs1) + offs;
+
+    auto load_res = load(addr, 32);
     if (load_res.second != ReturnException::NormalExecutionReturn)
         return load_res.second;
 
@@ -2311,6 +2314,9 @@ ReturnException VEmu::FSW()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
+    auto offs = curr_instr.get_fields().imm;
+
+    auto addr = iregs.load_reg(rs1) + offs;
 
     union {
         uint32_t i;
@@ -2318,7 +2324,7 @@ ReturnException VEmu::FSW()
     } a{};
 
     a.s = static_cast<float>(fregs.load_reg(rs2));
-    auto store_res = store(iregs.load_reg(rs1), static_cast<uint64_t>(a.i), 32);
+    auto store_res = store(addr, static_cast<uint64_t>(a.i), 32);
 
     return store_res;
 }
