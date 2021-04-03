@@ -146,6 +146,8 @@ void VEmu::init_func_map()
         {IName::FCVTLUS,  &VEmu::FCVTLUS},
         {IName::FCVTSL,   &VEmu::FCVTSL},
         {IName::FCVTSLU,  &VEmu::FCVTSLU},
+        {IName::FCLASSS,  &VEmu::FCLASSS},
+        
         {IName::XXX,      &VEmu::XXX},
     };
 }
@@ -2759,6 +2761,44 @@ ReturnException VEmu::FCVTSLU()
     uint32_t op = static_cast<uint32_t>(iregs.load_reg(rs1));
 
     fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
+
+    return ReturnException::NormalExecutionReturn;
+}
+
+ReturnException VEmu::FCLASSS()
+{
+    auto rs1 = curr_instr.get_fields().rs1;
+    auto rd = curr_instr.get_fields().rd;
+
+    float op = static_cast<float>(fregs.load_reg(rs1));
+    int fpc = std::fpclassify(op);
+    bool sign = std::signbit(op);
+    int64_t res = 0;
+
+    switch(fpc) {
+        case FP_INFINITE:
+           if (sign) res = 0;
+           else      res = 7;
+           break;
+        case FP_NORMAL:
+           if (sign) res = 1;
+           else      res = 6;
+           break;
+        case FP_SUBNORMAL:
+           if (sign) res = 2;
+           else      res = 5;
+           break;
+        case FP_ZERO:
+           if (sign) res = 3;
+           else      res = 4;
+           break;
+        case FP_NAN:
+            res = 9;
+            break;
+        default: break;
+    }
+    
+    iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
 }
