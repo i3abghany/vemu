@@ -7,6 +7,7 @@ VEmu::VEmu(std::string f_name) :
     pc = 0x80000000;
     bus = Bus{};
     iregs = RegFile{};
+    fregs = FRegFile{};
     csrs.fill(0);
     iregs.store_reg(2, ADDR_BASE + DRAM::RAM_SIZE);
     read_file();
