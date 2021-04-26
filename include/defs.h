@@ -39,6 +39,18 @@
 
 #define ADDR_BASE (uint32_t) 0x8000'0000
 
+#define CLIC_BASE     (uint64_t) 0x200'0000
+#define CLIC_SIZE     (uint64_t) 0x10000
+#define CLIC_MTIMECMP (uint64_t) CLIC_BASE + 0x4000
+#define CLIC_MTIME    (uint64_t) CLIC_BASE + 0xbff8
+
+#define PLIC_BASE      (uint64_t) 0xc00'0000
+#define PLIC_SIZE      (uint64_t) 0x400'0000
+#define PLIC_PENDING   (uint64_t) PLIC_BASE + 0x1000
+#define PLIC_SENABLE   (uint64_t) PLIC_BASE + 0x2080
+#define PLIC_SPRIORITY (uint64_t) PLIC_BASE + 0x201000
+#define PLIC_SCLAIM    (uint64_t) PLIC_BASE + 0x201004
+
 #define AM_OPCODE (uint8_t) 0b0101111
 
 #define FP_R_OPCODE (uint8_t) 0b1010011
