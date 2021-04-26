@@ -37,7 +37,7 @@
 #define B_INST_IMM_2 (uint32_t) 0x00000080
 #define B_INST_IMM_3 (uint32_t) 0x80000000
 
-#define ADDR_BASE (uint32_t) 0x8000'0000
+#define ADDR_BASE (uint64_t) 0x8000'0000
 
 #define CLIC_BASE     (uint64_t) 0x200'0000
 #define CLIC_SIZE     (uint64_t) 0x10000
