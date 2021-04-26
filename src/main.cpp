@@ -7,7 +7,8 @@
 #include "../include/Tester.h"
 #endif
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 #ifndef TEST_ENV
     if (argc < 2) {
         std::cout << "Provide a program.\n";

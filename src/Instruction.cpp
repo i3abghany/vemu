@@ -1,13 +1,16 @@
 #include "../include/Instruction.h"
 
-Instruction::Type Instruction::get_type() {
+Instruction::Type Instruction::get_type()
+{
     return t;
 }
 
-Fields Instruction::get_fields() {
+Fields Instruction::get_fields()
+{
     return f;
 }
 
-IName Instruction::get_name() {
+IName Instruction::get_name()
+{
     return name;
 }

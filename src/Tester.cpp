@@ -1,6 +1,7 @@
 #include "../include/Tester.h"
 
-void Tester::run() {
+void Tester::run()
+{
     for (const auto& [fname, pc] : fname_passing_pc) {
         VEmu em = VEmu {fname};
         em.set_pass_pc(pc);
