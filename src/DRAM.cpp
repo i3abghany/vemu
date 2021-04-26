@@ -4,26 +4,33 @@ DRAM::DRAM() {
     ram.resize(RAM_SIZE, 0x00);
 }
 
-uint64_t DRAM::load(uint64_t addr, size_t sz) {
-    uint64_t res = 0x00000000;
+std::pair<uint64_t, ReturnException> DRAM::load(uint64_t addr, size_t sz) {
+    std::pair<uint64_t, ReturnException> res;
+    res.first = 0x00000000;
+    res.second = ReturnException::NormalExecutionReturn;
+
     switch (sz) {
-        case  8: res = load_byte(addr); break;
-        case 16: res = load_hword(addr); break;
-        case 32: res = load_word(addr); break;
-        case 64: res = load_dword(addr); break;
-        default: break;
+        case  8: res.first = load_byte(addr); break;
+        case 16: res.first = load_hword(addr); break;
+        case 32: res.first = load_word(addr); break;
+        case 64: res.first = load_dword(addr); break;
+        default: res.second = ReturnException::StoreAMOAccessFault; break;
     }
+
     return res;
 }
 
-void DRAM::store(uint64_t addr, uint64_t data, size_t sz) {
+ReturnException DRAM::store(uint64_t addr, uint64_t data, size_t sz) {
+    auto res = ReturnException::NormalExecutionReturn;
     switch (sz) {
         case  8: store_byte(addr, data); break;
         case 16: store_hword(addr, data); break;
         case 32: store_word(addr, data); break;
         case 64: store_dword(addr, data); break;
-        default: break;
+        default: res = ReturnException::LoadAccessFault; break;
     }
+
+    return res;
 }
 
 uint64_t DRAM::load_byte(uint64_t addr) {

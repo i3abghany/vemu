@@ -175,11 +175,7 @@ void VEmu::read_file()
 
 std::pair<uint64_t, ReturnException> VEmu::load(uint64_t addr, size_t sz)
 {
-    if (addr < ADDR_BASE) {
-        return {0, ReturnException::LoadAccessFault};
-    } else { 
-        return {bus.load(addr, sz), ReturnException::NormalExecutionReturn};
-    }
+    return bus.load(addr, sz);
 }
 
 void VEmu::dump_regs()
@@ -202,9 +198,7 @@ ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
         reservation_set.erase(addr);
     }
 
-    bus.store(addr, data, sz);
-
-    return ReturnException::NormalExecutionReturn;
+    return bus.store(addr, data, sz);
 }
 
 std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
