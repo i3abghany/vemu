@@ -15,6 +15,11 @@ int64_t RegFile::load_reg(size_t idx)
     return data[idx];
 }
 
+std::array<int64_t, 32> RegFile::get_regs()
+{
+    return data;
+}
+
 void RegFile::dump_regs()
 {
     for (int i = 0; i < 32; i++) {

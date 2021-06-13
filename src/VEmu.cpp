@@ -183,6 +183,16 @@ void VEmu::dump_regs()
     iregs.dump_regs();
 }
 
+std::array<int64_t, 32> VEmu::get_iregs()
+{
+    return iregs.get_regs();
+}
+
+std::array<double, 32> VEmu::get_fregs()
+{
+    return fregs.get_regs();
+}
+
 ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 {
     // FIXME: only checks on aligned addresses

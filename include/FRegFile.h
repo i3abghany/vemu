@@ -6,13 +6,14 @@
 class FRegFile {
 public:
     FRegFile();
+    static constexpr size_t REGS_NUM = 32;
 public:
     void store_reg(size_t idx, double value);
     double load_reg(size_t idx);
     void dump_regs();
+    std::array<double, 32> get_regs();
 
 private:
-    static constexpr size_t REGS_NUM = 32;
     std::array<double, REGS_NUM> data;
 
     constexpr static std::array<const char *, REGS_NUM> abi_map = {{

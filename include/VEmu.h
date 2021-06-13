@@ -25,6 +25,8 @@ public:
 
     uint32_t run();
     void dump_regs();
+    std::array<int64_t, 32> get_iregs();
+    std::array<double, 32> get_fregs();
 
 private:
     void init_func_map();

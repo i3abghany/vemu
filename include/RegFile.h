@@ -6,14 +6,15 @@
 
 class RegFile {
 public:
+    static constexpr size_t REGS_NUM = 32;
     RegFile();
 public:
     void store_reg(size_t idx, int64_t value);
     int64_t load_reg(size_t idx);
     void dump_regs();
+    std::array<int64_t, REGS_NUM> get_regs();
 
 private:
-    static constexpr size_t REGS_NUM = 32;
     std::array<int64_t, REGS_NUM> data;
 
     constexpr static std::array<const char *, REGS_NUM> abi_map = {{
