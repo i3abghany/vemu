@@ -278,15 +278,15 @@ void VEmu::store_csr(uint64_t addr, uint64_t val)
 void VEmu::dump_csrs()
 {
     std::cout << std::hex;
-    std::cout << "mstatus: " << load_csr(MSTATUS) << std::endl;
-    std::cout << "mtvec: " << load_csr(MTVEC) << std::endl;
-    std::cout << "mepc: " << load_csr(MEPC) << std::endl;
-    std::cout << "mcause: " << load_csr(MCAUSE) << std::endl;
+    std::cout << "mstatus: " << load_csr(MSTATUS) << '\n';
+    std::cout << "mtvec: " << load_csr(MTVEC) << '\n';
+    std::cout << "mepc: " << load_csr(MEPC) << '\n';
+    std::cout << "mcause: " << load_csr(MCAUSE) << '\n';
 
-    std::cout << "sstatus: " << load_csr(SSTATUS) << std::endl;
-    std::cout << "stvec: " << load_csr(STVEC) << std::endl;
-    std::cout << "sepc: " << load_csr(SEPC) << std::endl;
-    std::cout << "scause: " << load_csr(SCAUSE) << std::endl;
+    std::cout << "sstatus: " << load_csr(SSTATUS) << '\n';
+    std::cout << "stvec: " << load_csr(STVEC) << '\n';
+    std::cout << "sepc: " << load_csr(SEPC) << '\n';
+    std::cout << "scause: " << load_csr(SCAUSE) << '\n';
 }
 
 ReturnException VEmu::LB()
@@ -2171,7 +2171,7 @@ ReturnException VEmu::XXX()
         << hex_instr
         << "PC: "
         << pc
-        << std::endl;
+        << '\n';
 
 
     std::cout.flags(ft);
@@ -2277,7 +2277,7 @@ bool VEmu::is_fatal(ReturnException e)
 void VEmu::exit_fatally(ReturnException e)
 {
     std::cout << "Exit on exception: " << stringify_exception(e);
-    std::cout << "\n" << std::hex << pc << std::endl;
+    std::cout << '\n' << std::hex << pc << '\n';
 
     dump_regs();
 
