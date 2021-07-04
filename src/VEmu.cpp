@@ -1,4 +1,4 @@
-#include "../include/VEmu.h"
+#include <VEmu.h>
 
 VEmu::VEmu(std::string f_name) :
     bin_file_name(std::move(f_name))

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "defs.h"
+#include <defs.h>
 
 class PLIC {
 public:   

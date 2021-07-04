@@ -1,4 +1,4 @@
-#include "../include/CLIC.h"
+#include <CLIC.h>
 
 CLIC::CLIC()
 {

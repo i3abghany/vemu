@@ -1,4 +1,4 @@
-#include "../include/FRegFile.h"
+#include <FRegFile.h>
 
 FRegFile::FRegFile()
 {

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include "defs.h"
+#include <defs.h>
 
 class DRAM {
 public:

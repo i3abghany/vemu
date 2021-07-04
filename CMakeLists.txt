@@ -17,6 +17,8 @@ set(SRC_FILES
     src/PLIC.cpp
 )
 
+include_directories(include)
+
 add_executable(emu ${SRC_FILES})
 
 add_executable(test_emu

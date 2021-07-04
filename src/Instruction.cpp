@@ -1,4 +1,4 @@
-#include "../include/Instruction.h"
+#include <Instruction.h>
 
 Instruction::Type Instruction::get_type()
 {

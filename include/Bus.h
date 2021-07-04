@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "DRAM.h"
-#include "PLIC.h"
-#include "CLIC.h"
+#include <DRAM.h>
+#include <PLIC.h>
+#include <CLIC.h>
 
 class Bus {
 public:

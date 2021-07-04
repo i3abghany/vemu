@@ -2,9 +2,9 @@
 #include <string>
 
 #ifndef TEST_ENV
-#include "../include/VEmu.h"
+#include <VEmu.h>
 #else
-#include "../include/Tester.h"
+#include <Tester.h>
 #endif
 
 int main(int argc, char *argv[])

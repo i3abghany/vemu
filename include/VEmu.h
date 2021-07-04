@@ -13,11 +13,11 @@
 #include <cassert>
 #include <cmath>
 
-#include "InstructionDecoder.h"
-#include "RegFile.h"
-#include "Bus.h"
-#include "util.h"
-#include "FRegFile.h"
+#include <InstructionDecoder.h>
+#include <RegFile.h>
+#include <Bus.h>
+#include <util.h>
+#include <FRegFile.h>
 
 class VEmu {
 public:

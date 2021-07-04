@@ -1,4 +1,4 @@
-#include "../include/InstructionDecoder.h"
+#include <InstructionDecoder.h>
 
 InstructionDecoder::InstructionDecoder()
 {

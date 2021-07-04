@@ -4,7 +4,8 @@
 #include <iomanip>
 #include <cstdint>
 #include <string>
-#include "defs.h"
+
+#include <defs.h>
 
 struct Fields {
     uint8_t OPCode;

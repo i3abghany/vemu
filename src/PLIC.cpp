@@ -1,4 +1,4 @@
-#include "../include/PLIC.h"
+#include <PLIC.h>
 
 PLIC::PLIC()
 {

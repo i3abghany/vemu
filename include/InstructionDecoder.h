@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Instruction.h"
-#include "InstructionDecoder.h"
-
 #include <string>
 #include <map>
 #include <unordered_map>
+
+#include <Instruction.h>
+#include <InstructionDecoder.h>
 
 class InstructionDecoder {
 public:

@@ -1,4 +1,4 @@
-#include "../include/util.h"
+#include <util.h>
 
 uint64_t sext_byte(uint8_t b)
 {

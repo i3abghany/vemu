@@ -1,4 +1,4 @@
-#include "../include/Bus.h"
+#include <Bus.h>
 
 Bus::Bus() {
     dr = DRAM{};

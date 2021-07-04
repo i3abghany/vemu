@@ -1,4 +1,4 @@
-#include "../include/DRAM.h"
+#include <DRAM.h>
 
 DRAM::DRAM() {
     ram.resize(RAM_SIZE, 0x00);

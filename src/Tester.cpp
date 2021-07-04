@@ -1,4 +1,4 @@
-#include "../include/Tester.h"
+#include <Tester.h>
 
 void Tester::run()
 {

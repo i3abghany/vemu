@@ -1,4 +1,5 @@
-#include "../include/RegFile.h"
+#include <RegFile.h>
+
 RegFile::RegFile()
 {
     data.fill(0);
