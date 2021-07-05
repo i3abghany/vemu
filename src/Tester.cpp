@@ -1,17 +1,29 @@
 #include <Tester.h>
 
+void func(const std::string &fname, const uint64_t &pc)
+{
+    VEmu em = VEmu {fname};
+    em.set_pass_pc(pc);
+    em.run();
+}
+
 void Tester::run()
 {
-    std::for_each(std::execution::par_unseq,
-            fname_passing_pc.begin(),
-            fname_passing_pc.end(),
-            [](auto &&pair) {
-                const auto &fname = pair.first;
-                const auto &pc = pair.second;
-                VEmu em = VEmu {fname};
-                em.set_pass_pc(pc);
-                em.run();
-            });
+    std::vector<std::thread> vt {};
+    size_t mx = std::thread::hardware_concurrency();
+    for (const auto &[fname, pc] : fname_passing_pc) {
+        std::thread t(func, std::ref(fname), std::ref(pc));
+        vt.push_back(std::move(t));
+
+        if (vt.size() == mx) {
+            for (auto &th : vt) { 
+                th.join();
+            }
+            vt.clear();
+        }
+    }
+
+    std::for_each(vt.begin(), vt.end(), [](std::thread& th) { th.join(); });
 }
 
 const std::map<std::string, uint64_t> Tester::fname_passing_pc = {

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <map>
 #include <execution>
+#include <thread>
 
 #include <VEmu.h>
 
