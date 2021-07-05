@@ -2,11 +2,16 @@
 
 void Tester::run()
 {
-    for (const auto& [fname, pc] : fname_passing_pc) {
-        VEmu em = VEmu {fname};
-        em.set_pass_pc(pc);
-        em.run();
-    }
+    std::for_each(std::execution::par_unseq,
+            fname_passing_pc.begin(),
+            fname_passing_pc.end(),
+            [](auto &&pair) {
+                const auto &fname = pair.first;
+                const auto &pc = pair.second;
+                VEmu em = VEmu {fname};
+                em.set_pass_pc(pc);
+                em.run();
+            });
 }
 
 const std::map<std::string, uint64_t> Tester::fname_passing_pc = {

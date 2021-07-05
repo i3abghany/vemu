@@ -643,14 +643,21 @@ ReturnException VEmu::ECALL()
     exit(EXIT_FAILURE);
 }
 #else
+
+std::string to_hex(uint64_t num)
+{
+    std::stringstream stream;
+    stream << "0x" << std::setfill ('0') << std::setw(8) << std::hex << num;
+    return stream.str();
+}
+
 ReturnException VEmu::ECALL()
 {
     if (pc == pass_pc) {
-        std::cout << "Passed test: " << bin_file_name << '\n';
+        std::cout << ("Passed test: " + bin_file_name + '\n');
     }
     else {
-        std::cout << "Failed test: " << bin_file_name << "PC: " << 
-            std:: hex << pc << '\n';
+        std::cout << ("Failed test: " + bin_file_name + "PC: " + to_hex(pc) + '\n');
     }
     test_flag_done = true;
     return ReturnException::NormalExecutionReturn;
