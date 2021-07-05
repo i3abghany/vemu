@@ -5,6 +5,11 @@ InstructionDecoder::InstructionDecoder()
     init_fixed_instrs();
 }
 
+/*
+ * MRET and SRET have fixed encodings with no parameters. Hence, we don't
+ * bother to decode it at all, we just insert its encoding to the decoding
+ * cache.
+ */
 void InstructionDecoder::init_fixed_instrs()
 {
     instr_cache[0x30200073] = Instruction(
@@ -1017,13 +1022,11 @@ uint32_t InstructionDecoder::imm_j(uint32_t inst)
 
 bool InstructionDecoder::is_shift_imm_32_instruction(IName n)
 {
-    return n == IName::SLLIW || n == IName::SRLIW || 
-           n == IName::SRAIW;
+    return n == IName::SLLIW || n == IName::SRLIW || n == IName::SRAIW;
 }
 
 bool InstructionDecoder::is_shift_imm_64_instruction(IName n)
 {
-    return n == IName::SLLI || n == IName::SRLI ||
-           n == IName::SRAI;
+    return n == IName::SLLI || n == IName::SRLI || n == IName::SRAI;
 }
 
