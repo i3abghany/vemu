@@ -5,7 +5,6 @@ VEmu::VEmu(std::string f_name) :
 {
     mode = Mode::Machine;
     pc = 0x80000000;
-    bus = Bus{};
     iregs = RegFile{};
     fregs = FRegFile{};
     csrs.fill(0);
@@ -201,9 +200,7 @@ ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
     // is in the reservation set, storing in
     // the address 0x810000001 will not
     // mark the word as not reserved.
-    if (addr < ADDR_BASE) {
-        return ReturnException::StoreAMOAccessFault;
-    }
+
     if (reservation_set.count(addr)) {
         reservation_set.erase(addr);
     }

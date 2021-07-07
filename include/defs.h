@@ -51,6 +51,25 @@
 #define PLIC_SPRIORITY (uint64_t) PLIC_BASE + 0x201000
 #define PLIC_SCLAIM    (uint64_t) PLIC_BASE + 0x201004
 
+#define UART_BASE (uint64_t) 0x1000'0000
+#define UART_SIZE (uint64_t) 0x100
+#define UART_RHR  (uint64_t) UART_BASE + 0
+#define UART_THR  (uint64_t) UART_BASE + 0
+#define UART_LCR  (uint64_t) UART_BASE + 3
+#define UART_LSR  (uint64_t) UART_BASE + 5
+
+/*
+ * The 0th bit if set, data is received and is stored in either
+ * receive holding register or in the UART FIFO.
+ */
+#define UART_LSR_RX (uint8_t) 1
+
+/*
+ * The bit at the 5th bit if reset, the transmit holding register is full and
+ * will not receive more data.
+ */
+#define UART_LSR_TX (uint8_t) (1 << 5)
+
 #define AM_OPCODE (uint8_t) 0b0101111
 
 #define FP_R_OPCODE (uint8_t) 0b1010011

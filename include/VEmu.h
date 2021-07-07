@@ -198,7 +198,7 @@ private:
     void dump_csrs();
 
 private:
-    Bus bus;
+    Bus bus {};
     std::pair<uint32_t, ReturnException> get_4byte_aligned_instr(uint64_t);
 
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
