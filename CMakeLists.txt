@@ -41,7 +41,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
 target_compile_definitions(test_emu PRIVATE -DTEST_ENV)
 
 target_compile_options(emu_dbg PRIVATE "-ggdb")
+target_compile_options(test_emu PRIVATE "-fno-omit-frame-pointer")
 
 target_compile_options(test_emu PRIVATE "-ggdb")
+target_compile_options(test_emu PRIVATE "-fno-omit-frame-pointer")
 
 target_compile_options(emu PRIVATE "-O3")
