@@ -1,7 +1,7 @@
 #include <DRAM.h>
 
 DRAM::DRAM() {
-    ram.resize(RAM_SIZE, 0x00);
+    ram.reserve(RAM_SIZE);
 }
 
 std::pair<uint64_t, ReturnException> DRAM::load(uint64_t addr, size_t sz) {
