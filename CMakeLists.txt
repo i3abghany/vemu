@@ -19,29 +19,12 @@ set(SRC_FILES
 
 include_directories(include)
 
-add_executable(emu_dbg ${SRC_FILES})
 add_executable(emu ${SRC_FILES})
 
 add_executable(test_emu
     ${SRC_FILES} src/Tester.cpp
 )
 
-string(CONCAT ${CXX_FLAGS},
-    "-Wall "
-    "-Werror "
-    "-Wextra "
-    "-Wshadow "
-    "-Wswitch-default "
-    "-Wswitch-enum "
-    "-Wconversion "
-    "-Wunreachable-code ")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ggdb -Wall -Werror -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code")
 
 target_compile_definitions(test_emu PRIVATE -DTEST_ENV)
-
-target_compile_options(emu_dbg PRIVATE "-ggdb")
-
-target_compile_options(test_emu PRIVATE "-ggdb")
-
-target_compile_options(emu PRIVATE "-O3")
