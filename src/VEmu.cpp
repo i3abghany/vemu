@@ -159,14 +159,19 @@ void VEmu::read_file()
         std::cout << "Could not open the file.\n";
         exit(EXIT_FAILURE);
     }
+#ifndef _WIN32
     std::filesystem::path file_path {bin_file_name};
-
     auto sz = std::filesystem::file_size(file_path);
-    code_size = sz;
+#else
+    struct stat statbuf{};
+    int rc = stat(bin_file_name.c_str(), &statbuf);
+    auto sz = rc == 0 ? statbuf.st_size : -1;
+#endif
+    code_size = static_cast<uint64_t>(sz);
 
     uint64_t i = 0;
     while (sz--) {
-        uint8_t c = static_cast<uint8_t>(ifs.get());
+        auto c = static_cast<uint8_t>(ifs.get());
         store(ADDR_BASE + i, c, 8);
         i++;
     }
