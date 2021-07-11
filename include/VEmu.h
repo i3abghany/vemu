@@ -10,6 +10,7 @@
 #include <filesystem>
 #else
 #include <sys/stat.h>
+#include <windows.h>
 #endif
 #include <functional>
 #include <unordered_set>

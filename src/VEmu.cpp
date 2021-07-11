@@ -656,10 +656,21 @@ std::string to_hex(uint64_t num)
 ReturnException VEmu::ECALL()
 {
     if (pc == pass_pc) {
+#ifdef _WIN32
+        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(hStdout, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+#endif
         std::cout << ("Passed test: " + bin_file_name + '\n');
     }
     else {
-        std::cout << ("Failed test: " + bin_file_name + "PC: " + to_hex(pc) + '\n');
+#ifdef _WIN32
+        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(hStdout, FOREGROUND_RED | FOREGROUND_INTENSITY);
+#endif
+        std::cout << ("Failed test: " + bin_file_name + " PC: " + to_hex(pc) + '\n');
+        static constexpr size_t GP_REG = 3;
+        std::cout << ("Failed on test #" + std::to_string(iregs.load_reg(GP_REG)) + '\n');
+        exit(EXIT_FAILURE);
     }
     test_flag_done = true;
     return ReturnException::NormalExecutionReturn;
@@ -668,7 +679,6 @@ ReturnException VEmu::ECALL()
 
 ReturnException VEmu::EBREAK()
 {
-
     return ReturnException::InstructionAddressBreakpoint;
 }
 
@@ -2178,7 +2188,7 @@ ReturnException VEmu::XXX()
         << std::setfill('0')
         << std::hex
         << hex_instr
-        << "PC: "
+        << " PC: "
         << pc
         << '\n';
 
