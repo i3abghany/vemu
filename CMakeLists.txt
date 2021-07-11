@@ -26,6 +26,16 @@ add_executable(test_emu
     ${SRC_FILES} src/Tester.cpp
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fno-omit-frame-pointer -ggdb -Wall -Werror -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code")
+string(APPEND CMAKE_CXX_FLAGS "-pthread ")
+string(APPEND CMAKE_CXX_FLAGS "-fno-omit-frame-pointer ")
+string(APPEND CMAKE_CXX_FLAGS "-ggdb ")
+string(APPEND CMAKE_CXX_FLAGS "-Wall ")
+string(APPEND CMAKE_CXX_FLAGS "-Werror ")
+string(APPEND CMAKE_CXX_FLAGS "-Wextra ")
+string(APPEND CMAKE_CXX_FLAGS "-Wshadow ")
+string(APPEND CMAKE_CXX_FLAGS "-Wswitch-default ")
+string(APPEND CMAKE_CXX_FLAGS "-Wswitch-enum ")
+string(APPEND CMAKE_CXX_FLAGS "-Wconversion ")
+string(APPEND CMAKE_CXX_FLAGS "-Wunreachable-code ")
 
 target_compile_definitions(test_emu PRIVATE -DTEST_ENV)
