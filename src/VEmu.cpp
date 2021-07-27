@@ -2305,10 +2305,41 @@ void VEmu::exit_fatally(ReturnException e)
 
 std::string VEmu::stringify_exception(ReturnException e)
 {
-    if (e == ReturnException::EnvironmentCallFromUserMode)
+    switch (e) {
+    case ReturnException::InstructionAddressMisaligned:
+        return "InstructionAddressMisaligned";
+    case ReturnException::InstructionAccessFault:
+        return "InstructionAccessFault";
+    case ReturnException::IllegalInstruction:
+        return "IllegalInstruction";
+    case ReturnException::InstructionAddressBreakpoint:
+        return "InstructionAddressBreakpoint";
+    case ReturnException::LoadAddressMisaligned:
+        return "LoadAddressMisaligned";
+    case ReturnException::LoadAccessFault:
+        return "LoadAccessFault";
+    case ReturnException::StoreAMOAddressMisaligned:
+        return "StoreAMOAddressMisaligned";
+    case ReturnException::StoreAMOAccessFault:
+        return "StoreAMOAccessFault";
+    case ReturnException::EnvironmentCallFromUserMode:
         return "EnvironmentCallFromUserMode";
-    else
-        return "Exception";
+    case ReturnException::EnvironmentCallFromSupervisorMode:
+        return "EnvironmentCallFromSupervisorMode";
+    case ReturnException::EnvironmentCallFromMachineMode:
+        return "EnvironmentCallFromMachineMode";
+    case ReturnException::InstructionPageFault:
+        return "InstructionPageFault";
+    case ReturnException::LoadPageFault:
+        return "LoadPageFault";
+    case ReturnException::StoreAMOPageFault:
+        return "StoreAMOPageFault";
+    case ReturnException::NormalExecutionReturn:
+        return "NormalExecutionReturn";
+    default:
+        std::cout << "stringify_exception: Unsupported exception.\n";
+        exit(EXIT_FAILURE);
+    }
 }
 
 ReturnException VEmu::FLW()
