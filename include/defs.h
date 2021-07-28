@@ -213,6 +213,7 @@ enum class IName : uint8_t {
 
 #define MHARTID    0xf14
 #define MSTATUS    0x300
+#define MISA       0x301
 #define MTVEC      0x305
 #define MEDELEG    0x302
 #define MIDELEG    0x303

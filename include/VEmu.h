@@ -35,6 +35,7 @@ public:
 
 private:
     void init_func_map();
+    void init_misa();
     std::map<IName, std::function<ReturnException(VEmu *)>> inst_funcs;
 
     ReturnException LB();

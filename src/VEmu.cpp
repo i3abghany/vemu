@@ -8,12 +8,26 @@ VEmu::VEmu(std::string f_name) :
     iregs = RegFile{};
     fregs = FRegFile{};
     csrs.fill(0);
+    init_misa();
     iregs.store_reg(2, ADDR_BASE + DRAM::RAM_SIZE);
     read_file();
     init_func_map();
 #ifdef TEST_ENV
     test_flag_done = false;
 #endif
+}
+
+void VEmu::init_misa()
+{
+    uint64_t misa = 0;
+    misa |= (1 << 20);    // User-mode
+    misa |= (1 << 18);    // Supervisor-mode
+    misa |= (1 << 12);    // Integer multiply/divide
+    misa |= (1 << 8);     // Base integer ISA
+    misa |= (1 << 5);     // Single-precision floating-point
+    misa |= (1 << 0);     // Atomic ISA
+
+    store_csr(MISA, misa);
 }
 
 void VEmu::init_func_map()
@@ -119,7 +133,6 @@ void VEmu::init_func_map()
 
         {IName::FLW,      &VEmu::FLW},
         {IName::FSW,      &VEmu::FSW},
-        {IName::FADDS,    &VEmu::FADDS},
         {IName::FMADDS,   &VEmu::FMADDS},
         {IName::FMSUBS,   &VEmu::FMSUBS},
         {IName::FNMSUBS,  &VEmu::FNMSUBS},
@@ -669,7 +682,7 @@ ReturnException VEmu::ECALL()
 #endif
         std::cout << ("Failed test: " + bin_file_name + " PC: " + to_hex(pc) + '\n');
         static constexpr size_t GP_REG = 3;
-        std::cout << ("Failed on test #" + std::to_string(iregs.load_reg(GP_REG)) + '\n');
+        std::cout << ("Failed on testcase #" + std::to_string(iregs.load_reg(GP_REG) >> 1) + '\n');
         exit(EXIT_FAILURE);
     }
     test_flag_done = true;
