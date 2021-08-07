@@ -28,6 +28,10 @@ UART::UART()
     read_thread.detach();
 }
 
+bool UART::is_interrupting() {
+    return interrupting.exchange(false, std::memory_order_acquire);
+}
+
 std::pair<uint64_t, ReturnException> UART::load(uint64_t addr, size_t sz)
 {
     std::pair<uint64_t, ReturnException> res;

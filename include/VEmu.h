@@ -214,10 +214,15 @@ private:
     std::unordered_set<uint64_t> reservation_set;
 
 private:
+    void take_interrupt(Interrupt i);
+    Interrupt check_pending_interrupt();
     void trap(ReturnException e);
     bool is_fatal(ReturnException e);
     void exit_fatally(ReturnException e);
     std::string stringify_exception(ReturnException e);
+
+private:
+    static constexpr int UART_IRQ = 10;
 
 #ifdef TEST_ENV
 private:

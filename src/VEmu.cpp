@@ -245,6 +245,10 @@ std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 uint32_t VEmu::run()
 {
     for (; pc < ADDR_BASE + code_size; pc += 4) {
+        Interrupt i = check_pending_interrupt();
+        if (i != Interrupt::NoInterrupt) {
+            take_interrupt(i);
+        }
         if (pc == 0x0) break;
 
 #ifdef TEST_ENV
@@ -2210,6 +2214,54 @@ ReturnException VEmu::XXX()
     return ReturnException::IllegalInstruction;
 }
 
+Interrupt VEmu::check_pending_interrupt()
+{
+    if (mode == Mode::Machine) {
+        if (((load_csr(MSTATUS) >> MSTATUS_MIE_POS) & 1) == 0)  {
+            return Interrupt::NoInterrupt;
+        }
+    } else if (mode == Mode::Supervisor) {
+        if (((load_csr(SSTATUS) >> SSTATUS_SIE_POS) & 1) == 0)  {
+            return Interrupt::NoInterrupt;
+        }
+    }
+
+    uint32_t irq = bus.uart_is_interrupting() ? UART_IRQ : 0;
+
+    if (irq == UART_IRQ) {
+        bus.store(PLIC_SCLAIM, 32, irq);
+        store_csr(MIP, load_csr(MIP) | (1U << MIP_SEIP_POS));
+    }
+
+    const auto is_pending = [this](uint64_t interrupt_pos) -> bool {
+        /* Check if the interrupt is enabled AND pending */
+        uint64_t pending = load_csr(MIE) & load_csr(MIP);
+        return pending & (1U << interrupt_pos);
+    };
+
+    if (is_pending(MIP_MEIP_POS)) {
+        store_csr(MIP, load_csr(MIP) & ~(1U << MIP_MEIP_POS));
+        return Interrupt::MachineExternalInterrupt;
+    } else if (is_pending(MIP_MSIP_POS)) {
+        store_csr(MIP, load_csr(MIP) & ~(1U << MIP_MSIP_POS));
+        return Interrupt::MachineSoftwareInterrupt;
+    } else if (is_pending(MIP_MTIP_POS)) {
+        store_csr(MIP, load_csr(MIP) & ~(1U << MIP_MTIP_POS));
+        return Interrupt::MachineTimerInterrupt;
+    } else if (is_pending(MIP_SEIP_POS)) {
+        store_csr(MIP, load_csr(MIP) & ~(1U << MIP_SEIP_POS));
+        return Interrupt::SupervisorExternalInterrupt;
+    } else if (is_pending(MIP_SSIP_POS)) {
+        store_csr(MIP, load_csr(MIP) & ~(1U << MIP_SSIP_POS));
+        return Interrupt::SupervisorSoftwareInterrupt;
+    } else if (is_pending(MIP_STIP_POS)) {
+        store_csr(MIP, load_csr(MIP) & ~(1U << MIP_STIP_POS));
+        return Interrupt::SupervisorTimerInterrupt;
+    }
+
+    return Interrupt::NoInterrupt;
+}
+
 void VEmu::trap(ReturnException e)
 {
     uint64_t exception_pc = pc;
@@ -2220,78 +2272,88 @@ void VEmu::trap(ReturnException e)
        privilege level. However, some exceptions can be
        marked to be done at a lower privilege level. This marking
        is saved in the MEDELEG control and status register. When
-       the current mode is user-mode, the exception is handled
+       the current mode is user-mode, the exception is handled in
+       supervisor mode.
     */
     bool do_deleg = (load_csr(MEDELEG) >> cause) & 1;
 
-    if (prev_mode == Mode::User && do_deleg) {
+    if ((prev_mode == Mode::User || prev_mode == Mode::Supervisor) && do_deleg) {
         mode = Mode::Supervisor;
 
-        pc = load_csr(STVEC) & (~(0b11));
+        /* Set PC to the exception handler base address. */
+        pc = load_csr(STVEC) & (~(0b1U));
         pc -= 4;
 
-        store_csr(SEPC, exception_pc & (~1));
+        /* SEPC contains the address of the instruciton that caused the exception */
+        store_csr(SEPC, exception_pc & (~1U));
 
+        /* When a trap is taken in Supervisor mode, SCAUSE is written
+         * with a code that indicates the cause of the trap.
+         * */
         store_csr(SCAUSE, cause);
 
+        /* Exception specific data that is used to assist the software.
+         * Currently not utilized. */
         store_csr(STVAL, 0);
 
-        // set previous interrupt enable to the current global
-        // interrupt enable.
-        uint8_t sie = (load_csr(SSTATUS) >> 1) & 1;
+        /* SPIE is set to the Current SIE, and SIE is zero'd out. */
+        uint8_t sie = (load_csr(SSTATUS) >> SSTATUS_SIE_POS) & 1U;
         if (sie) {
-            store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 5));
+            store_csr(SSTATUS, load_csr(SSTATUS) | (1U << SSTATUS_SPIE_POS));
         } else {
-            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 5)));
+            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1U << SSTATUS_SPIE_POS)));
         }
 
-        // set global interrupt bit to 0.
-        store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 1)));
+        /* Set SIE to zero */
+        store_csr(SSTATUS, load_csr(SSTATUS) & (~(1U << SSTATUS_SIE_POS)));
 
-        // SPP is set to 0 if previous mode is User mode,
-        // 1 otherwise.
+        /* SPP sets the previous mode, if user mode, it's set to zero. */
         if (prev_mode == Mode::User) {
-            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1 << 8)));
+            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1U << SSTATUS_SPP_POS)));
         } else {
-            store_csr(SSTATUS, load_csr(SSTATUS) | (1 << 8));
+            store_csr(SSTATUS, load_csr(SSTATUS) | (1U << SSTATUS_SPP_POS));
         }
     } else {
         mode = Mode::Machine;
 
-        pc = load_csr(MTVEC) & (~(0b11));
+        /* PC is set to the respective exception handler. */
+        pc = load_csr(MTVEC) & (~(0b1U));
         pc -= 4;
 
-        store_csr(MEPC, exception_pc & (~1));
+        /* MEPC is is set to the exception-raising PC. */
+        store_csr(MEPC, exception_pc & (~0b1U));
 
+        /* MCAUSE is set to the cause of the exception. */
         store_csr(MCAUSE, cause);
 
+        /* Assisting information, currently not utilized. */
         store_csr(MTVAL, 0);
 
-        // set previous interrupt enable to the current global
-        // interrupt enable.
-        uint8_t mie = (load_csr(MSTATUS) >> 3) & 1;
+        /* MPIE is set to MIE, indicating previous interrupt enable. */
+        uint8_t mie = (load_csr(MSTATUS) >> MSTATUS_MIE_POS) & 1U;
         if (mie == 1) {
-            store_csr(MSTATUS, load_csr(MSTATUS) | (1 << 7));
+            store_csr(MSTATUS, load_csr(MSTATUS) | (1U << MSTATUS_MPIE_POS));
         } else {
-            store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 7)));
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(1U << MSTATUS_MPIE_POS)));
         }
 
-        // set global interrupt bit to 0.
-        store_csr(MSTATUS, load_csr(MSTATUS) & (~(1 << 3)));
+        /* Set MIE to zero. */
+        store_csr(MSTATUS, load_csr(MSTATUS) & (~(1U << MSTATUS_MIE_POS)));
 
+        /* MPP is a two-bit field. 00 -> User, 01 -> Supervisor, 11 -> Machine */
         switch (prev_mode) {
             case Mode::User:
-                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11 << 11)));
+                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11U << 11U)));
                 break;
             case Mode::Supervisor:
-                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1 << 12)));
-                store_csr(MSTATUS, load_csr(MSTATUS) | (0b1 << 11));
+                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1U << 12U)));
+                store_csr(MSTATUS, load_csr(MSTATUS) | (0b1U << 11U));
                 break;
             case Mode::Machine:
-                store_csr(MSTATUS, load_csr(MSTATUS) | (0b11 << 11));
+                store_csr(MSTATUS, load_csr(MSTATUS) | (0b11U << 11U));
                 break;
             default:
-                std::cout << "Unsupported(?) privilege mode.\n";
+                std::cout << "Unsupported(?) previous privilege mode.\n";
                 exit(EXIT_FAILURE);
         }
     }
@@ -2352,6 +2414,108 @@ std::string VEmu::stringify_exception(ReturnException e)
     default:
         std::cout << "stringify_exception: Unsupported exception.\n";
         exit(EXIT_FAILURE);
+    }
+}
+
+/* This is a mess since this and trap() are essentially identical, obviously
+ * there's a better solution, but for now this will suffice...
+ */
+void VEmu::take_interrupt(Interrupt i)
+{
+    uint64_t current_pc = pc;
+    uint64_t cause = (1ULL << 63ULL) | static_cast<uint64_t>(i);
+    Mode prev_mode = mode;
+
+    /* Exceptions are handled usually in the Machine mode
+       privilege level. However, some exceptions can be
+       marked to be done at a lower privilege level. This marking
+       is saved in the MEDELEG control and status register. When
+       the current mode is user-mode, the exception is handled in
+       supervisor mode.
+    */
+    bool do_deleg = (load_csr(MEDELEG) >> cause) & 1U;
+
+    if ((prev_mode == Mode::User || prev_mode == Mode::Supervisor) && do_deleg) {
+        mode = Mode::Supervisor;
+
+        /* Set PC to the exception handler base address. */
+        uint64_t vector = (load_csr(STVEC) & 1U) ? 4 * cause : 0;
+        pc = (load_csr(STVEC) & ~(1U)) + vector;
+        pc -= 4;
+
+        /* SEPC contains the address of the instruciton that caused the exception */
+        store_csr(SEPC, current_pc & (~1U));
+
+        /* When a trap is taken in Supervisor mode, SCAUSE is written
+         * with a code that indicates the cause of the trap.
+         * */
+        store_csr(SCAUSE, cause);
+
+        /* Exception specific data that is used to assist the software.
+         * Currently not utilized. */
+        store_csr(STVAL, 0);
+
+        /* SPIE is set to the Current SIE, and SIE is zero'd out. */
+        uint8_t sie = (load_csr(SSTATUS) >> SSTATUS_SIE_POS) & 1U;
+        if (sie) {
+            store_csr(SSTATUS, load_csr(SSTATUS) | (1U << SSTATUS_SPIE_POS));
+        } else {
+            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1U << SSTATUS_SPIE_POS)));
+        }
+
+        /* Set SIE to zero */
+        store_csr(SSTATUS, load_csr(SSTATUS) & (~(1U << SSTATUS_SIE_POS)));
+
+        /* SPP sets the previous mode, if user mode, it's set to zero. */
+        if (prev_mode == Mode::User) {
+            store_csr(SSTATUS, load_csr(SSTATUS) & (~(1U << SSTATUS_SPP_POS)));
+        } else {
+            store_csr(SSTATUS, load_csr(SSTATUS) | (1U << SSTATUS_SPP_POS));
+        }
+    } else {
+        mode = Mode::Machine;
+
+        /* PC is set to the respective exception handler. */
+        uint64_t vector = (load_csr(MTVEC) & 1U) ? cause * 4 : 0;
+        pc = (load_csr(MTVEC) & (~(0b1U))) + vector;
+        pc -= 4;
+
+        /* MEPC is is set to the exception-raising PC. */
+        store_csr(MEPC, current_pc & (~0b1U));
+
+        /* MCAUSE is set to the cause of the exception. */
+        store_csr(MCAUSE, cause);
+
+        /* Assisting information, currently not utilized. */
+        store_csr(MTVAL, 0);
+
+        /* MPIE is set to MIE, indicating previous interrupt enable. */
+        uint8_t mie = (load_csr(MSTATUS) >> MSTATUS_MIE_POS) & 1U;
+        if (mie == 1) {
+            store_csr(MSTATUS, load_csr(MSTATUS) | (1U << MSTATUS_MPIE_POS));
+        } else {
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(1U << MSTATUS_MPIE_POS)));
+        }
+
+        /* Set MIE to zero. */
+        store_csr(MSTATUS, load_csr(MSTATUS) & (~(1U << MSTATUS_MIE_POS)));
+
+        /* MPP is a two-bit field. 00 -> User, 01 -> Supervisor, 11 -> Machine */
+        switch (prev_mode) {
+            case Mode::User:
+                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11U << 11U)));
+                break;
+            case Mode::Supervisor:
+                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1U << 12U)));
+                store_csr(MSTATUS, load_csr(MSTATUS) | (0b1U << 11U));
+                break;
+            case Mode::Machine:
+                store_csr(MSTATUS, load_csr(MSTATUS) | (0b11U << 11U));
+                break;
+            default:
+                std::cout << "Unsupported(?) previous privilege mode.\n";
+                exit(EXIT_FAILURE);
+        }
     }
 }
 

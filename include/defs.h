@@ -237,6 +237,20 @@ enum class IName : uint8_t {
 
 #define FCSR       0x003
 
+#define SSTATUS_SIE_POS  1U
+#define SSTATUS_SPIE_POS 5U
+#define SSTATUS_SPP_POS  8U
+
+#define MSTATUS_MIE_POS  3U
+#define MSTATUS_MPIE_POS 7U
+
+#define MIP_SSIP_POS 1U
+#define MIP_MSIP_POS 3U
+#define MIP_STIP_POS 5U
+#define MIP_MTIP_POS 7U
+#define MIP_SEIP_POS 9U
+#define MIP_MEIP_POS 11U
+
 enum class Mode : uint8_t {
 	User = 0b00,
 	Supervisor = 0b01,
@@ -261,3 +275,15 @@ enum class ReturnException : uint8_t {
     NormalExecutionReturn = 255,
 };
 
+enum class Interrupt : uint8_t {
+    UserSoftwareInterrupt = 0,
+    SupervisorSoftwareInterrupt = 1,
+    MachineSoftwareInterrupt = 3,
+    UserTimerInterrupt = 4,
+    SupervisorTimerInterrupt = 5,
+    MachineTimerInterrupt = 7,
+    UserExternalInterrupt = 8,
+    SupervisorExternalInterrupt = 9,
+    MachineExternalInterrupt = 11,
+    NoInterrupt = 255,
+};
