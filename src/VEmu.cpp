@@ -663,16 +663,11 @@ ReturnException VEmu::ECALL()
 }
 #else
 
-std::string to_hex(uint64_t num)
-{
-    std::stringstream stream;
-    stream << "0x" << std::setfill ('0') << std::setw(8) << std::hex << num;
-    return stream.str();
-}
-
 ReturnException VEmu::ECALL()
 {
-    if (pc == pass_pc) {
+    /* a0 is loaded with zero on ECALL in `pass`. */
+    constexpr size_t A0_REG = 10;
+    if (iregs.load_reg(A0_REG) == 0) {
 #ifdef _WIN32
         HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleTextAttribute(hStdout, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
@@ -684,7 +679,7 @@ ReturnException VEmu::ECALL()
         HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleTextAttribute(hStdout, FOREGROUND_RED | FOREGROUND_INTENSITY);
 #endif
-        std::cout << ("Failed test: " + bin_file_name + " PC: " + to_hex(pc) + '\n');
+        std::cout << "Failed test: " <<  bin_file_name <<  '\n';
         static constexpr size_t GP_REG = 3;
         std::cout << ("Failed on testcase #" + std::to_string(iregs.load_reg(GP_REG) >> 1) + '\n');
         exit(EXIT_FAILURE);
