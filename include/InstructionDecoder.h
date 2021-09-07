@@ -41,6 +41,7 @@ private:
 private:
     const static std::map<IName, std::string> inst_string_names;
     std::unordered_map<uint32_t, Instruction> instr_cache;
+    std::unordered_map<uint8_t, Instruction::Type> opcode_to_type_cache;
 
     void init_fixed_instrs();
 

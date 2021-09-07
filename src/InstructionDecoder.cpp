@@ -12,7 +12,7 @@ InstructionDecoder::InstructionDecoder()
  */
 void InstructionDecoder::init_fixed_instrs()
 {
-    instr_cache[0x30200073] = Instruction(
+    instr_cache[0x30200073] = Instruction {
         Instruction::Type::R,
         IName::MRET,
         Fields {
@@ -30,7 +30,7 @@ void InstructionDecoder::init_fixed_instrs()
             .rs3 = 0,
         },
         "MRET"
-    );
+    };
 
     instr_cache[0x10200073] = Instruction {
         Instruction::Type::R,
@@ -598,35 +598,53 @@ const std::map<IName, uint8_t> InstructionDecoder::i_funct6 = {
 
 Instruction::Type InstructionDecoder::instr_type(uint8_t op)
 {
+    if (opcode_to_type_cache.find(op) != std::end(opcode_to_type_cache)) {
+        return opcode_to_type_cache[op];
+    }
+
     for (const auto& [k, v] : i_opcodes) {
-        if (op == v) return Instruction::Type::I;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::I;
+        }
     }
 
     for (const auto& [k, v] : j_opcodes) {
-        if (op == v) return Instruction::Type::J;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::J;
+        }
     }
 
     for (const auto& [k, v] : s_opcodes) {
-        if (op == v) return Instruction::Type::S;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::S;
+        }
     }
 
     for (const auto& [k, v] : b_opcodes) {
-        if (op == v) return Instruction::Type::B;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::B;
+        }
     }
 
     for (const auto& [k, v] : r_opcodes) {
-        if (op == v) return Instruction::Type::R;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::R;
+        }
     }
 
     for (const auto& [k, v] : r4_opcodes) {
-        if (op == v) return Instruction::Type::R4;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::R4;
+        }
     }
 
     for (const auto& [k, v] : u_opcodes) {
-        if (op == v) return Instruction::Type::U;
+        if (op == v) {
+            return opcode_to_type_cache[op] = Instruction::Type::U;
+        }
     }
 
-    return Instruction::Type::WRONG;
+    return opcode_to_type_cache[op] = Instruction::Type::WRONG;
 }
 
 Instruction::Type InstructionDecoder::instr_type(uint32_t inst)
@@ -1029,4 +1047,3 @@ bool InstructionDecoder::is_shift_imm_64_instruction(IName n)
 {
     return n == IName::SLLI || n == IName::SRLI || n == IName::SRAI;
 }
-
