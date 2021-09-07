@@ -27,8 +27,6 @@ add_executable(test_emu
 )
 
 string(APPEND CMAKE_CXX_FLAGS "-pthread ")
-string(APPEND CMAKE_CXX_FLAGS "-fno-omit-frame-pointer ")
-string(APPEND CMAKE_CXX_FLAGS "-ggdb ")
 string(APPEND CMAKE_CXX_FLAGS "-Wall ")
 string(APPEND CMAKE_CXX_FLAGS "-Werror ")
 string(APPEND CMAKE_CXX_FLAGS "-Wextra ")
@@ -39,3 +37,7 @@ string(APPEND CMAKE_CXX_FLAGS "-Wconversion ")
 string(APPEND CMAKE_CXX_FLAGS "-Wunreachable-code ")
 
 target_compile_definitions(test_emu PRIVATE -DTEST_ENV)
+target_compile_options(test_emu PRIVATE -ggdb)
+target_compile_options(test_emu PRIVATE -fno-omit-frame-pointer)
+
+target_compile_options(emu PRIVATE -O3)
