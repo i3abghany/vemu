@@ -2761,12 +2761,26 @@ ReturnException VEmu::FSGNJXS()
 
 bool VEmu::is_negative_zero(double d)
 {
-    return d == 0.0 && *((int *)(&d)) != 0;
+    union {
+        int64_t a;
+        double d;
+    } u;
+
+    u.d = d;
+
+    return d == 0.0 && u.a != 0;
 }
 
 bool VEmu::is_positive_zero(double d)
 {
-    return d == 0.0 && *((int *)(&d)) == 0;
+    union {
+        int64_t a;
+        double d;
+    } u;
+
+    u.d = d;
+
+    return d == 0.0 && u.a == 0;
 }
 
 ReturnException VEmu::FMINS()
