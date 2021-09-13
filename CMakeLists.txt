@@ -38,6 +38,11 @@ string(APPEND CMAKE_CXX_FLAGS "-Wunreachable-code ")
 
 target_compile_definitions(test_emu PRIVATE -DTEST_ENV)
 target_compile_options(test_emu PRIVATE -ggdb)
-target_compile_options(test_emu PRIVATE -fno-omit-frame-pointer)
+target_compile_options(test_emu PRIVATE -fprofile-arcs)
+target_compile_options(test_emu PRIVATE -ftest-coverage)
+target_compile_options(test_emu PRIVATE --coverage)
+
+target_link_libraries(test_emu PRIVATE -lgcov)
+target_link_libraries(test_emu PRIVATE --coverage)
 
 target_compile_options(emu PRIVATE -O3)
