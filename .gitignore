@@ -2,3 +2,4 @@
 cmake-build-debug/*
 tests/bins/new/*
 build/*
+.vscode/*
