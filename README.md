@@ -28,6 +28,6 @@ ninja test_emu
 ```
 
 The test suite is organized in a manner that in each test, an `ECALL` 
-instruction is invoked whether the test passed or not. The test target
-interposes `ECALL` instructions and checks whether the current PC is at the
-passing position or not.
+instruction is invoked whether the test passed or not. A pass/fail value is set
+in a register that we could check to see whether all tests have passed or not.
+The testing target interposes `ECALL` instructions to do so.
