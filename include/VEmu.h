@@ -232,7 +232,7 @@ public:
     void set_pass_pc(uint64_t p) {
         pass_pc = p;
     }
-    bool test_flag_done;
+    bool test_flag_done = false;
 #endif
 };
 

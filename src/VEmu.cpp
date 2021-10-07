@@ -12,9 +12,6 @@ VEmu::VEmu(std::string f_name) :
     iregs.store_reg(2, ADDR_BASE + DRAM::RAM_SIZE);
     read_file();
     init_func_map();
-#ifdef TEST_ENV
-    test_flag_done = false;
-#endif
 }
 
 void VEmu::init_misa()
@@ -1164,6 +1161,7 @@ ReturnException VEmu::DIV()
     int64_t res;
 
     if (iregs.load_reg(rs2) == 0) {
+        csrs[FCSR] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
     } else if (iregs.load_reg(rs1) == INT64_MIN && iregs.load_reg(rs2) == -1) {
         res = iregs.load_reg(rs1);
@@ -1185,6 +1183,7 @@ ReturnException VEmu::DIVU()
     int64_t res;
 
     if (iregs.load_reg(rs2) == 0) {
+        csrs[FCSR] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
         iregs.store_reg(rd, res);
     } else {
@@ -1209,6 +1208,7 @@ ReturnException VEmu::DIVW()
     int64_t res;
 
     if (rs2_32 == 0) {
+        csrs[FCSR] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
     } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
         res = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
@@ -1234,6 +1234,7 @@ ReturnException VEmu::DIVUW()
     int64_t res;
 
     if (rs2_32 == 0) {
+        csrs[FCSR] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
     }
     else {
