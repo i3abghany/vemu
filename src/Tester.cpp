@@ -89,5 +89,6 @@ const std::vector<TestCase> Tester::test_cases = {
 //    {"../tests/bins/rv64um_p_remu"},
 //    {"../tests/bins/rv64um_p_remuw"},
 //    {"../tests/bins/rv64um_p_remw"},
-    {"../tests/bins/rv64uf_p_fadd"},
+//    {"../tests/bins/rv64uf_p_fadd"},
+    {"../tests/bins/rv64uf_p_fdiv"},
 };

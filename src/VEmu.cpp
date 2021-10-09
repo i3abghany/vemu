@@ -2759,12 +2759,30 @@ ReturnException VEmu::FDIVS()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    float op1 = static_cast<float>(fregs.load_reg(rs1));
-    float op2 = static_cast<float>(fregs.load_reg(rs2));
+    reset_float_flags();
 
-    float res = op1 / op2;
+    float op1 = static_cast<float>(fregs.load_reg(rs1));
+    float32_t op1_bits;
+    memcpy(&op1_bits, &op1, sizeof(uint32_t));
+
+    float op2 = static_cast<float>(fregs.load_reg(rs2));
+    float32_t op2_bits;
+    memcpy(&op2_bits, &op2, sizeof(uint32_t));
+
+    float32_t res_bits = f32_div(op1_bits, op2_bits);
+
+    float res;
+    memcpy(&res, &res_bits.v, sizeof(uint32_t));
 
     fregs.store_reg(rd, static_cast<double>(res));
+
+    update_float_flags();
+
+    if (std::fabs(op2) == 0.0f) {
+        csrs[FFLAGS] |= 0x8U;
+    } else {
+        csrs[FFLAGS] &= ~(0x8U);
+    }
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -2775,8 +2793,12 @@ ReturnException VEmu::FSQRTS()
     auto rd = curr_instr.get_fields().rd;
 
     float op = static_cast<float>(fregs.load_reg(rs1));
+    float32_t op_bits;
+    memcpy(&op_bits, &op, sizeof (uint32_t));
 
-    float res = std::sqrt(op);
+    float32_t res_bits = f32_sqrt(op_bits);
+    float res;
+    memcpy(&res, &res_bits.v, sizeof(uint32_t));
 
     fregs.store_reg(rd, static_cast<double>(res));
 
