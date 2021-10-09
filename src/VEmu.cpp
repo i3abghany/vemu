@@ -1,5 +1,9 @@
 #include <VEmu.h>
 
+extern "C" {
+#include <softfloat.h>
+};
+
 VEmu::VEmu(std::string f_name) :
     bin_file_name(std::move(f_name))
 {
@@ -1161,7 +1165,7 @@ ReturnException VEmu::DIV()
     int64_t res;
 
     if (iregs.load_reg(rs2) == 0) {
-        csrs[FCSR] |= (0x8);
+        csrs[FFLAGS] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
     } else if (iregs.load_reg(rs1) == INT64_MIN && iregs.load_reg(rs2) == -1) {
         res = iregs.load_reg(rs1);
@@ -1183,7 +1187,7 @@ ReturnException VEmu::DIVU()
     int64_t res;
 
     if (iregs.load_reg(rs2) == 0) {
-        csrs[FCSR] |= (0x8);
+        csrs[FFLAGS] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
         iregs.store_reg(rd, res);
     } else {
@@ -1208,7 +1212,7 @@ ReturnException VEmu::DIVW()
     int64_t res;
 
     if (rs2_32 == 0) {
-        csrs[FCSR] |= (0x8);
+        csrs[FFLAGS] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
     } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
         res = static_cast<int64_t>(static_cast<int32_t>(rs1_32));
@@ -1234,7 +1238,7 @@ ReturnException VEmu::DIVUW()
     int64_t res;
 
     if (rs2_32 == 0) {
-        csrs[FCSR] |= (0x8);
+        csrs[FFLAGS] |= (0x8);
         res = 0xFFFFFFFF'FFFFFFFF;
     }
     else {
@@ -2629,18 +2633,62 @@ ReturnException VEmu::FNMADDS()
     return ReturnException::NormalExecutionReturn;
 }
 
+void VEmu::update_float_flags()
+{
+    if (softfloat_exceptionFlags & softfloat_flag_inexact) {
+        csrs[FFLAGS] |= (0x1);
+    } else {
+        csrs[FFLAGS] &= ~(0x1U);
+    }
+
+    if (softfloat_exceptionFlags & softfloat_flag_underflow) {
+        csrs[FFLAGS] |= (0x2);
+    } else {
+        csrs[FFLAGS] &= ~(0x2U);
+    }
+
+    if (softfloat_exceptionFlags & softfloat_flag_overflow) {
+        csrs[FFLAGS] |= (0x4);
+    } else {
+        csrs[FFLAGS] &= ~(0x4U);
+    }
+
+    if (softfloat_exceptionFlags & softfloat_flag_invalid) {
+        csrs[FFLAGS] |= (0x10);
+    } else {
+        csrs[FFLAGS] &= ~(0x10U);
+    }
+}
+
+void VEmu::reset_float_flags()
+{
+    softfloat_exceptionFlags = 0;
+}
+
 ReturnException VEmu::FADDS()
 {
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
+    reset_float_flags();
+
     float op1 = static_cast<float>(fregs.load_reg(rs1));
     float op2 = static_cast<float>(fregs.load_reg(rs2));
 
-    float res = op1 + op2;
+    uint32_t op1_bits;
+    memcpy(&op1_bits, &op1, sizeof (uint32_t));
+
+    uint32_t op2_bits;
+    memcpy(&op2_bits, &op2, sizeof (uint32_t));
+
+    float32_t res_bits = f32_add({ op1_bits }, { op2_bits });
+
+    float res;
+    memcpy(&res, &res_bits.v, sizeof (uint32_t));
 
     fregs.store_reg(rd, static_cast<double>(res));
+    update_float_flags();
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -2651,12 +2699,28 @@ ReturnException VEmu::FSUBS()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
+    reset_float_flags();
+
     float op1 = static_cast<float>(fregs.load_reg(rs1));
     float op2 = static_cast<float>(fregs.load_reg(rs2));
 
-    float res = op1 - op2;
+    uint32_t op1_bits;
+    memcpy(&op1_bits, &op1, sizeof (uint32_t));
+
+    uint32_t op2_bits;
+    memcpy(&op2_bits, &op2, sizeof (uint32_t));
+
+    float32_t res_bits = f32_sub({ op1_bits }, { op2_bits });
+
+    float res;
+    memcpy(&res, &res_bits.v, sizeof (uint32_t));
+
+    if (std::isinf(op1) && std::isinf(op2) && !std::signbit(op1) && !std::signbit(op2)) {
+       res = std::fabs(res);
+    }
 
     fregs.store_reg(rd, static_cast<double>(res));
+    update_float_flags();
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -2667,13 +2731,25 @@ ReturnException VEmu::FMULS()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
+    reset_float_flags();
+
     float op1 = static_cast<float>(fregs.load_reg(rs1));
     float op2 = static_cast<float>(fregs.load_reg(rs2));
 
-    float res = op1 * op2;
+    float32_t op1_bits;
+    memcpy(&op1_bits, &op1, sizeof(uint32_t));
+
+    float32_t op2_bits;
+    memcpy(&op2_bits, &op2, sizeof(uint32_t));
+
+    float32_t res_bits = f32_mul(op1_bits, op2_bits);
+
+    float res;
+    memcpy(&res, &res_bits.v, sizeof (uint32_t));
 
     fregs.store_reg(rd, static_cast<double>(res));
 
+    update_float_flags();
     return ReturnException::NormalExecutionReturn;
 }
 

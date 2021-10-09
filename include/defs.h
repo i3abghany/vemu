@@ -235,7 +235,7 @@ enum class IName : uint8_t {
 #define STVAL      0x143
 #define SATP       0x180
 
-#define FCSR       0x003
+#define FFLAGS       0x001
 
 #define SSTATUS_SIE_POS  1U
 #define SSTATUS_SPIE_POS 5U

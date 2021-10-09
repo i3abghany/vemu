@@ -26,7 +26,7 @@
 
 class VEmu {
 public:
-    VEmu(std::string f_name);
+    explicit VEmu(std::string f_name);
 
     uint32_t run();
     void dump_regs();
@@ -177,6 +177,8 @@ private:
 private:
     bool is_negative_zero(double);
     bool is_positive_zero(double);
+    void update_float_flags();
+    void reset_float_flags();
 
 private:
     void read_file();
@@ -225,13 +227,7 @@ private:
     static constexpr int UART_IRQ = 10;
 
 #ifdef TEST_ENV
-private:
-    uint64_t pass_pc;
-
 public:
-    void set_pass_pc(uint64_t p) {
-        pass_pc = p;
-    }
     bool test_flag_done = false;
 #endif
 };

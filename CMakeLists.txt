@@ -20,6 +20,16 @@ set(SRC_FILES
 
 include_directories(include)
 
+set(SOFTFLOAT_MAIN_DIR "vendor/SoftFloat")
+set(SOFTFLOAT_SOURCE_DIR "${SOFTFLOAT_MAIN_DIR}/source")
+set(SPECIALIZED_TYPE 8086-SSE)
+
+include_directories(softfloat PUBLIC
+        "${SOFTFLOAT_SOURCE_DIR}/${SPECIALIZED_TYPE}/"
+        "${SOFTFLOAT_SOURCE_DIR}/include"
+        "${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/"
+        )
+
 add_executable(emu ${SRC_FILES})
 
 add_executable(test_emu
@@ -42,7 +52,10 @@ target_compile_options(test_emu PRIVATE -fprofile-arcs)
 target_compile_options(test_emu PRIVATE -ftest-coverage)
 target_compile_options(test_emu PRIVATE --coverage)
 
+target_compile_options(emu PRIVATE -O3)
+
 target_link_libraries(test_emu PRIVATE -lgcov)
 target_link_libraries(test_emu PRIVATE --coverage)
 
-target_compile_options(emu PRIVATE -O3)
+target_link_libraries(test_emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
+target_link_libraries(emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
