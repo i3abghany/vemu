@@ -4,7 +4,8 @@ DRAM::DRAM() {
     ram.reserve(RAM_SIZE);
 }
 
-std::pair<uint64_t, ReturnException> DRAM::load(uint64_t addr, size_t sz) {
+std::pair<uint64_t, ReturnException> DRAM::load(uint64_t addr, size_t sz)
+{
     std::pair<uint64_t, ReturnException> res;
     res.first = 0x00000000;
     res.second = ReturnException::NormalExecutionReturn;
@@ -33,7 +34,8 @@ ReturnException DRAM::store(uint64_t addr, uint64_t data, size_t sz) {
     return res;
 }
 
-uint64_t DRAM::load_byte(uint64_t addr) {
+uint64_t DRAM::load_byte(uint64_t addr) const
+{
     uint64_t res = 0x00000000;
     uint64_t idx = addr - ADDR_BASE;
 
@@ -42,7 +44,8 @@ uint64_t DRAM::load_byte(uint64_t addr) {
     return res;
 }
 
-uint64_t DRAM::load_hword(uint64_t addr) {
+uint64_t DRAM::load_hword(uint64_t addr) const
+{
     uint64_t res = 0x00000000;
     uint64_t idx = addr - ADDR_BASE;
 
@@ -52,7 +55,8 @@ uint64_t DRAM::load_hword(uint64_t addr) {
     return res;
 }
 
-uint64_t DRAM::load_word(uint64_t addr) {
+uint64_t DRAM::load_word(uint64_t addr) const
+{
     uint64_t res = 0x00000000;
     uint64_t idx = addr - ADDR_BASE;
 
@@ -63,7 +67,8 @@ uint64_t DRAM::load_word(uint64_t addr) {
     return res;
 }
 
-uint64_t DRAM::load_dword(uint64_t addr) {
+uint64_t DRAM::load_dword(uint64_t addr) const
+{
     uint64_t res = 0x00000000;
     uint64_t idx = addr - ADDR_BASE;
 

@@ -13,10 +13,10 @@ set(SRC_FILES
     src/Bus.cpp 
     src/RegFile.cpp
     src/FRegFile.cpp
-    src/CLIC.cpp
+        src/CLINT.cpp
     src/PLIC.cpp
     src/UART.cpp
-)
+        )
 
 include_directories(include)
 

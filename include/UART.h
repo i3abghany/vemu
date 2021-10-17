@@ -9,14 +9,29 @@
 #include <iostream>
 
 #include <defs.h>
+#include <Device.h>
 
-class UART {
+class UART : public Device {
 public:
     UART();
     
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
-    ReturnException store(uint64_t, uint64_t, size_t);
-    bool is_interrupting();
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
+    ReturnException store(uint64_t, uint64_t, size_t) override;
+
+    [[nodiscard]] uint64_t get_base() const override
+    {
+        return UART_BASE;
+    }
+
+    [[nodiscard]] uint64_t get_size() const override
+    {
+        return UART_SIZE;
+    }
+
+    [[nodiscard]] bool is_interrupting() override
+    {
+        return interrupting.exchange(false, std::memory_order_acquire);
+    }
 
 private:
     uint64_t load8(uint64_t);

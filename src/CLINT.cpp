@@ -1,17 +1,17 @@
-#include <CLIC.h>
+#include <CLINT.h>
 
-CLIC::CLIC()
+CLINT::CLINT()
 {
     mtime = 0;
     mtimecmp = 0;
 }
 
-uint64_t CLIC::load64(uint64_t addr)
+uint64_t CLINT::load64(uint64_t addr) const
 {
     switch (addr) {
-        case CLIC_MTIMECMP:
+        case CLINT_MTIMECMP:
             return mtimecmp;
-        case CLIC_MTIME:
+        case CLINT_MTIME:
             return mtime;
         default:
             break;
@@ -20,13 +20,13 @@ uint64_t CLIC::load64(uint64_t addr)
     return 0;
 }
 
-void CLIC::store64(uint64_t addr, uint64_t data)
+void CLINT::store64(uint64_t addr, uint64_t data)
 {
     switch (addr) {
-        case CLIC_MTIMECMP:
+        case CLINT_MTIMECMP:
             mtimecmp = data;
             break;
-        case CLIC_MTIME:
+        case CLINT_MTIME:
             mtime = data;
             break;
         default:
@@ -34,7 +34,7 @@ void CLIC::store64(uint64_t addr, uint64_t data)
     }
 }
 
-std::pair<uint64_t, ReturnException> CLIC::load(uint64_t addr, size_t sz)
+std::pair<uint64_t, ReturnException> CLINT::load(uint64_t addr, size_t sz)
 {
     std::pair<uint64_t, ReturnException> res;
     res.second = ReturnException::NormalExecutionReturn;
@@ -51,7 +51,7 @@ std::pair<uint64_t, ReturnException> CLIC::load(uint64_t addr, size_t sz)
     return res;
 }
 
-ReturnException CLIC::store(uint64_t addr, uint64_t value, size_t sz)
+ReturnException CLINT::store(uint64_t addr, uint64_t value, size_t sz)
 {
     ReturnException res;
     res = ReturnException::NormalExecutionReturn;

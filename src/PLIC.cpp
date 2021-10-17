@@ -42,7 +42,7 @@ ReturnException PLIC::store(uint64_t addr, uint64_t value, size_t sz)
     return res;
 }
 
-uint64_t PLIC::load64(uint64_t addr)
+uint64_t PLIC::load64(uint64_t addr) const
 {
     switch (addr) {
         case PLIC_PENDING:

@@ -4,21 +4,37 @@
 #include <vector>
 
 #include <defs.h>
+#include <Device.h>
 
-class DRAM {
+class DRAM : public Device {
 public:
     DRAM();
     static constexpr uint64_t RAM_SIZE = 1024 * 1024 * 128;
 
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
-    ReturnException store(uint64_t, uint64_t, size_t);
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
+    ReturnException store(uint64_t, uint64_t, size_t) override;
+
+    [[nodiscard]] uint64_t get_base() const override
+    {
+        return ADDR_BASE;
+    }
+
+    [[nodiscard]] uint64_t get_size() const override
+    {
+        return RAM_SIZE;
+    }
+
+    [[nodiscard]] bool is_interrupting() override
+    {
+        return false;
+    }
 
 private:
 
-    uint64_t load_byte(uint64_t);
-    uint64_t load_hword(uint64_t);
-    uint64_t load_word(uint64_t);
-    uint64_t load_dword(uint64_t);
+    [[nodiscard]] uint64_t load_byte(uint64_t) const;
+    [[nodiscard]] uint64_t load_hword(uint64_t) const;
+    [[nodiscard]] uint64_t load_word(uint64_t) const;
+    [[nodiscard]] uint64_t load_dword(uint64_t) const;
 
     void store_byte(uint64_t, uint64_t);
     void store_hword(uint64_t, uint64_t);
