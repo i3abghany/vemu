@@ -1,8 +1,8 @@
 # vemu
 
 A toy emulator for the RISC-V ISA.  
-Currently supports: RV64IMAF full user-space emulation.  
-Partially supports the previliged ISA specification.
+Currently supports: RV64IMA full user-space emulation.
+Partially supports: The F extension and the previliged ISA specification.
 
 The emulator uses the Berkeley SoftFloat (release 3e) to carry out floating
 point operations. The source of the library is included in the `vendor`
