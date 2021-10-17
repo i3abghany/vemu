@@ -39,10 +39,10 @@
 
 #define ADDR_BASE (uint64_t) 0x8000'0000
 
-#define CLIC_BASE     (uint64_t) 0x200'0000
-#define CLIC_SIZE     (uint64_t) 0x10000
-#define CLIC_MTIMECMP (uint64_t) CLIC_BASE + 0x4000
-#define CLIC_MTIME    (uint64_t) CLIC_BASE + 0xbff8
+#define CLINT_BASE     (uint64_t) 0x200'0000
+#define CLINT_SIZE     (uint64_t) 0x10000
+#define CLINT_MTIMECMP (uint64_t) CLINT_BASE + 0x4000
+#define CLINT_MTIME    (uint64_t) CLINT_BASE + 0xbff8
 
 #define PLIC_BASE      (uint64_t) 0xc00'0000
 #define PLIC_SIZE      (uint64_t) 0x400'0000

@@ -7,9 +7,9 @@
 #include <defs.h>
 #include <Device.h>
 
-class CLIC : public Device {
+class CLINT : public Device {
 public:
-    CLIC();
+    CLINT();
 
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
     ReturnException store(uint64_t, uint64_t, size_t) override;

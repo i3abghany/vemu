@@ -4,7 +4,7 @@
 
 #include <DRAM.h>
 #include <PLIC.h>
-#include <CLIC.h>
+#include <CLINT.h>
 #include <UART.h>
 
 class Bus {
@@ -16,7 +16,7 @@ public:
 
 private:
     DRAM dr {};
-    CLIC clic {};
+    CLINT clint {};
     PLIC plic {};
     UART uart {};
 };
