@@ -5,13 +5,14 @@
 #include <utility>
 
 #include <defs.h>
+#include <Device.h>
 
-class PLIC {
+class PLIC : public Device {
 public:   
     PLIC();
 
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
-    ReturnException store(uint64_t, uint64_t, size_t);
+    std::pair<uint64_t, ReturnException> load(uint64_t addr, size_t sz) override;
+    ReturnException store(uint64_t addr, uint64_t value, size_t sz) override;
 
 private:
     uint64_t load64(uint64_t);

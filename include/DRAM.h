@@ -4,14 +4,15 @@
 #include <vector>
 
 #include <defs.h>
+#include <Device.h>
 
-class DRAM {
+class DRAM : public Device {
 public:
     DRAM();
     static constexpr uint64_t RAM_SIZE = 1024 * 1024 * 128;
 
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
-    ReturnException store(uint64_t, uint64_t, size_t);
+    std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
+    ReturnException store(uint64_t, uint64_t, size_t) override;
 
 private:
 

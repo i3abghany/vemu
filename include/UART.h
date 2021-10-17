@@ -9,13 +9,14 @@
 #include <iostream>
 
 #include <defs.h>
+#include <Device.h>
 
-class UART {
+class UART : public Device {
 public:
     UART();
     
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
-    ReturnException store(uint64_t, uint64_t, size_t);
+    std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
+    ReturnException store(uint64_t, uint64_t, size_t) override;
     bool is_interrupting();
 
 private:

@@ -1,17 +1,18 @@
 #pragma once
 
-#include <cstdint>
+#include<cstdint>
 #include <cstddef>
 #include <utility>
 
 #include <defs.h>
+#include <Device.h>
 
-class CLIC {
+class CLIC : public Device {
 public:
     CLIC();
 
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
-    ReturnException store(uint64_t, uint64_t, size_t);
+    std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
+    ReturnException store(uint64_t, uint64_t, size_t) override;
 
 private:
     uint64_t load64(uint64_t addr);
