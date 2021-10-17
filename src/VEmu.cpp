@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <VEmu.h>
 
 extern "C" {
