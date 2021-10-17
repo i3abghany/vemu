@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <algorithm>
 
 #include <DRAM.h>
 #include <PLIC.h>
@@ -10,13 +11,25 @@
 class Bus {
 public:
     Bus() = default;
+
+    ~Bus()
+    {
+        for (Device *device : devices)
+            delete device;
+    }
+
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
     ReturnException  store(uint64_t, uint64_t, size_t);
-    bool uart_is_interrupting() { return uart.is_interrupting(); }
+    bool uart_is_interrupting() { return get_uart()->is_interrupting(); }
 
 private:
-    DRAM dr {};
-    CLINT clint {};
-    PLIC plic {};
-    UART uart {};
+    std::vector<Device *> devices = { new CLINT(), new PLIC(), new UART(), new DRAM() };
+
+    Device *get_uart()
+    {
+        /* We have to ensure that we have only one UART device... */
+        return *std::find_if(std::begin(devices), std::end(devices), [](Device *device) {
+            return dynamic_cast<UART *>(device) != nullptr;
+        });
+    }
 };

@@ -11,11 +11,26 @@ class CLINT : public Device {
 public:
     CLINT();
 
-    std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
     ReturnException store(uint64_t, uint64_t, size_t) override;
 
+    [[nodiscard]] uint64_t get_base() const override
+    {
+        return CLINT_BASE;
+    }
+
+    [[nodiscard]] uint64_t get_size() const override
+    {
+        return CLINT_SIZE;
+    }
+
+    [[nodiscard]] bool is_interrupting() override
+    {
+        return false;
+    }
+
 private:
-    uint64_t load64(uint64_t addr);
+    [[nodiscard]] uint64_t load64(uint64_t addr) const;
     void store64(uint64_t addr, uint64_t data);
 
     uint64_t mtime;

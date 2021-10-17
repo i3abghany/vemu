@@ -12,13 +12,14 @@ UART::UART()
     }
 
     std::thread read_thread([this]() {
-        char c;
+        unsigned char c;
 
         while (true) {
             std::cin >> std::noskipws >> c;
 
+            /* TODO: Use a condvar instead of spinning. */
             while ((uart_mem[UART_LSR - UART_BASE] & UART_LSR_RX) == 1)
-                ; // spinning for now. Better: use a condvar.
+                ;
 
             uart_mem[UART_RHR - UART_BASE] = c;
             uart_mem[UART_LSR - UART_BASE] |= UART_LSR_RX;
@@ -26,10 +27,6 @@ UART::UART()
     });
 
     read_thread.detach();
-}
-
-bool UART::is_interrupting() {
-    return interrupting.exchange(false, std::memory_order_acquire);
 }
 
 std::pair<uint64_t, ReturnException> UART::load(uint64_t addr, size_t sz)

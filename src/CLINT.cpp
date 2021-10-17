@@ -6,7 +6,7 @@ CLINT::CLINT()
     mtimecmp = 0;
 }
 
-uint64_t CLINT::load64(uint64_t addr)
+uint64_t CLINT::load64(uint64_t addr) const
 {
     switch (addr) {
         case CLINT_MTIMECMP:
