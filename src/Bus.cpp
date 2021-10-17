@@ -1,9 +1,5 @@
 #include <Bus.h>
 
-Bus::Bus() {
-
-}
-
 std::pair<uint64_t, ReturnException> Bus::load(uint64_t addr, size_t sz) {
     if (addr >= UART_BASE && addr < UART_BASE + UART_SIZE) {
         return uart.load(addr, sz);
