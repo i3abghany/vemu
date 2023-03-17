@@ -2,9 +2,11 @@
 
 #include <VEmu.h>
 
+#ifdef SUPPORT_SOFTFLOAT
 extern "C" {
 #include <softfloat.h>
 };
+#endif
 
 VEmu::VEmu(std::string f_name) :
     bin_file_name(std::move(f_name))
@@ -2523,6 +2525,9 @@ void VEmu::take_interrupt(Interrupt i)
 
 ReturnException VEmu::FLW()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#endif
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
     auto offs = curr_instr.get_fields().imm;
@@ -2546,6 +2551,9 @@ ReturnException VEmu::FLW()
 
 ReturnException VEmu::FSW()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#endif
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto offs = curr_instr.get_fields().imm;
@@ -2565,6 +2573,9 @@ ReturnException VEmu::FSW()
 
 ReturnException VEmu::FMADDS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rs3 = curr_instr.get_fields().rs3;
@@ -2579,10 +2590,14 @@ ReturnException VEmu::FMADDS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FMSUBS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rs3 = curr_instr.get_fields().rs3;
@@ -2597,10 +2612,14 @@ ReturnException VEmu::FMSUBS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FNMSUBS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rs3 = curr_instr.get_fields().rs3;
@@ -2615,10 +2634,14 @@ ReturnException VEmu::FNMSUBS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FNMADDS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rs3 = curr_instr.get_fields().rs3;
@@ -2633,8 +2656,10 @@ ReturnException VEmu::FNMADDS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
+#ifdef SUPPORT_SOFTFLOAT
 void VEmu::update_float_flags()
 {
     if (softfloat_exceptionFlags & softfloat_flag_inexact) {
@@ -2666,9 +2691,13 @@ void VEmu::reset_float_flags()
 {
     softfloat_exceptionFlags = 0;
 }
+#endif
 
 ReturnException VEmu::FADDS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -2693,10 +2722,14 @@ ReturnException VEmu::FADDS()
     update_float_flags();
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FSUBS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -2725,10 +2758,14 @@ ReturnException VEmu::FSUBS()
     update_float_flags();
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FMULS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -2753,10 +2790,14 @@ ReturnException VEmu::FMULS()
 
     update_float_flags();
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FDIVS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -2787,10 +2828,14 @@ ReturnException VEmu::FDIVS()
     }
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FSQRTS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -2805,10 +2850,14 @@ ReturnException VEmu::FSQRTS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FSGNJS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -2821,10 +2870,14 @@ ReturnException VEmu::FSGNJS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FSGNJNS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -2837,10 +2890,14 @@ ReturnException VEmu::FSGNJNS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FSGNJXS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -2858,6 +2915,7 @@ ReturnException VEmu::FSGNJXS()
     fregs.store_reg(rd, static_cast<double>(res));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 bool VEmu::is_negative_zero(double d)
@@ -2886,6 +2944,9 @@ bool VEmu::is_positive_zero(double d)
 
 ReturnException VEmu::FMINS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -2909,10 +2970,14 @@ ReturnException VEmu::FMINS()
     }
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FMAXS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
@@ -2936,10 +3001,14 @@ ReturnException VEmu::FMAXS()
     }
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTWS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -2949,10 +3018,14 @@ ReturnException VEmu::FCVTWS()
     iregs.store_reg(rd, static_cast<int64_t>(static_cast<int32_t>(op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTWUS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -2962,10 +3035,14 @@ ReturnException VEmu::FCVTWUS()
     iregs.store_reg(rd, static_cast<uint64_t>((op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FMVXW()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -2979,10 +3056,14 @@ ReturnException VEmu::FMVXW()
     iregs.store_reg(rd, static_cast<int64_t>(a.i));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FEQS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -2993,10 +3074,14 @@ ReturnException VEmu::FEQS()
     iregs.store_reg(rd, (op1 == op2) ? 1 : 0);
     
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FLTS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -3007,10 +3092,14 @@ ReturnException VEmu::FLTS()
     iregs.store_reg(rd, (op1 < op2) ? 1 : 0);
     
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FLES()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
@@ -3021,10 +3110,14 @@ ReturnException VEmu::FLES()
     iregs.store_reg(rd, (op1 <= op2) ? 1 : 0);
     
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTSW()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3033,10 +3126,14 @@ ReturnException VEmu::FCVTSW()
     fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTSWU()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3045,10 +3142,14 @@ ReturnException VEmu::FCVTSWU()
     fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FMVWX()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3062,10 +3163,14 @@ ReturnException VEmu::FMVWX()
     fregs.store_reg(rd, static_cast<double>(a.s));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTLS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3075,10 +3180,14 @@ ReturnException VEmu::FCVTLS()
     iregs.store_reg(rd, static_cast<int64_t>(op));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTLUS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3088,10 +3197,14 @@ ReturnException VEmu::FCVTLUS()
     iregs.store_reg(rd, static_cast<int64_t>(static_cast<uint64_t>(op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTSL()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3099,10 +3212,14 @@ ReturnException VEmu::FCVTSL()
     fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCVTSLU()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3111,10 +3228,14 @@ ReturnException VEmu::FCVTSLU()
     fregs.store_reg(rd, static_cast<double>(static_cast<float>(op)));
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }
 
 ReturnException VEmu::FCLASSS()
 {
+#ifndef SUPPORT_SOFTFLOAT
+    return ReturnException::IllegalInstruction;
+#else
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
@@ -3149,4 +3270,5 @@ ReturnException VEmu::FCLASSS()
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
+#endif
 }

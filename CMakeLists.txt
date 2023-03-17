@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(vemu)
 
+set(CMAKE_CXX_COMPILER g++-12)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SRC_FILES 
@@ -13,10 +14,10 @@ set(SRC_FILES
     src/Bus.cpp 
     src/RegFile.cpp
     src/FRegFile.cpp
-        src/CLINT.cpp
+    src/CLINT.cpp
     src/PLIC.cpp
     src/UART.cpp
-        )
+)
 
 include_directories(include)
 
@@ -24,11 +25,14 @@ set(SOFTFLOAT_MAIN_DIR "vendor/SoftFloat")
 set(SOFTFLOAT_SOURCE_DIR "${SOFTFLOAT_MAIN_DIR}/source")
 set(SPECIALIZED_TYPE 8086-SSE)
 
+if(SUPPORT_SOFTFLOAT)
 include_directories(softfloat PUBLIC
         "${SOFTFLOAT_SOURCE_DIR}/${SPECIALIZED_TYPE}/"
         "${SOFTFLOAT_SOURCE_DIR}/include"
         "${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/"
         )
+    string(APPEND CMAKE_CXX_FLAGS "-DSUPPORT_SOFTFLOAT ")
+endif()
 
 add_executable(emu ${SRC_FILES})
 
@@ -57,5 +61,7 @@ target_compile_options(emu PRIVATE -O3)
 target_link_libraries(test_emu PRIVATE -lgcov)
 target_link_libraries(test_emu PRIVATE --coverage)
 
-target_link_libraries(test_emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
-target_link_libraries(emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
+if (SUPPORT_SOFTFLOAT)
+    target_link_libraries(test_emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
+    target_link_libraries(emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
+endif()
