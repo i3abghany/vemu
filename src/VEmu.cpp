@@ -174,7 +174,7 @@ void VEmu::read_file()
 {
     std::ifstream ifs(bin_file_name, std::ios_base::binary);
     if (!ifs) {
-        std::cout << "Could not open the file.\n";
+        std::cout << "Could not open the file " << bin_file_name << "\n";
         exit(EXIT_FAILURE);
     }
 #ifndef _WIN32
