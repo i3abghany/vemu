@@ -18,6 +18,7 @@ jobs:
       - name: Build the test binary
         run: |
           cd ${{ github.workspace }}
+          git submodule update --init --recursive
           mkdir build && cd build
           cmake ..
           make test_emu -j8

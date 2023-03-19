@@ -9,12 +9,27 @@
 
 typedef uint8_t BytePermission;
 
-static constexpr BytePermission PERM_READ = (1 << 0);
+static constexpr BytePermission PERM_EXEC = (1 << 0);
 static constexpr BytePermission PERM_WRITE = (1 << 1);
-static constexpr BytePermission PERM_EXEC = (1 << 2);
+static constexpr BytePermission PERM_READ = (1 << 2);
 static constexpr BytePermission PERM_RAW = (1 << 3);
 
 static constexpr uint64_t BLOCK_SIZE = 4096;
+
+struct MemorySegment
+{
+    BytePermission perms;
+    uint64_t start_addr;
+    uint64_t mem_size;        
+    uint64_t file_size;        
+    const uint8_t *data;        
+};
+
+struct FileInfo
+{
+    std::vector<MemorySegment> segments;
+    uint64_t entry_point;
+};
 
 class MMU : public Device
 {
@@ -31,12 +46,14 @@ class MMU : public Device
     [[nodiscard]] bool is_interrupting() override { return false; }
 
     void write_from(const std::vector<uint8_t>&, uint64_t);
-    std::vector<uint8_t> read_to(uint64_t, uint64_t);
+    std::vector<uint8_t> read_to(uint64_t, uint64_t) const;
 
     void reset_to(const MMU& other);
 
     uint64_t allocate(uint64_t);
     void set_perms(uint64_t, uint64_t, BytePermission);
+
+    void load_file(FileInfo);
 
   private:
     [[nodiscard]] uint64_t load_byte(uint64_t) const;

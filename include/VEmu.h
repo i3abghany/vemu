@@ -27,6 +27,12 @@ class VEmu
          uint64_t pc = 0x80000000,
          uint64_t ram_size = 128 * 1024 * 1024);
 
+    explicit VEmu(const std::vector<uint8_t>,
+                  uint64_t pc = 0x80000000,
+                  uint64_t ram_size = 128 * 1024 * 1024);
+
+    VEmu(std::string f_name, const FileInfo info);
+
     uint32_t run();
     void dump_regs();
     std::array<int64_t, 32> get_iregs();
@@ -179,7 +185,6 @@ class VEmu
     ReturnException FCVTSL();
     ReturnException FCVTSLU();
 
-  private:
     bool is_negative_zero(double);
     bool is_positive_zero(double);
     void update_float_flags();
@@ -220,14 +225,14 @@ class VEmu
     uint64_t ram_size;
 
   private:
-    static constexpr int UART_IRQ = 10;
-
     void take_interrupt(Interrupt i);
     Interrupt check_pending_interrupt();
     void trap(ReturnException e);
     bool is_fatal(ReturnException e);
     void exit_fatally(ReturnException e);
     std::string stringify_exception(ReturnException e);
+
+    static constexpr int UART_IRQ = 10;
 
 #ifdef TEST_ENV
   public:

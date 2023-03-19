@@ -19,6 +19,7 @@ set(SRC_FILES
 )
 
 include_directories(include)
+include_directories(vendor/ELFIO)
 
 set(SOFTFLOAT_MAIN_DIR "vendor/SoftFloat")
 set(SOFTFLOAT_SOURCE_DIR "${SOFTFLOAT_MAIN_DIR}/source")
