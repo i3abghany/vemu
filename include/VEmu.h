@@ -28,8 +28,8 @@ class VEmu
          uint64_t ram_size = 128 * 1024 * 1024);
 
     explicit VEmu(const std::vector<uint8_t>,
-         uint64_t pc = 0x80000000,
-         uint64_t ram_size = 128 * 1024 * 1024);
+                  uint64_t pc = 0x80000000,
+                  uint64_t ram_size = 128 * 1024 * 1024);
 
     uint32_t run();
     void dump_regs();
