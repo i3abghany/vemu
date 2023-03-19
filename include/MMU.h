@@ -24,7 +24,7 @@ class MMU : public Device
                                                             size_t) override;
     ReturnException store(uint64_t, uint64_t, size_t) override;
 
-    [[nodiscard]] uint64_t get_base() const override { return ADDR_BASE; }
+    [[nodiscard]] uint64_t get_base() const override { return 0; }
 
     [[nodiscard]] uint64_t get_size() const override { return ram_size; }
 
