@@ -2,7 +2,7 @@
 
 UART::UART()
 {
-    uart_mem = std::array<uint8_t, UART_SIZE> {};
+    uart_mem = std::array<uint8_t, UART_SIZE>{};
 
     {
         std::lock_guard<std::mutex> lock(mu);
@@ -46,7 +46,6 @@ std::pair<uint64_t, ReturnException> UART::load(uint64_t addr, size_t sz)
     return res;
 }
 
-
 ReturnException UART::store(uint64_t addr, uint64_t value, size_t sz)
 {
     ReturnException res;
@@ -68,7 +67,7 @@ uint64_t UART::load8(uint64_t addr)
 {
     std::lock_guard<std::mutex> lock(mu);
 
-    if(addr == UART_RHR) {
+    if (addr == UART_RHR) {
         uart_mem[UART_LSR - UART_BASE] &= static_cast<uint8_t>(~(UART_LSR_RX));
     }
 

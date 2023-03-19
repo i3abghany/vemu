@@ -1,13 +1,14 @@
 #pragma once
 
-#include <iostream>
-#include <iomanip>
 #include <cstdint>
+#include <iomanip>
+#include <iostream>
 #include <string>
 
 #include <defs.h>
 
-struct Fields {
+struct Fields
+{
     uint8_t OPCode;
     uint8_t rd;
     uint8_t funct3;
@@ -22,9 +23,11 @@ struct Fields {
     uint8_t rs3;
 };
 
-class Instruction {
-public:
-    enum class Type {
+class Instruction
+{
+  public:
+    enum class Type
+    {
         R,
         R4,
         I,
@@ -35,16 +38,20 @@ public:
         WRONG
     };
 
-public:
+  public:
     Instruction() = default;
     Instruction(Type type, IName i, Fields vals, std::string n)
-        : t(type), name(i), f(vals), str_name(n) {};
+      : t(type)
+      , name(i)
+      , f(vals)
+      , str_name(n){};
 
     Type get_type();
     Fields get_fields();
     IName get_name();
 
-    friend std::ostream& operator << (std::ostream &os, const Instruction &ins) {
+    friend std::ostream& operator<<(std::ostream& os, const Instruction& ins)
+    {
         os << std::hex;
         os << std::setfill('0');
         os << std::setw(8);
@@ -84,7 +91,7 @@ public:
         return os << "\n";
     }
 
-private:
+  private:
     Type t;
     IName name;
     Fields f;
