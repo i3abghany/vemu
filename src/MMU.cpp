@@ -1,6 +1,9 @@
 #include <MMU.h>
 #include <cassert>
 
+struct FileInfo;
+struct MemorySegment;
+
 MMU::MMU(uint64_t mem_size)
   : ram_size(mem_size)
 {
@@ -34,6 +37,25 @@ void MMU::reset_to(const MMU& other)
         }
     }
     dirty_blocks.clear();
+}
+
+void MMU::load_file(FileInfo info)
+{
+    for (auto seg : info.segments) {
+        set_perms(seg.start_addr, seg.mem_size, PERM_WRITE);
+        std::vector<uint8_t> data;
+        data.assign((uint8_t*)seg.data, (uint8_t*)seg.data + seg.file_size);
+        if (data.size() < seg.mem_size) {
+            data.resize(seg.mem_size, 0);
+        }
+        if (data.size() > seg.mem_size)
+            data =
+              std::vector<uint8_t>{ data.begin(), data.begin() + seg.mem_size };
+        write_from(data, seg.start_addr);
+        set_perms(seg.start_addr, seg.mem_size, seg.perms);
+        alloc_ptr = std::max(
+          alloc_ptr, ((seg.start_addr + seg.mem_size) + 0xFFFF) & ~0xFFFF);
+    }
 }
 
 void MMU::write_from(const std::vector<uint8_t>& buf, uint64_t start_addr)
@@ -183,7 +205,7 @@ uint64_t MMU::load_dword(uint64_t addr) const
 
 void MMU::store_byte(uint64_t addr, uint64_t data)
 {
-    std::vector<uint8_t> data_to_store(2);
+    std::vector<uint8_t> data_to_store(1);
     data_to_store[0] = static_cast<uint8_t>(data);
     write_from(data_to_store, addr);
 }

@@ -31,6 +31,8 @@ class VEmu
                   uint64_t pc = 0x80000000,
                   uint64_t ram_size = 128 * 1024 * 1024);
 
+    VEmu(std::string f_name, const FileInfo info);
+
     uint32_t run();
     void dump_regs();
     std::array<int64_t, 32> get_iregs();

@@ -1,6 +1,13 @@
 #include <algorithm>
 
 #include <Tester.h>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wshadow"
+// #pragma GCC system_header
+#include <elfio/elfio.hpp>
+#pragma GCC diagnostic pop
+using namespace ELFIO;
 
 void Tester::run()
 {
@@ -15,93 +22,79 @@ void Tester::run()
             continue;
         }
         std::cout << "Starting test: " << tcase.bin_file_name << "... ";
-        VEmu em = VEmu{ tcase.bin_file_name, 0x80000000, 64 * 1024 * 1024 };
+        elfio reader;
+        if (!reader.load(tcase.bin_file_name)) {
+            std::cout << "Can't find or process ELF file "
+                      << tcase.bin_file_name << std::endl;
+            continue;
+        }
+        std::vector<MemorySegment> segments;
+        auto seg_num = reader.segments.size();
+        for (int i = 0; i < seg_num; ++i) {
+            const segment* pseg = reader.segments[i];
+            BytePermission perms = (uint8_t)pseg->get_flags();
+            const uint8_t* p = (const uint8_t*)reader.segments[i]->get_data();
+            segments.push_back({ perms,
+                                 pseg->get_virtual_address(),
+                                 pseg->get_memory_size(),
+                                 pseg->get_file_size(),
+                                 p });
+        }
+        FileInfo info{ segments, reader.get_entry() };
+        VEmu em = VEmu{ tcase.bin_file_name, info };
         em.run();
     }
 }
 
 const std::vector<TestCase> Tester::test_cases = {
-    { "../tests/bins/rv64ua_p_amoadd_d" },
-    { "../tests/bins/rv64ua_p_amoadd_w" },
-    { "../tests/bins/rv64ua_p_amoand_d" },
-    { "../tests/bins/rv64ua_p_amoand_w" },
-    { "../tests/bins/rv64ua_p_amomax_d" },
-    { "../tests/bins/rv64ua_p_amomaxu_d" },
-    { "../tests/bins/rv64ua_p_amomaxu_w" },
-    { "../tests/bins/rv64ua_p_amomax_w" },
-    { "../tests/bins/rv64ua_p_amomin_d" },
-    { "../tests/bins/rv64ua_p_amominu_d" },
-    { "../tests/bins/rv64ua_p_amominu_w" },
-    { "../tests/bins/rv64ua_p_amomin_w" },
-    { "../tests/bins/rv64ua_p_amoor_d" },
-    { "../tests/bins/rv64ua_p_amoor_w" },
-    { "../tests/bins/rv64ua_p_amoswap_d" },
-    { "../tests/bins/rv64ua_p_amoswap_w" },
-    { "../tests/bins/rv64ua_p_amoxor_d" },
-    { "../tests/bins/rv64ua_p_amoxor_w" },
-    { "../tests/bins/rv64ui_p_add" },
-    { "../tests/bins/rv64ui_p_addi" },
-    { "../tests/bins/rv64ui_p_addiw" },
-    { "../tests/bins/rv64ui_p_addw" },
-    { "../tests/bins/rv64ui_p_auipc" },
-    { "../tests/bins/rv64ui_p_bgeu" },
-    { "../tests/bins/rv64ui_p_blt" },
-    { "../tests/bins/rv64ui_p_bltu" },
-    { "../tests/bins/rv64ui_p_bne" },
-    { "../tests/bins/rv64ui_p_fence_i", true },
-    { "../tests/bins/rv64ui_p_jal" },
-    { "../tests/bins/rv64ui_p_jalr" },
-    { "../tests/bins/rv64ui_p_lb" },
-    { "../tests/bins/rv64ui_p_lbu" },
-    { "../tests/bins/rv64ui_p_ld" },
-    { "../tests/bins/rv64ui_p_lh" },
-    { "../tests/bins/rv64ui_p_lui" },
-    { "../tests/bins/rv64ui_p_lw" },
-    { "../tests/bins/rv64ui_p_lwu" },
-    { "../tests/bins/rv64ui_p_sb", true },
-    { "../tests/bins/rv64ui_p_sd", true },
-    { "../tests/bins/rv64ui_p_sh", true },
-    { "../tests/bins/rv64ui_p_sll" },
-    { "../tests/bins/rv64ui_p_slli" },
-    { "../tests/bins/rv64ui_p_slliw" },
-    { "../tests/bins/rv64ui_p_sllw" },
-    { "../tests/bins/rv64ui_p_slt" },
-    { "../tests/bins/rv64ui_p_slti" },
-    { "../tests/bins/rv64ui_p_sltiu" },
-    { "../tests/bins/rv64ui_p_sltu" },
-    { "../tests/bins/rv64ui_p_sraiw" },
-    { "../tests/bins/rv64ui_p_sraw" },
-    { "../tests/bins/rv64ui_p_srli" },
-    { "../tests/bins/rv64ui_p_srliw" },
-    { "../tests/bins/rv64ui_p_srlw" },
-    { "../tests/bins/rv64ui_p_subw" },
-    { "../tests/bins/rv64ui_p_sw", true },
-    { "../tests/bins/rv64ui_p_xor" },
-    { "../tests/bins/rv64ui_p_xori" },
-    { "../tests/bins/rv64um_p_div" },
-    { "../tests/bins/rv64um_p_divu" },
-    { "../tests/bins/rv64um_p_divuw" },
-    { "../tests/bins/rv64um_p_divw" },
-    { "../tests/bins/rv64um_p_mul" },
-    { "../tests/bins/rv64um_p_mulh" },
-    { "../tests/bins/rv64um_p_mulhsu" },
-    { "../tests/bins/rv64um_p_mulhu" },
-    { "../tests/bins/rv64um_p_mulw" },
-    { "../tests/bins/rv64um_p_rem" },
-    { "../tests/bins/rv64um_p_remu" },
-    { "../tests/bins/rv64um_p_remuw" },
-    { "../tests/bins/rv64um_p_remw" },
-    { "../tests/bins/rv64ui_p_and" },
-    { "../tests/bins/rv64ui_p_andi" },
-    { "../tests/bins/rv64ui_p_beq" },
-    { "../tests/bins/rv64ui_p_bge" },
-    { "../tests/bins/rv64ui_p_lhu" },
-    { "../tests/bins/rv64ui_p_or" },
-    { "../tests/bins/rv64ui_p_ori" },
-    { "../tests/bins/rv64ui_p_sra" },
-    { "../tests/bins/rv64ui_p_srai" },
-    { "../tests/bins/rv64ui_p_srl" },
-    { "../tests/bins/rv64ui_p_sub" },
-    { "../tests/bins/rv64uf_p_fadd", true },
-    { "../tests/bins/rv64uf_p_fdiv", true }
+    { "../tests/elf/rv64ui-p-add" },
+    { "../tests/elf/rv64ui-p-addi" },
+    { "../tests/elf/rv64ui-p-addiw" },
+    { "../tests/elf/rv64ui-p-addw" },
+    { "../tests/elf/rv64ui-p-and" },
+    { "../tests/elf/rv64ui-p-andi" },
+    { "../tests/elf/rv64ui-p-auipc" },
+    { "../tests/elf/rv64ui-p-beq" },
+    { "../tests/elf/rv64ui-p-bge" },
+    { "../tests/elf/rv64ui-p-bgeu" },
+    { "../tests/elf/rv64ui-p-blt" },
+    { "../tests/elf/rv64ui-p-bltu" },
+    { "../tests/elf/rv64ui-p-bne" },
+    { "../tests/elf/rv64ui-p-fence_i" },
+    { "../tests/elf/rv64ui-p-jal" },
+    { "../tests/elf/rv64ui-p-jalr" },
+    { "../tests/elf/rv64ui-p-lb" },
+    { "../tests/elf/rv64ui-p-lbu" },
+    { "../tests/elf/rv64ui-p-ld" },
+    { "../tests/elf/rv64ui-p-lh" },
+    { "../tests/elf/rv64ui-p-lhu" },
+    { "../tests/elf/rv64ui-p-lui" },
+    { "../tests/elf/rv64ui-p-lw" },
+    { "../tests/elf/rv64ui-p-lwu" },
+    { "../tests/elf/rv64ui-p-or" },
+    { "../tests/elf/rv64ui-p-ori" },
+    { "../tests/elf/rv64ui-p-sb" },
+    { "../tests/elf/rv64ui-p-sd" },
+    { "../tests/elf/rv64ui-p-sh" },
+    { "../tests/elf/rv64ui-p-sll" },
+    { "../tests/elf/rv64ui-p-slli" },
+    { "../tests/elf/rv64ui-p-slliw" },
+    { "../tests/elf/rv64ui-p-sllw" },
+    { "../tests/elf/rv64ui-p-slt" },
+    { "../tests/elf/rv64ui-p-slti" },
+    { "../tests/elf/rv64ui-p-sltiu" },
+    { "../tests/elf/rv64ui-p-sltu" },
+    { "../tests/elf/rv64ui-p-sra" },
+    { "../tests/elf/rv64ui-p-srai" },
+    { "../tests/elf/rv64ui-p-sraiw" },
+    { "../tests/elf/rv64ui-p-sraw" },
+    { "../tests/elf/rv64ui-p-srl" },
+    { "../tests/elf/rv64ui-p-srli" },
+    { "../tests/elf/rv64ui-p-srliw" },
+    { "../tests/elf/rv64ui-p-srlw" },
+    { "../tests/elf/rv64ui-p-sub" },
+    { "../tests/elf/rv64ui-p-subw" },
+    { "../tests/elf/rv64ui-p-sw" },
+    { "../tests/elf/rv64ui-p-xor" },
+    { "../tests/elf/rv64ui-p-xori" }
 };

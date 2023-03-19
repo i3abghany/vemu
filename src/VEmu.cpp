@@ -33,6 +33,13 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     iregs.store_reg(2, stack_base + STACK_SIZE);
 }
 
+VEmu::VEmu(std::string f_name, const FileInfo info)
+  : VEmu("", info.entry_point, 128 * 1024 * 1024)
+{
+    bin_file_name = std::move(f_name);
+    bus.get_mmu()->load_file(info);
+}
+
 VEmu::VEmu(std::vector<uint8_t> bytes, uint64_t start_pc, uint64_t mem_size)
   : VEmu("", start_pc, mem_size)
 {
@@ -275,8 +282,9 @@ std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 
 uint32_t VEmu::run()
 {
-    uint64_t base = pc;
-    for (; pc < base + code_size; pc += 4) {
+    // uint64_t base = pc;
+    // for (; pc < base + code_size; pc += 4) {
+    for (;; pc += 4) {
         Interrupt i = check_pending_interrupt();
         if (i != Interrupt::NoInterrupt) {
             take_interrupt(i);
