@@ -198,7 +198,8 @@ void VEmu::read_file()
     auto sz = rc == 0 ? statbuf.st_size : -1;
 #endif
     code_size = static_cast<uint64_t>(sz);
-    auto base = bus.get_mmu()->allocate(code_size);
+    auto aligned_code_size = (code_size + 0xFFFF) & ~0xFFFF;
+    auto base = bus.get_mmu()->allocate(aligned_code_size);
     pc = base;
     std::vector<uint8_t> content;
     content.reserve(code_size);
