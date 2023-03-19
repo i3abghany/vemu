@@ -1476,9 +1476,10 @@ ReturnException VEmu::JALR()
     int64_t imm = static_cast<int64_t>(imm_32);
 
     auto res = static_cast<int64_t>(this->pc + 4);
+    auto rs1_val = iregs.load_reg(rs1);
     iregs.store_reg(rd, res);
 
-    this->pc = static_cast<uint64_t>(iregs.load_reg(rs1) + imm);
+    this->pc = static_cast<uint64_t>(rs1_val + imm);
     this->pc &= ~(0x1);
     this->pc -= 4;
 
