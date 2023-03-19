@@ -4,7 +4,6 @@
 #include <vector>
 #include <array>
 #include <string>
-#include <cstdint>
 #include <fstream>
 #ifndef _WIN32
 #include <filesystem>
@@ -15,13 +14,10 @@
 #include <functional>
 #include <unordered_set>
 #include <utility>
-#include <cassert>
-#include <cmath>
 
 #include <InstructionDecoder.h>
 #include <RegFile.h>
 #include <Bus.h>
-#include <util.h>
 #include <FRegFile.h>
 
 class VEmu {

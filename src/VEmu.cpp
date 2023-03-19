@@ -1,4 +1,8 @@
 #include <cstring>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <type_traits>
 
 #include <VEmu.h>
 
@@ -313,6 +317,16 @@ void VEmu::dump_csrs()
     std::cout << "scause: " << load_csr(SCAUSE) << '\n';
 }
 
+template <typename T>
+uint64_t sext_from(T w)
+{
+    return static_cast<uint64_t>(
+        static_cast<int64_t>(
+            static_cast<typename std::make_signed<T>::type>(w)
+        )
+    );
+}
+
 ReturnException VEmu::LB()
 {
     LBU();
@@ -320,7 +334,7 @@ ReturnException VEmu::LB()
     auto rd = curr_instr.get_fields().rd;
 
     auto res = static_cast<int64_t>(
-        sext_byte(static_cast<uint8_t>(iregs.load_reg(rd) & 0xFF)));
+         sext_from<uint8_t>(iregs.load_reg(rd) & 0xFFUL));
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -333,7 +347,7 @@ ReturnException VEmu::LW()
     auto rd = curr_instr.get_fields().rd;
 
     auto res = static_cast<int64_t>(
-        sext_word(static_cast<uint32_t>(iregs.load_reg(rd) & 0xFFFFFFFF)));
+        sext_from<uint32_t>(iregs.load_reg(rd) & 0xFFFFFFFFUL));
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -368,7 +382,7 @@ ReturnException VEmu::LH()
     auto rd = curr_instr.get_fields().rd;
 
     auto res = static_cast<int64_t>(
-        sext_hword(static_cast<uint16_t>(iregs.load_reg(rd) & 0xFFFF)));
+        sext_from<uint16_t>(iregs.load_reg(rd) & 0xFFFFUL));
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -1832,7 +1846,7 @@ ReturnException VEmu::AMOMINUW()
         return store_ret;
     }
 
-    iregs.store_reg(rd, sext_word(tmp));
+    iregs.store_reg(rd, sext_from<uint32_t>(tmp));
 
     return ReturnException::NormalExecutionReturn;
 }
@@ -1863,7 +1877,7 @@ ReturnException VEmu::AMOMAXUW()
         return store_ret;
     }
 
-    iregs.store_reg(rd, sext_word(tmp));
+    iregs.store_reg(rd, sext_from<uint32_t>(tmp));
 
     return ReturnException::NormalExecutionReturn;
 }
