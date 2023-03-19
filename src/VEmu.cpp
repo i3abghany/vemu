@@ -54,9 +54,12 @@ void VEmu::init_func_map()
         {IName::SLTIU,    &VEmu::SLTIU},
         {IName::XORI,     &VEmu::XORI},
         {IName::ORI,      &VEmu::ORI},
+        {IName::OR,       &VEmu::OR},
         {IName::ANDI,     &VEmu::ANDI},
+        {IName::AND,      &VEmu::AND},
         {IName::SLLI,     &VEmu::SLLI},
         {IName::SRLI,     &VEmu::SRLI},
+        {IName::SRA,      &VEmu::SRA},
         {IName::SRAI,     &VEmu::SRAI},
         {IName::SLLIW,    &VEmu::SLLIW},
         {IName::SRLIW,    &VEmu::SRLIW},
@@ -690,7 +693,7 @@ ReturnException VEmu::ECALL()
         HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleTextAttribute(hStdout, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 #endif
-        std::cout << ("Passed test: " + bin_file_name + '\n');
+        std::cout << "Passed\n";
     }
     else {
 #ifdef _WIN32
@@ -700,6 +703,7 @@ ReturnException VEmu::ECALL()
         std::cout << "Failed test: " <<  bin_file_name <<  '\n';
         static constexpr size_t GP_REG = 3;
         std::cout << ("Failed on testcase #" + std::to_string(iregs.load_reg(GP_REG) >> 1) + '\n');
+        dump_regs();
         exit(EXIT_FAILURE);
     }
     test_flag_done = true;
