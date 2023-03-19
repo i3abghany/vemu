@@ -24,10 +24,26 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     fregs = FRegFile{};
     csrs.fill(0);
     init_misa();
-    iregs.store_reg(2, ADDR_BASE + mem_size);
     init_func_map();
     if (bin_file_name != "")
         read_file();
+
+    static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
+    auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
+    bus.get_mmu()->set_perms(stack_base, STACK_SIZE, PERM_RAW | PERM_WRITE);
+    iregs.store_reg(2, stack_base + STACK_SIZE);
+}
+
+VEmu::VEmu(std::vector<uint8_t> bytes, uint64_t start_pc, uint64_t mem_size)
+  : VEmu("", start_pc, mem_size)
+{
+    code_size = bytes.size();
+    auto aligned_code_size = (code_size + 0xFFFF) & ~0xFFFF;
+    auto base = bus.get_mmu()->allocate(aligned_code_size);
+    pc = base;
+    bus.get_mmu()->set_perms(base, code_size, PERM_WRITE);
+    bus.get_mmu()->write_from(bytes, base);
+    bus.get_mmu()->set_perms(base, code_size, PERM_EXEC | PERM_READ);
 }
 
 void VEmu::init_misa()

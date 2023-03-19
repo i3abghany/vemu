@@ -56,7 +56,7 @@ void MMU::write_from(const std::vector<uint8_t>& buf, uint64_t start_addr)
     }
 }
 
-std::vector<uint8_t> MMU::read_to(uint64_t start_addr, uint64_t len)
+std::vector<uint8_t> MMU::read_to(uint64_t start_addr, uint64_t len) const
 {
     assert(start_addr + len < ram_size);
     std::vector<uint8_t> ret(len);
@@ -135,7 +135,8 @@ uint64_t MMU::load_byte(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    res |= static_cast<uint64_t>(ram[addr]);
+    std::vector<uint8_t> read_data = read_to(addr, 1);
+    res |= static_cast<uint64_t>(read_data[0]);
 
     return res;
 }
@@ -144,8 +145,9 @@ uint64_t MMU::load_hword(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    res |= static_cast<uint64_t>(ram[addr]);
-    res |= static_cast<uint64_t>(ram[addr + 1]) << 8;
+    std::vector<uint8_t> read_data = read_to(addr, 2);
+    res |= static_cast<uint64_t>(read_data[0]);
+    res |= static_cast<uint64_t>(read_data[1]) << 8;
 
     return res;
 }
@@ -154,10 +156,11 @@ uint64_t MMU::load_word(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    res |= static_cast<uint64_t>(ram[addr]);
-    res |= static_cast<uint64_t>(ram[addr + 1]) << 8;
-    res |= static_cast<uint64_t>(ram[addr + 2]) << 16;
-    res |= static_cast<uint64_t>(ram[addr + 3]) << 24;
+    std::vector<uint8_t> read_data = read_to(addr, 4);
+    res |= static_cast<uint64_t>(read_data[0]);
+    res |= static_cast<uint64_t>(read_data[1]) << 8;
+    res |= static_cast<uint64_t>(read_data[2]) << 16;
+    res |= static_cast<uint64_t>(read_data[3]) << 24;
     return res;
 }
 
@@ -165,45 +168,54 @@ uint64_t MMU::load_dword(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    res |= static_cast<uint64_t>(ram[addr]);
-    res |= static_cast<uint64_t>(ram[addr + 1]) << 8;
-    res |= static_cast<uint64_t>(ram[addr + 2]) << 16;
-    res |= static_cast<uint64_t>(ram[addr + 3]) << 24;
-    res |= static_cast<uint64_t>(ram[addr + 4]) << 32;
-    res |= static_cast<uint64_t>(ram[addr + 5]) << 40;
-    res |= static_cast<uint64_t>(ram[addr + 6]) << 48;
-    res |= static_cast<uint64_t>(ram[addr + 7]) << 56;
+    std::vector<uint8_t> read_data = read_to(addr, 8);
+    res |= static_cast<uint64_t>(read_data[0]);
+    res |= static_cast<uint64_t>(read_data[1]) << 8;
+    res |= static_cast<uint64_t>(read_data[2]) << 16;
+    res |= static_cast<uint64_t>(read_data[3]) << 24;
+    res |= static_cast<uint64_t>(read_data[4]) << 32;
+    res |= static_cast<uint64_t>(read_data[5]) << 40;
+    res |= static_cast<uint64_t>(read_data[6]) << 48;
+    res |= static_cast<uint64_t>(read_data[7]) << 56;
 
     return res;
 }
 
 void MMU::store_byte(uint64_t addr, uint64_t data)
 {
-    ram[addr] = static_cast<uint8_t>(data);
+    std::vector<uint8_t> data_to_store(2);
+    data_to_store[0] = static_cast<uint8_t>(data);
+    write_from(data_to_store, addr);
 }
 
 void MMU::store_hword(uint64_t addr, uint64_t data)
 {
-    ram[addr] = static_cast<uint8_t>(data) & 0xFF;
-    ram[addr + 1] = static_cast<uint8_t>((data >> 8) & 0xFF);
+    std::vector<uint8_t> data_to_store(2);
+    data_to_store[0] = static_cast<uint8_t>(data) & 0xFF;
+    data_to_store[1] = static_cast<uint8_t>((data >> 8) & 0xFF);
+    write_from(data_to_store, addr);
 }
 
 void MMU::store_word(uint64_t addr, uint64_t data)
 {
-    ram[addr] = static_cast<uint8_t>(data) & 0xFF;
-    ram[addr + 1] = static_cast<uint8_t>((data >> 8) & 0xFF);
-    ram[addr + 2] = static_cast<uint8_t>((data >> 16) & 0xFF);
-    ram[addr + 3] = static_cast<uint8_t>((data >> 24) & 0xFF);
+    std::vector<uint8_t> data_to_store(4);
+    data_to_store[0] = static_cast<uint8_t>(data) & 0xFF;
+    data_to_store[1] = static_cast<uint8_t>((data >> 8) & 0xFF);
+    data_to_store[2] = static_cast<uint8_t>((data >> 16) & 0xFF);
+    data_to_store[3] = static_cast<uint8_t>((data >> 24) & 0xFF);
+    write_from(data_to_store, addr);
 }
 
 void MMU::store_dword(uint64_t addr, uint64_t data)
 {
-    ram[addr] = static_cast<uint8_t>(data) & 0xFF;
-    ram[addr + 1] = static_cast<uint8_t>((data >> 8) & 0xFF);
-    ram[addr + 2] = static_cast<uint8_t>((data >> 16) & 0xFF);
-    ram[addr + 3] = static_cast<uint8_t>((data >> 24) & 0xFF);
-    ram[addr + 4] = static_cast<uint8_t>((data >> 32) & 0xFF);
-    ram[addr + 5] = static_cast<uint8_t>((data >> 40) & 0xFF);
-    ram[addr + 6] = static_cast<uint8_t>((data >> 48) & 0xFF);
-    ram[addr + 7] = static_cast<uint8_t>((data >> 56) & 0xFF);
+    std::vector<uint8_t> data_to_store(8);
+    data_to_store[0] = static_cast<uint8_t>(data) & 0xFF;
+    data_to_store[1] = static_cast<uint8_t>((data >> 8) & 0xFF);
+    data_to_store[2] = static_cast<uint8_t>((data >> 16) & 0xFF);
+    data_to_store[3] = static_cast<uint8_t>((data >> 24) & 0xFF);
+    data_to_store[4] = static_cast<uint8_t>((data >> 32) & 0xFF);
+    data_to_store[5] = static_cast<uint8_t>((data >> 40) & 0xFF);
+    data_to_store[6] = static_cast<uint8_t>((data >> 48) & 0xFF);
+    data_to_store[7] = static_cast<uint8_t>((data >> 56) & 0xFF);
+    write_from(data_to_store, addr);
 }
