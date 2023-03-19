@@ -1,10 +1,10 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
 #include <array>
-#include <string>
 #include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 #ifndef _WIN32
 #include <filesystem>
 #else
@@ -15,24 +15,33 @@
 #include <unordered_set>
 #include <utility>
 
-#include <InstructionDecoder.h>
-#include <RegFile.h>
 #include <Bus.h>
 #include <FRegFile.h>
+#include <InstructionDecoder.h>
+#include <RegFile.h>
 
-class VEmu {
-public:
-    explicit VEmu(std::string f_name);
+class VEmu
+{
+  public:
+    VEmu(std::string f_name = "",
+         uint64_t pc = 0x80000000,
+         uint64_t ram_size = 128 * 1024 * 1024);
 
     uint32_t run();
     void dump_regs();
     std::array<int64_t, 32> get_iregs();
     std::array<double, 32> get_fregs();
 
-private:
+    VEmu fork()
+    {
+        VEmu forked{};
+        return forked;
+    }
+
+  private:
     void init_func_map();
     void init_misa();
-    std::map<IName, std::function<ReturnException(VEmu *)>> inst_funcs;
+    std::map<IName, std::function<ReturnException(VEmu*)>> inst_funcs;
 
     ReturnException LB();
     ReturnException LH();
@@ -170,29 +179,17 @@ private:
     ReturnException FCVTSL();
     ReturnException FCVTSLU();
 
-private:
+  private:
     bool is_negative_zero(double);
     bool is_positive_zero(double);
     void update_float_flags();
     void reset_float_flags();
 
-private:
+  private:
     void read_file();
     std::string bin_file_name;
 
-    uint32_t hex_instr;
-    Instruction curr_instr;
-
-    uint64_t pc;
-    uint64_t code_size;
-
-private:
-    Mode mode;
-
-private:
-    RegFile iregs;
-    FRegFile fregs;
-private:
+  private:
     constexpr static size_t CSR_NUM = 4096;
     std::array<uint64_t, CSR_NUM> csrs;
 
@@ -201,17 +198,30 @@ private:
 
     void dump_csrs();
 
-private:
-    Bus bus {};
+  private:
     std::pair<uint32_t, ReturnException> get_4byte_aligned_instr(uint64_t);
-
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
     ReturnException store(uint64_t, uint64_t, size_t);
 
-private:
+  private:
+    Mode mode;
+
+    Bus bus;
     std::unordered_set<uint64_t> reservation_set;
 
-private:
+    RegFile iregs;
+    FRegFile fregs;
+
+    uint32_t hex_instr;
+    Instruction curr_instr;
+
+    uint64_t pc;
+    uint64_t code_size;
+    uint64_t ram_size;
+
+  private:
+    static constexpr int UART_IRQ = 10;
+
     void take_interrupt(Interrupt i);
     Interrupt check_pending_interrupt();
     void trap(ReturnException e);
@@ -219,12 +229,8 @@ private:
     void exit_fatally(ReturnException e);
     std::string stringify_exception(ReturnException e);
 
-private:
-    static constexpr int UART_IRQ = 10;
-
 #ifdef TEST_ENV
-public:
+  public:
     bool test_flag_done = false;
 #endif
 };
-

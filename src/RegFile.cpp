@@ -7,7 +7,8 @@ RegFile::RegFile()
 
 void RegFile::store_reg(size_t idx, int64_t value)
 {
-    if (idx == 0) return;
+    if (idx == 0)
+        return;
     data[idx] = value;
 }
 
@@ -24,17 +25,9 @@ std::array<int64_t, 32> RegFile::get_regs()
 void RegFile::dump_regs()
 {
     for (int i = 0; i < 32; i++) {
-        std::cout << "{"
-            << std::left
-            << std::setfill(' ')
-            << std::setw(3)
-            << abi_map[i]
-            << "} " << "regs["
-            << std::left
-            << std::setw(2)
-            << i << "] = "
-            << std::hex
-            << data[i] <<
-            std::dec << '\n';
+        std::cout << "{" << std::left << std::setfill(' ') << std::setw(3)
+                  << abi_map[i] << "} "
+                  << "regs[" << std::left << std::setw(2) << i
+                  << "] = " << std::hex << data[i] << std::dec << '\n';
     }
 }

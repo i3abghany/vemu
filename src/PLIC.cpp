@@ -78,5 +78,4 @@ void PLIC::store64(uint64_t addr, uint64_t data)
         default:
             break;
     }
-
 }

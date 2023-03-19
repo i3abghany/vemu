@@ -5,7 +5,7 @@ OBJ_COPY=riscv64-unknown-linux-gnu-objcopy
 CC=g++
 CFLAGS=-std=c++17 -ggdb -Wall -Werror -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code 
 
-OBJ_FILES = main.o VEmu.o InstructionDecoder.o Instruction.o DRAM.o Bus.o util.o RegFile.o
+OBJ_FILES = main.o VEmu.o InstructionDecoder.o Instruction.o MMU.o Bus.o util.o RegFile.o
 
 tests: CFLAGS += -DTEST_ENV
 
@@ -16,7 +16,7 @@ tests: $(OBJ_FILES) Tester.o
 	$(CC) $(CFLAGS) -o emu $(OBJ_FILES) Tester.o \
 	&& ./emu
 
-Instruction.o DRAM.o: ../include/defs.h
+Instruction.o MMU.o: ../include/defs.h
 
 main.o: main.cpp VEmu.o 
 	$(CC) $(CFLAGS) -c main.cpp 
@@ -33,11 +33,11 @@ InstructionDecoder.o: InstructionDecoder.cpp ../include/InstructionDecoder.h Ins
 Instruction.o: Instruction.cpp ../include/Instruction.h  
 	$(CC) $(CFLAGS) -c Instruction.cpp
 
-Bus.o: Bus.cpp ../include/Bus.h DRAM.o 
+Bus.o: Bus.cpp ../include/Bus.h MMU.o 
 	$(CC) $(CFLAGS) -c Bus.cpp 
 
-DRAM.o: DRAM.cpp ../include/DRAM.h 
-	$(CC) $(CFLAGS) -c DRAM.cpp 
+MMU.o: MMU.cpp ../include/MMU.h 
+	$(CC) $(CFLAGS) -c MMU.cpp 
 
 util.o: util.cpp ../include/util.h 
 	$(CC) $(CFLAGS) -c util.cpp 

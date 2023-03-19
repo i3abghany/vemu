@@ -9,7 +9,7 @@ set(SRC_FILES
     src/InstructionDecoder.cpp 
     src/VEmu.cpp 
     src/Instruction.cpp 
-    src/DRAM.cpp
+    src/MMU.cpp
     src/Bus.cpp 
     src/RegFile.cpp
     src/FRegFile.cpp
