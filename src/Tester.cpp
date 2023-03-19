@@ -13,7 +13,7 @@ void Tester::run()
             std::cout << "Skipped test: " << tcase.bin_file_name << std::endl;
             continue;
         }
-        VEmu em = VEmu {tcase.bin_file_name};
+        VEmu em = VEmu {tcase.bin_file_name, 0x80000000, 128 * 1024 * 1024};
         em.run();
     }
 }

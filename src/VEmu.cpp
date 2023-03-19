@@ -12,18 +12,17 @@ extern "C" {
 };
 #endif
 
-VEmu::VEmu(std::string f_name) :
-    bin_file_name(std::move(f_name))
+VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size) :
+    bin_file_name(std::move(f_name)), bus(mem_size), pc(start_pc), ram_size(mem_size)
 {
     mode = Mode::Machine;
-    pc = 0x80000000;
     iregs = RegFile{};
     fregs = FRegFile{};
     csrs.fill(0);
     init_misa();
-    iregs.store_reg(2, ADDR_BASE + DRAM::RAM_SIZE);
-    read_file();
+    iregs.store_reg(2, ADDR_BASE + mem_size);
     init_func_map();
+    if (bin_file_name != "") read_file();
 }
 
 void VEmu::init_misa()
