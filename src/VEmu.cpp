@@ -30,7 +30,6 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
     auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
-    bus.get_mmu()->set_perms(stack_base, STACK_SIZE, PERM_RAW | PERM_WRITE);
     iregs.store_reg(2, stack_base + STACK_SIZE);
 }
 
