@@ -20,9 +20,9 @@ struct MemorySegment
 {
     BytePermission perms;
     uint64_t start_addr;
-    uint64_t mem_size;        
-    uint64_t file_size;        
-    const uint8_t *data;        
+    uint64_t mem_size;
+    uint64_t file_size;
+    const uint8_t* data;
 };
 
 struct FileInfo

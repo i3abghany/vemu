@@ -27,20 +27,52 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     init_func_map();
     if (bin_file_name != "")
         read_file();
-
-    static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
-    auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
-    iregs.store_reg(2, stack_base + STACK_SIZE);
 }
 
-VEmu::VEmu(std::string f_name, const FileInfo info)
+VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg)
   : VEmu("", info.entry_point, 128 * 1024 * 1024)
 {
     bin_file_name = std::move(f_name);
     bus.get_mmu()->load_file(info);
+
+    static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
+    auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
+    iregs.store_reg(2, stack_base + STACK_SIZE);
+
+    push_to_stack(0, 64);
+    push_to_stack(0, 64);
+
+    // argv end
+    push_to_stack(0, 64);
+
+    // argv[2]
+    auto argv2 = bus.get_mmu()->allocate(1024);
+    std::vector<uint8_t> argname;
+    argname.reserve(arg.length() + 1);
+    for (uint64_t i = 0; i < arg.length(); i++)
+        argname.push_back(arg[i]);
+    argname.push_back('\0');
+    push_to_stack(argv2, 64);
+
+    // argv[1]
+    auto argv1 = bus.get_mmu()->allocate(32);
+    std::vector<uint8_t> dash_x{ '-', 'x', '\0' };
+    bus.get_mmu()->write_from(dash_x, argv1);
+    push_to_stack(argv1, 64);
+
+    // argv[0]
+    auto argv0 = bus.get_mmu()->allocate(32);
+    std::vector<uint8_t> pname{ 'o', 'b', 'j', 'd', 'u', 'm', 'b', '\0' };
+    bus.get_mmu()->write_from(pname, argv0);
+    push_to_stack(argv0, 64);
+
+    // argc
+    push_to_stack(3, 64);
 }
 
-VEmu::VEmu(std::vector<uint8_t> bytes, uint64_t start_pc, uint64_t mem_size)
+VEmu::VEmu(const std::vector<uint8_t>& bytes,
+           uint64_t start_pc,
+           uint64_t mem_size)
   : VEmu("", start_pc, mem_size)
 {
     code_size = bytes.size();
@@ -63,6 +95,13 @@ void VEmu::init_misa()
     misa |= (1 << 0);  // Atomic ISA
 
     store_csr(MISA, misa);
+}
+
+void VEmu::push_to_stack(uint64_t data, size_t sz)
+{
+    auto sp = iregs.load_reg(2) - 8;
+    bus.get_mmu()->store(sp, data, sz);
+    iregs.store_reg(2, sp);
 }
 
 void VEmu::init_func_map()
@@ -282,8 +321,6 @@ std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 
 uint32_t VEmu::run()
 {
-    // uint64_t base = pc;
-    // for (; pc < base + code_size; pc += 4) {
     for (;; pc += 4) {
         Interrupt i = check_pending_interrupt();
         if (i != Interrupt::NoInterrupt) {
@@ -689,18 +726,32 @@ ReturnException VEmu::FENCEI()
 #ifndef TEST_ENV
 ReturnException VEmu::ECALL()
 {
-    switch (mode) {
-        case Mode::User:
-            return ReturnException::EnvironmentCallFromUserMode;
-        case Mode::Supervisor:
-            return ReturnException::EnvironmentCallFromSupervisorMode;
-        case Mode::Machine:
-            return ReturnException::EnvironmentCallFromMachineMode;
-        default:
-            exit(EXIT_FAILURE);
+    constexpr size_t A7_REG = 17;
+    int64_t syscall_number = iregs.load_reg(A7_REG);
+
+    std::cout << "SYSCALL: " << syscall_number << '\n';
+    if (syscall_number == 214) { // brk
+        constexpr size_t A0_REG = 10;
+        assert(iregs.load_reg(A0_REG) == 0);
+    } else {
+        // std::cout << "Unsupported syscall: " << syscall_number << std::endl;
+        assert(false);
     }
 
-    exit(EXIT_FAILURE);
+    return ReturnException::NormalExecutionReturn;
+
+    // switch (mode) {
+    //     case Mode::User:
+    //         return ReturnException::EnvironmentCallFromUserMode;
+    //     case Mode::Supervisor:
+    //         return ReturnException::EnvironmentCallFromSupervisorMode;
+    //     case Mode::Machine:
+    //         return ReturnException::EnvironmentCallFromMachineMode;
+    //     default:
+    //         exit(EXIT_FAILURE);
+    // }
+
+    // exit(EXIT_FAILURE);
 }
 #else
 
