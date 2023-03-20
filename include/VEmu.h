@@ -38,10 +38,20 @@ class VEmu
     std::array<int64_t, 32> get_iregs();
     std::array<double, 32> get_fregs();
 
+    VEmu(const VEmu& other)
+      : bus{ other.bus }
+    {
+        bin_file_name = other.bin_file_name;
+        string_arg = other.string_arg;
+        file_info = other.file_info;
+        pc = file_info.entry_point;
+        ram_size = other.ram_size;
+    }
+
     VEmu fork()
     {
-        VEmu forked{};
-        return forked;
+        VEmu other{ *this };
+        return other;
     }
 
   private:
@@ -234,6 +244,9 @@ class VEmu
     std::string stringify_exception(ReturnException e);
 
     static constexpr int UART_IRQ = 10;
+
+    FileInfo file_info;
+    std::string string_arg;
 
 #ifdef TEST_ENV
   public:

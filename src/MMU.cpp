@@ -33,7 +33,6 @@ void MMU::reset_to(const MMU& other)
         uint64_t start_addr = blk * BLOCK_SIZE;
         for (uint64_t i = start_addr; i < start_addr + BLOCK_SIZE; i++) {
             ram[i] = other.ram[i];
-            byte_permission[i] = other.byte_permission[i];
         }
     }
     dirty_blocks.clear();

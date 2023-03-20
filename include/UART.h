@@ -15,6 +15,11 @@ class UART : public Device
 {
   public:
     UART();
+    UART(const UART& other)
+    {
+        uart_mem = other.uart_mem;
+        interrupting = false;
+    }
 
     [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t,
                                                             size_t) override;

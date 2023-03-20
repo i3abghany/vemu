@@ -37,6 +37,7 @@ int main(int argc, char* argv[])
                              pseg->get_file_size(),
                              p });
     }
+
     FileInfo info{ segments, reader.get_entry() };
     VEmu em = VEmu{ argv[1], info, argv[2] };
     em.run();

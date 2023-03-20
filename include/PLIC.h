@@ -11,6 +11,7 @@ class PLIC : public Device
 {
   public:
     PLIC();
+    PLIC(const PLIC& other) = default;
 
     [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t addr,
                                                             size_t sz) override;
