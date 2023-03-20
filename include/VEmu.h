@@ -27,11 +27,11 @@ class VEmu
          uint64_t pc = 0x80000000,
          uint64_t ram_size = 128 * 1024 * 1024);
 
-    explicit VEmu(const std::vector<uint8_t>,
+    explicit VEmu(const std::vector<uint8_t>&,
                   uint64_t pc = 0x80000000,
                   uint64_t ram_size = 128 * 1024 * 1024);
 
-    VEmu(std::string f_name, const FileInfo info);
+    VEmu(std::string f_name, const FileInfo& info, const std::string&);
 
     uint32_t run();
     void dump_regs();
@@ -207,6 +207,7 @@ class VEmu
     std::pair<uint32_t, ReturnException> get_4byte_aligned_instr(uint64_t);
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
     ReturnException store(uint64_t, uint64_t, size_t);
+    void push_to_stack(uint64_t, size_t);
 
   private:
     Mode mode;

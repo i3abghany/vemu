@@ -56,7 +56,8 @@ target_compile_options(test_emu PRIVATE -fprofile-arcs)
 target_compile_options(test_emu PRIVATE -ftest-coverage)
 target_compile_options(test_emu PRIVATE --coverage)
 
-target_compile_options(emu PRIVATE -O3)
+# target_compile_options(emu PRIVATE -O3)
+target_compile_options(emu PRIVATE -ggdb)
 
 target_link_libraries(test_emu PRIVATE -lgcov)
 target_link_libraries(test_emu PRIVATE --coverage)
