@@ -11,6 +11,7 @@ class CLINT : public Device
 {
   public:
     CLINT();
+    CLINT(const CLINT& other) = default;
 
     [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t,
                                                             size_t) override;

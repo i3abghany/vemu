@@ -34,6 +34,8 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg)
 {
     bin_file_name = std::move(f_name);
     bus.get_mmu()->load_file(info);
+    file_info = info;
+    string_arg = arg;
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
     auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);

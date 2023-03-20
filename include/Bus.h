@@ -18,6 +18,16 @@ class Bus
         mmu = new MMU(ram_size);
     }
 
+    Bus(const Bus& other)
+    {
+        devices = std::vector<Device*>{
+            new CLINT(*dynamic_cast<CLINT*>(other.devices[0])),
+            new PLIC(*dynamic_cast<PLIC*>(other.devices[1])),
+            new UART(*dynamic_cast<UART*>(other.devices[2]))
+        };
+        mmu = new MMU(*other.mmu);
+    }
+
     ~Bus()
     {
         for (Device* device : devices)

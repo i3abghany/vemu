@@ -34,6 +34,15 @@ struct FileInfo
 class MMU : public Device
 {
   public:
+    MMU(const MMU& other)
+    {
+        ram = other.ram;
+        byte_permission = other.byte_permission;
+        dirty_blocks = other.dirty_blocks;
+        alloc_ptr = other.alloc_ptr;
+        ram_size = other.ram_size;
+    }
+
     MMU(uint64_t ram_size);
     [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t,
                                                             size_t) override;
