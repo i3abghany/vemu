@@ -93,14 +93,15 @@ std::vector<uint8_t> MMU::read_to(uint64_t start_addr, uint64_t len) const
     // assert(can_read_all);
     // assert(!has_raw);
     if (!can_read_all) {
-        std::cout << "WARNING: Reading memory without read permission @ 0x"
-                  << std::hex << start_addr << ", len: 0x" << len << std::endl;
+        // std::cout << "WARNING: Reading memory without read permission @ 0x"
+        //           << std::hex << start_addr << ", len: 0x" << len <<
+        //           std::endl;
         std::cout << std::dec;
     }
 
     if (has_raw) {
-        std::cout << "WARNING: Reading uninitialized memory @ 0x" << std::hex
-                  << start_addr << ", len: 0x" << len << std::endl;
+        // std::cout << "WARNING: Reading uninitialized memory @ 0x" << std::hex
+        //           << start_addr << ", len: 0x" << len << std::endl;
         std::cout << std::dec;
     }
 
