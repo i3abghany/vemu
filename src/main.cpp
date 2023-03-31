@@ -26,8 +26,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
     std::vector<MemorySegment> segments;
-    auto seg_num = reader.segments.size();
-    for (int i = 0; i < seg_num; ++i) {
+    for (int i = 0; i < reader.segments.size(); ++i) {
         const segment* pseg = reader.segments[i];
         BytePermission seg_perms = (uint8_t)pseg->get_flags();
         const uint8_t* p = (const uint8_t*)reader.segments[i]->get_data();

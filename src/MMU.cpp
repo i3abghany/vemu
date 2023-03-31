@@ -83,16 +83,25 @@ std::vector<uint8_t> MMU::read_to(uint64_t start_addr, uint64_t len) const
     std::vector<uint8_t> ret(len);
 
     bool can_read_all = true;
+    bool has_raw = false;
     for (uint64_t i = start_addr; i < start_addr + len; i++) {
         can_read_all &= ((byte_permission[i] & PERM_READ) != 0);
+        has_raw |= (byte_permission[i] & PERM_RAW) != 0;
     }
 
     // TODO: Handle read permission errors gracefully.
-    assert(can_read_all);
+    // assert(can_read_all);
+    // assert(!has_raw);
+    if (!can_read_all) {
+        std::cout << "WARNING: Reading memory without read permission @ 0x"
+                  << std::hex << start_addr << ", len: 0x" << len << std::endl;
+        std::cout << std::dec;
+    }
 
-    for (uint64_t i = start_addr; i < start_addr + len; i++) {
-        // TODO: Handle uninitialized memory errors gracefully.
-        assert((byte_permission[i] & PERM_RAW) == 0);
+    if (has_raw) {
+        std::cout << "WARNING: Reading uninitialized memory @ 0x" << std::hex
+                  << start_addr << ", len: 0x" << len << std::endl;
+        std::cout << std::dec;
     }
 
     for (uint64_t i = start_addr; i < start_addr + len; i++) {
@@ -200,6 +209,17 @@ uint64_t MMU::load_dword(uint64_t addr) const
     res |= static_cast<uint64_t>(read_data[7]) << 56;
 
     return res;
+}
+
+[[nodiscard]] std::string MMU::_read_null_terminated_string(uint64_t addr) const
+{
+    std::string str;
+    uint8_t read_char = ' ';
+    while (read_char != 0) {
+        read_char = read_to(addr++, 1)[0];
+        str += read_char;
+    }
+    return str;
 }
 
 void MMU::store_byte(uint64_t addr, uint64_t data)

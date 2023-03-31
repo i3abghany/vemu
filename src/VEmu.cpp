@@ -48,23 +48,25 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg)
     push_to_stack(0, 64);
 
     // argv[2]
-    auto argv2 = bus.get_mmu()->allocate(1024);
+    auto argv2 = bus.get_mmu()->allocate(256);
     std::vector<uint8_t> argname;
     argname.reserve(arg.length() + 1);
     for (uint64_t i = 0; i < arg.length(); i++)
         argname.push_back(arg[i]);
     argname.push_back('\0');
+    bus.get_mmu()->write_from(argname, argv2);
     push_to_stack(argv2, 64);
 
     // argv[1]
-    auto argv1 = bus.get_mmu()->allocate(32);
+    auto argv1 = bus.get_mmu()->allocate(8);
     std::vector<uint8_t> dash_x{ '-', 'x', '\0' };
     bus.get_mmu()->write_from(dash_x, argv1);
     push_to_stack(argv1, 64);
 
     // argv[0]
     auto argv0 = bus.get_mmu()->allocate(32);
-    std::vector<uint8_t> pname{ 'o', 'b', 'j', 'd', 'u', 'm', 'b', '\0' };
+    std::vector<uint8_t> pname{ '.', '/', 'o', 'b', 'j',
+                                'd', 'u', 'm', 'b', '\0' };
     bus.get_mmu()->write_from(pname, argv0);
     push_to_stack(argv0, 64);
 
@@ -101,8 +103,8 @@ void VEmu::init_misa()
 
 void VEmu::push_to_stack(uint64_t data, size_t sz)
 {
-    auto sp = iregs.load_reg(2) - 8;
-    bus.get_mmu()->store(sp, data, sz);
+    auto sp = iregs.load_reg(2) - (sz / 8);
+    store(sp, data, sz);
     iregs.store_reg(2, sp);
 }
 
