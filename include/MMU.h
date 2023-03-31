@@ -55,7 +55,9 @@ class MMU : public Device
     [[nodiscard]] bool is_interrupting() override { return false; }
 
     void write_from(const std::vector<uint8_t>&, uint64_t);
-    std::vector<uint8_t> read_to(uint64_t, uint64_t) const;
+    [[nodiscard]] std::vector<uint8_t> read_to(uint64_t, uint64_t) const;
+    [[nodiscard]] std::string _read_null_terminated_string(uint64_t) const;
+    [[nodiscard]] uint64_t cur_alloc_ptr() const { return alloc_ptr; }
 
     void reset_to(const MMU& other);
 
