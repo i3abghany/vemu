@@ -733,12 +733,42 @@ ReturnException VEmu::ECALL()
     constexpr size_t A7_REG = 17;
     int64_t syscall_number = iregs.load_reg(A7_REG);
 
-    std::cout << "SYSCALL: " << syscall_number << '\n';
+    // std::cout << "SYSCALL: " << std::dec << syscall_number << "@ pc " <<
+    // std::hex << pc << '\n';
+
+    constexpr size_t A0_REG = 10;
     if (syscall_number == 214) { // brk
-        constexpr size_t A0_REG = 10;
-        assert(iregs.load_reg(A0_REG) == 0);
+        uint64_t addr = iregs.load_reg(A0_REG);
+        int64_t increment =
+          addr == 0 ? 0
+                    : (int64_t)addr - (int64_t)bus.get_mmu()->cur_alloc_ptr();
+        std::cout << "\n################################\n";
+        std::cout << "\nsyscall sbrk" << std::hex << '\n';
+        std::cout << "\naddr: 0x" << addr << '\n';
+        std::cout << "\nincrement: 0x" << increment << '\n';
+        std::cout << "################################\n";
+        if (increment < 0) {
+            iregs.store_reg(A0_REG, bus.get_mmu()->cur_alloc_ptr());
+        } else {
+            auto ret_base = bus.get_mmu()->allocate(increment);
+            iregs.store_reg(A0_REG, ret_base);
+        }
+    } else if (syscall_number == 64) { // write
+        uint64_t fd = iregs.load_reg(A0_REG);
+        uint64_t buf = iregs.load_reg(A0_REG + 1);
+        size_t count = iregs.load_reg(A0_REG + 2);
+        std::cout << "\n################################\n";
+        std::cout << "\nsyscall write" << std::dec << '\n';
+        std::cout << std::hex << "\ncount: " << count << '\n';
+        std::cout << "\nbuf: " << buf << '\n';
+        std::cout << "################################\n";
+        auto v = bus.get_mmu()->read_to(buf, count);
+        std::string s(v.begin(), v.end());
+        if (fd == 2) {
+            std::cerr << s;
+        }
     } else {
-        // std::cout << "Unsupported syscall: " << syscall_number << std::endl;
+        std::cout << "Unsupported syscall: " << syscall_number << std::endl;
         assert(false);
     }
 
