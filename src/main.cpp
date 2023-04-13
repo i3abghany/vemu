@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 #ifndef TEST_ENV
     if (argc < 3) {
         std::cout << "Usage: " << argv[0]
-                  << " </path/to/objdump> </path/to/fuzz/input>";
+                  << " </path/to/objdump> </path/to/fuzz/input>\n";
         exit(EXIT_FAILURE);
     }
     elfio reader;
