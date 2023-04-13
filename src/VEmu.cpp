@@ -569,9 +569,6 @@ ReturnException VEmu::SLTI()
     return ReturnException::NormalExecutionReturn;
 }
 
-// SLTIU rd, rs1, 1 sets rd to 1
-// if rs1 == 0, otherwise it sets
-// it to 0.
 ReturnException VEmu::SLTIU()
 {
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
