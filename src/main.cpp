@@ -16,14 +16,15 @@ using namespace ELFIO;
 int main(int argc, char* argv[])
 {
 #ifndef TEST_ENV
-    if (argc < 2) {
-        std::cout << "Provide a program.\n";
-        return 1;
+    if (argc < 3) {
+        std::cout << "Usage: " << argv[0]
+                  << " </path/to/objdump> </path/to/fuzz/input>";
+        exit(EXIT_FAILURE);
     }
     elfio reader;
     if (!reader.load(argv[1])) {
         std::cout << "Can't find or process ELF file " << argv[1] << std::endl;
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     std::vector<MemorySegment> segments;
     for (int i = 0; i < reader.segments.size(); ++i) {
@@ -47,5 +48,4 @@ int main(int argc, char* argv[])
     Tester::run();
 
 #endif
-    return 0;
 }
