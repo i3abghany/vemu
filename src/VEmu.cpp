@@ -766,25 +766,29 @@ ReturnException VEmu::ECALL()
             iregs.store_reg(A0_REG, count);
         }
     } else {
-        std::cout << "Unsupported syscall: " << syscall_number << std::endl;
-        assert(false);
+        std::cout << "Unsupported syscall: " << std::dec << syscall_number
+                  << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     return ReturnException::NormalExecutionReturn;
 
-    // switch (mode) {
-    //     case Mode::User:
-    //         return ReturnException::EnvironmentCallFromUserMode;
-    //     case Mode::Supervisor:
-    //         return ReturnException::EnvironmentCallFromSupervisorMode;
-    //     case Mode::Machine:
-    //         return ReturnException::EnvironmentCallFromMachineMode;
-    //     default:
-    //         exit(EXIT_FAILURE);
-    // }
+#ifdef BAREMETAL_EMU
+    switch (mode) {
+        case Mode::User:
+            return ReturnException::EnvironmentCallFromUserMode;
+        case Mode::Supervisor:
+            return ReturnException::EnvironmentCallFromSupervisorMode;
+        case Mode::Machine:
+            return ReturnException::EnvironmentCallFromMachineMode;
+        default:
+            exit(EXIT_FAILURE);
+    }
 
-    // exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
+#endif
 }
+
 #else
 
 ReturnException VEmu::ECALL()
