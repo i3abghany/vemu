@@ -14,24 +14,30 @@ class Bus
     Bus(uint64_t mem_size)
       : ram_size(mem_size)
     {
+#ifndef FUZZ_ENV
         devices = std::vector<Device*>{ new CLINT(), new PLIC(), new UART() };
+#endif
         mmu = new MMU(ram_size);
     }
 
     Bus(const Bus& other)
     {
+#ifndef FUZZ_ENV
         devices = std::vector<Device*>{
             new CLINT(*dynamic_cast<CLINT*>(other.devices[0])),
             new PLIC(*dynamic_cast<PLIC*>(other.devices[1])),
             new UART(*dynamic_cast<UART*>(other.devices[2]))
         };
+#endif
         mmu = new MMU(*other.mmu);
     }
 
     ~Bus()
     {
+#ifndef FUZZ_ENV
         for (Device* device : devices)
             delete device;
+#endif
         delete mmu;
     }
 
