@@ -49,25 +49,17 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg)
 
     // argv[2]
     auto argv2 = bus.get_mmu()->allocate(256);
-    std::vector<uint8_t> argname;
-    argname.reserve(arg.length() + 1);
-    for (uint64_t i = 0; i < arg.length(); i++)
-        argname.push_back(arg[i]);
-    argname.push_back('\0');
-    bus.get_mmu()->write_from(argname, argv2);
+    write_string_to_addr(arg, argv2);
     push_to_stack(argv2, 64);
 
     // argv[1]
     auto argv1 = bus.get_mmu()->allocate(8);
-    std::vector<uint8_t> dash_x{ '-', 'x', '\0' };
-    bus.get_mmu()->write_from(dash_x, argv1);
+    write_string_to_addr("-x", argv1);
     push_to_stack(argv1, 64);
 
     // argv[0]
-    auto argv0 = bus.get_mmu()->allocate(32);
-    std::vector<uint8_t> pname{ '.', '/', 'o', 'b', 'j',
-                                'd', 'u', 'm', 'b', '\0' };
-    bus.get_mmu()->write_from(pname, argv0);
+    auto argv0 = bus.get_mmu()->allocate(256);
+    write_string_to_addr(bin_file_name, argv0);
     push_to_stack(argv0, 64);
 
     // argc
@@ -107,6 +99,16 @@ void VEmu::push_to_stack(uint64_t data, size_t sz)
     store(sp, data, sz);
     iregs.store_reg(2, sp);
 }
+
+void VEmu::write_string_to_addr(const std::string& arg, uint64_t addr)
+{
+    std::vector<uint8_t> p(arg.size() + 1);
+    for (size_t i = 0; i < p.size(); i++)
+        p[i] = arg[i];
+    p.back() = '\0';
+    bus.get_mmu()->write_from(p, addr);
+}
+
 
 void VEmu::init_func_map()
 {
