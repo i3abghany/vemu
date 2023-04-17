@@ -109,7 +109,6 @@ void VEmu::write_string_to_addr(const std::string& arg, uint64_t addr)
     bus.get_mmu()->write_from(p, addr);
 }
 
-
 void VEmu::init_func_map()
 {
     inst_funcs = {
@@ -349,7 +348,6 @@ uint32_t VEmu::run()
         if (is_fatal(ret))
             exit_fatally(ret);
     }
-    dump_csrs();
     return 0;
 }
 
