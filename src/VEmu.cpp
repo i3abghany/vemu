@@ -32,8 +32,11 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
         read_file();
 }
 
-VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg)
-  : VEmu("", info.entry_point, 128 * 1024 * 1024)
+VEmu::VEmu(std::string f_name,
+           const FileInfo& info,
+           const std::string& arg,
+           uint64_t mem_size)
+  : VEmu("", info.entry_point, mem_size)
 {
     bin_file_name = std::move(f_name);
     bus.get_mmu()->load_file(info);

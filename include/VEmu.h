@@ -24,9 +24,9 @@ class VEmu
 
     explicit VEmu(const std::vector<uint8_t>&,
                   uint64_t pc = 0x80000000,
-                  uint64_t ram_size = 128 * 1024 * 1024);
+                  uint64_t mem_size = 128 * 1024 * 1024);
 
-    VEmu(std::string f_name, const FileInfo& info, const std::string&);
+    VEmu(std::string f_name, const FileInfo& info, const std::string& arg, uint64_t mem_size = 128 * 1024 * 1024);
 
     uint32_t run();
     void dump_regs();
