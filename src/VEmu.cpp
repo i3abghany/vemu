@@ -726,30 +726,27 @@ ReturnException VEmu::FENCEI()
 #ifdef FUZZ_ENV
 ReturnException VEmu::ECALL()
 {
-    constexpr size_t A7_REG = 17;
-    int64_t syscall_number = iregs.load_reg(A7_REG);
-
-    constexpr size_t A0_REG = 10;
+    int64_t syscall_number = iregs.load_reg(REG_A7);
     if (syscall_number == 214) { // brk
-        uint64_t addr = iregs.load_reg(A0_REG);
+        uint64_t addr = iregs.load_reg(REG_A0);
         int64_t increment =
           addr == 0 ? 0
                     : (int64_t)addr - (int64_t)bus.get_mmu()->cur_alloc_ptr();
         if (increment < 0) {
-            iregs.store_reg(A0_REG, ~0);
+            iregs.store_reg(REG_A0, ~0);
         } else {
             auto ret_base = bus.get_mmu()->allocate(increment);
-            iregs.store_reg(A0_REG, ret_base + increment);
+            iregs.store_reg(REG_A0, ret_base + increment);
         }
     } else if (syscall_number == 64) { // write
-        uint64_t fd = iregs.load_reg(A0_REG);
-        uint64_t buf = iregs.load_reg(A0_REG + 1);
-        size_t count = iregs.load_reg(A0_REG + 2);
+        uint64_t fd = iregs.load_reg(REG_A0);
+        uint64_t buf = iregs.load_reg(REG_A1);
+        size_t count = iregs.load_reg(REG_A2);
         auto v = bus.get_mmu()->read_to(buf, count);
         std::string s(v.begin(), v.end());
         if (fd == 1 || fd == 2) {
             std::cout << s << std::flush;
-            iregs.store_reg(A0_REG, count);
+            iregs.store_reg(REG_A0, count);
         }
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number
@@ -763,14 +760,12 @@ ReturnException VEmu::ECALL()
 ReturnException VEmu::ECALL()
 {
     /* a0 is loaded with zero on ECALL in `pass`. */
-    constexpr size_t A0_REG = 10;
-    if (iregs.load_reg(A0_REG) == 0) {
+    if (iregs.load_reg(REG_A0) == 0) {
         std::cout << "Passed\n";
     } else {
         std::cout << "Failed test: " << bin_file_name << '\n';
-        static constexpr size_t GP_REG = 3;
         std::cout << ("Failed on testcase #" +
-                      std::to_string(iregs.load_reg(GP_REG) >> 1) + '\n');
+                      std::to_string(iregs.load_reg(REG_GP) >> 1) + '\n');
         dump_regs();
     }
     test_flag_done = true;
