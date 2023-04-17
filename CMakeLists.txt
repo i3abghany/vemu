@@ -16,6 +16,7 @@ set(SRC_FILES
     src/CLINT.cpp
     src/PLIC.cpp
     src/UART.cpp
+    src/util.cpp
 )
 
 include_directories(include)

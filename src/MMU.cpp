@@ -2,9 +2,6 @@
 #include <cassert>
 #include <execution>
 
-struct FileInfo;
-struct MemorySegment;
-
 MMU::MMU(uint64_t mem_size)
   : ram_size(mem_size)
 {

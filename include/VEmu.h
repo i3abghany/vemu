@@ -1,14 +1,14 @@
 #pragma once
 
 #include <array>
+#include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <filesystem>
-#include <functional>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include <Bus.h>
 #include <FRegFile.h>
