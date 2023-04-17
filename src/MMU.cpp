@@ -1,8 +1,6 @@
 #include <MMU.h>
 #include <cassert>
-
-struct FileInfo;
-struct MemorySegment;
+#include <execution>
 
 MMU::MMU(uint64_t mem_size)
   : ram_size(mem_size)
@@ -14,8 +12,10 @@ MMU::MMU(uint64_t mem_size)
 void MMU::set_perms(uint64_t addr, uint64_t size, BytePermission perm)
 {
     assert(addr + size < ram_size);
-    for (uint64_t i = addr; i < addr + size; i++)
-        byte_permission[i] = perm;
+    std::fill(std::execution::par,
+              byte_permission.begin() + addr,
+              byte_permission.begin() + addr + size,
+              perm);
 }
 
 uint64_t MMU::allocate(uint64_t size)

@@ -1,47 +1,20 @@
 #include <algorithm>
 
 #include <Tester.h>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wshadow"
-// #pragma GCC system_header
-#include <elfio/elfio.hpp>
-#pragma GCC diagnostic pop
-using namespace ELFIO;
+#include <util.h>
 
 void Tester::run()
 {
     for (const auto& tcase : test_cases) {
         if (tcase.skip) {
-#ifdef _WIN32
-            HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-            SetConsoleTextAttribute(hStdout,
-                                    FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-#endif
             std::cout << "Skipped test: " << tcase.bin_file_name << std::endl;
             continue;
         }
         std::cout << "Starting test: " << tcase.bin_file_name << "... ";
-        elfio reader;
-        if (!reader.load(tcase.bin_file_name)) {
-            std::cout << "Can't find or process ELF file "
-                      << tcase.bin_file_name << std::endl;
+        FileInfo info = read_elf(tcase.bin_file_name, false);
+        if (info.entry_point == (uint64_t)~0)
             continue;
-        }
-        std::vector<MemorySegment> segments;
-        auto seg_num = reader.segments.size();
-        for (int i = 0; i < seg_num; ++i) {
-            const segment* pseg = reader.segments[i];
-            BytePermission perms = (uint8_t)pseg->get_flags();
-            const uint8_t* p = (const uint8_t*)reader.segments[i]->get_data();
-            segments.push_back({ perms,
-                                 pseg->get_virtual_address(),
-                                 pseg->get_memory_size(),
-                                 pseg->get_file_size(),
-                                 p });
-        }
-        FileInfo info{ segments, reader.get_entry() };
-        VEmu em = VEmu{ tcase.bin_file_name, info, "" };
+        VEmu em = VEmu{ tcase.bin_file_name, info, "", 2 * 1024 * 1024 };
         em.run();
     }
 }

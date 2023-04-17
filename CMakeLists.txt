@@ -16,6 +16,7 @@ set(SRC_FILES
     src/CLINT.cpp
     src/PLIC.cpp
     src/UART.cpp
+    src/util.cpp
 )
 
 include_directories(include)
@@ -35,6 +36,7 @@ include_directories(softfloat PUBLIC
 endif()
 
 add_executable(emu ${SRC_FILES})
+add_executable(fuzz_emu ${SRC_FILES})
 
 add_executable(test_emu
     ${SRC_FILES} src/Tester.cpp
@@ -57,7 +59,10 @@ target_compile_options(test_emu PRIVATE -ftest-coverage)
 target_compile_options(test_emu PRIVATE --coverage)
 
 target_compile_options(emu PRIVATE -O3)
-target_compile_options(emu PRIVATE -ggdb)
+
+target_compile_options(fuzz_emu PRIVATE -O3)
+target_compile_options(fuzz_emu PRIVATE -ggdb)
+target_compile_options(fuzz_emu PRIVATE -DFUZZ_ENV)
 
 target_link_libraries(test_emu PRIVATE -lgcov)
 target_link_libraries(test_emu PRIVATE --coverage)

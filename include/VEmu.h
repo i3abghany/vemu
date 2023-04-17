@@ -1,19 +1,14 @@
 #pragma once
 
 #include <array>
+#include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <string>
-#include <vector>
-#ifndef _WIN32
-#include <filesystem>
-#else
-#include <sys/stat.h>
-#include <windows.h>
-#endif
-#include <functional>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include <Bus.h>
 #include <FRegFile.h>
@@ -29,9 +24,12 @@ class VEmu
 
     explicit VEmu(const std::vector<uint8_t>&,
                   uint64_t pc = 0x80000000,
-                  uint64_t ram_size = 128 * 1024 * 1024);
+                  uint64_t mem_size = 128 * 1024 * 1024);
 
-    VEmu(std::string f_name, const FileInfo& info, const std::string&);
+    VEmu(std::string f_name,
+         const FileInfo& info,
+         const std::string& arg,
+         uint64_t mem_size = 128 * 1024 * 1024);
 
     uint32_t run();
     void dump_regs();
@@ -218,6 +216,7 @@ class VEmu
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
     ReturnException store(uint64_t, uint64_t, size_t);
     void push_to_stack(uint64_t, size_t);
+    void write_string_to_addr(const std::string&, uint64_t);
 
   private:
     Mode mode;
