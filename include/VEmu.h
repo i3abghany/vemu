@@ -5,12 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#ifndef _WIN32
 #include <filesystem>
-#else
-#include <sys/stat.h>
-#include <windows.h>
-#endif
 #include <functional>
 #include <unordered_set>
 #include <utility>

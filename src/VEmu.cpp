@@ -253,15 +253,8 @@ void VEmu::read_file()
         std::cout << "Could not open the file " << bin_file_name << "\n";
         exit(EXIT_FAILURE);
     }
-#ifndef _WIN32
     std::filesystem::path file_path{ bin_file_name };
     auto sz = std::filesystem::file_size(file_path);
-#else
-    struct stat statbuf
-    {};
-    int rc = stat(bin_file_name.c_str(), &statbuf);
-    auto sz = rc == 0 ? statbuf.st_size : -1;
-#endif
     code_size = static_cast<uint64_t>(sz);
     auto aligned_code_size = (code_size + 0xFFFF) & ~0xFFFF;
     auto base = bus.get_mmu()->allocate(aligned_code_size);
@@ -754,7 +747,7 @@ ReturnException VEmu::ECALL()
         }
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number
-                  << std::endl;
+                  << ", pc: 0x" << std::hex << pc << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -783,17 +776,8 @@ ReturnException VEmu::ECALL()
     /* a0 is loaded with zero on ECALL in `pass`. */
     constexpr size_t A0_REG = 10;
     if (iregs.load_reg(A0_REG) == 0) {
-#ifdef _WIN32
-        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hStdout,
-                                FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-#endif
         std::cout << "Passed\n";
     } else {
-#ifdef _WIN32
-        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hStdout, FOREGROUND_RED | FOREGROUND_INTENSITY);
-#endif
         std::cout << "Failed test: " << bin_file_name << '\n';
         static constexpr size_t GP_REG = 3;
         std::cout << ("Failed on testcase #" +
