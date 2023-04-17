@@ -22,8 +22,11 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     mode = Mode::Machine;
     iregs = RegFile{};
     fregs = FRegFile{};
+#ifndef FUZZ_ENV
+    mode = Mode::User;
     csrs.fill(0);
     init_misa();
+#endif
     init_func_map();
     if (bin_file_name != "")
         read_file();
@@ -320,12 +323,12 @@ std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 uint32_t VEmu::run()
 {
     for (;; pc += 4) {
+#ifndef FUZZ_ENV
         Interrupt i = check_pending_interrupt();
         if (i != Interrupt::NoInterrupt) {
             take_interrupt(i);
         }
-        if (pc == 0x0)
-            break;
+#endif
 
 #ifdef TEST_ENV
         if (test_flag_done)
@@ -717,7 +720,7 @@ ReturnException VEmu::FENCEI()
     return ReturnException::NormalExecutionReturn;
 }
 
-#ifndef TEST_ENV
+#ifdef FUZZ_ENV
 ReturnException VEmu::ECALL()
 {
     constexpr size_t A7_REG = 17;
@@ -752,25 +755,8 @@ ReturnException VEmu::ECALL()
     }
 
     return ReturnException::NormalExecutionReturn;
-
-#ifdef BAREMETAL_EMU
-    switch (mode) {
-        case Mode::User:
-            return ReturnException::EnvironmentCallFromUserMode;
-        case Mode::Supervisor:
-            return ReturnException::EnvironmentCallFromSupervisorMode;
-        case Mode::Machine:
-            return ReturnException::EnvironmentCallFromMachineMode;
-        default:
-            exit(EXIT_FAILURE);
-    }
-
-    exit(EXIT_FAILURE);
-#endif
 }
-
-#else
-
+#elif defined(TEST_ENV)
 ReturnException VEmu::ECALL()
 {
     /* a0 is loaded with zero on ECALL in `pass`. */
@@ -786,6 +772,22 @@ ReturnException VEmu::ECALL()
     }
     test_flag_done = true;
     return ReturnException::NormalExecutionReturn;
+}
+#else
+ReturnException VEmu::ECALL()
+{
+    switch (mode) {
+        case Mode::User:
+            return ReturnException::EnvironmentCallFromUserMode;
+        case Mode::Supervisor:
+            return ReturnException::EnvironmentCallFromSupervisorMode;
+        case Mode::Machine:
+            return ReturnException::EnvironmentCallFromMachineMode;
+        default:
+            exit(EXIT_FAILURE);
+    }
+
+    exit(EXIT_FAILURE);
 }
 #endif
 
@@ -2348,6 +2350,13 @@ Interrupt VEmu::check_pending_interrupt()
     return Interrupt::NoInterrupt;
 }
 
+#ifdef FUZZ_ENV
+void VEmu::trap(ReturnException e)
+{
+    std::cout << "Unexpected return exception: " << stringify_exception(e)
+              << "@ pc: 0x" << std::hex << pc;
+}
+#else
 void VEmu::trap(ReturnException e)
 {
     uint64_t exception_pc = pc;
@@ -2447,6 +2456,7 @@ void VEmu::trap(ReturnException e)
         }
     }
 }
+#endif
 
 bool VEmu::is_fatal(ReturnException e)
 {
