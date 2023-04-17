@@ -10,7 +10,11 @@
 
 int main(int argc, char* argv[])
 {
-#ifndef TEST_ENV
+    (void)argc;
+    (void)argv;
+#ifdef TEST_ENV
+    Tester::run();
+#elif defined(FUZZ_ENV)
     if (argc < 3) {
         std::cout << "Usage: " << argv[0]
                   << " </path/to/objdump> </path/to/fuzz/input>\n";
@@ -21,9 +25,6 @@ int main(int argc, char* argv[])
     em.run();
     em.dump_regs();
 #else
-    (void)argc;
-    (void)argv;
-    Tester::run();
-
+#error "General emulation still WIP."
 #endif
 }
