@@ -53,23 +53,20 @@ VEmu::VEmu(std::string f_name,
     // argv end
     push_to_stack(0, 64);
 
-    // argv[2]
     auto argv2 = bus.get_mmu()->allocate(256);
     write_string_to_addr(arg, argv2);
     push_to_stack(argv2, 64);
 
-    // argv[1]
     auto argv1 = bus.get_mmu()->allocate(8);
     write_string_to_addr("-x", argv1);
     push_to_stack(argv1, 64);
 
-    // argv[0]
     auto argv0 = bus.get_mmu()->allocate(256);
     write_string_to_addr(bin_file_name, argv0);
     push_to_stack(argv0, 64);
 
-    // argc
-    push_to_stack(3, 64);
+    static constexpr uint64_t argc = 2;
+    push_to_stack(argc, 64);
 }
 
 VEmu::VEmu(const std::vector<uint8_t>& bytes,
@@ -727,7 +724,7 @@ ReturnException VEmu::FENCEI()
 ReturnException VEmu::ECALL()
 {
     int64_t syscall_number = iregs.load_reg(REG_A7);
-    if (syscall_number == 214) { // brk
+    if (syscall_number == SYSCALL_NR_BRK) {
         uint64_t addr = iregs.load_reg(REG_A0);
         int64_t increment =
           addr == 0 ? 0
@@ -738,19 +735,19 @@ ReturnException VEmu::ECALL()
             auto ret_base = bus.get_mmu()->allocate(increment);
             iregs.store_reg(REG_A0, ret_base + increment);
         }
-    } else if (syscall_number == 64) { // write
+    } else if (syscall_number == SYSCALL_NR_WRITE) {
         uint64_t fd = iregs.load_reg(REG_A0);
         uint64_t buf = iregs.load_reg(REG_A1);
         size_t count = iregs.load_reg(REG_A2);
-        auto v = bus.get_mmu()->read_to(buf, count);
-        std::string s(v.begin(), v.end());
+        auto str = bus.get_mmu()->read_to(buf, count).first;
+        std::string s(str.begin(), str.end());
         if (fd == 1 || fd == 2) {
             std::cout << s << std::flush;
             iregs.store_reg(REG_A0, count);
         }
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number
-                  << ", pc: 0x" << std::hex << pc << std::endl;
+                  << ", pc: 0x" << std::hex << pc << '\n';
         exit(EXIT_FAILURE);
     }
 
@@ -2352,7 +2349,7 @@ Interrupt VEmu::check_pending_interrupt()
 void VEmu::trap(ReturnException e)
 {
     std::cout << "Unexpected return exception: " << stringify_exception(e)
-              << "@ pc: 0x" << std::hex << pc;
+              << " @ pc: 0x" << std::hex << pc << '\n';
 }
 #else
 void VEmu::trap(ReturnException e)
@@ -2508,6 +2505,10 @@ std::string VEmu::stringify_exception(ReturnException e)
             return "StoreAMOPageFault";
         case ReturnException::NormalExecutionReturn:
             return "NormalExecutionReturn";
+        case ReturnException::UninitializedMemoryAccess:
+            return "UninitializedMemoryAccess";
+        case ReturnException::ReadMemoryWithNoPermission:
+            return "ReadMemoryWithNoPermission";
         default:
             std::cout << "stringify_exception: Unsupported exception.\n";
             exit(EXIT_FAILURE);

@@ -285,6 +285,11 @@ enum class IName : uint8_t
 #define REG_T5 30
 #define REG_T6 31
 
+#define SYSCALL_NR_EXIT 57
+#define SYSCALL_NR_WRITE 64
+#define SYSCALL_NR_BRK 214
+#define SYSCALL_NR_OPEN 1024
+
 enum class Mode : uint8_t
 {
     User = 0b00,
@@ -308,6 +313,8 @@ enum class ReturnException : uint8_t
     InstructionPageFault = 12,
     LoadPageFault = 13,
     StoreAMOPageFault = 15,
+    ReadMemoryWithNoPermission= 253,
+    UninitializedMemoryAccess = 254,
     NormalExecutionReturn = 255,
 };
 
