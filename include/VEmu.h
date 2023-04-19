@@ -15,20 +15,15 @@
 #include <InstructionDecoder.h>
 #include <RegFile.h>
 
-class VEmu
-{
-  public:
-    VEmu(std::string f_name = "",
-         uint64_t pc = 0x80000000,
+class VEmu {
+public:
+    VEmu(std::string f_name = "", uint64_t pc = 0x80000000,
          uint64_t ram_size = 128 * 1024 * 1024);
 
-    explicit VEmu(const std::vector<uint8_t>&,
-                  uint64_t pc = 0x80000000,
+    explicit VEmu(const std::vector<uint8_t>&, uint64_t pc = 0x80000000,
                   uint64_t mem_size = 128 * 1024 * 1024);
 
-    VEmu(std::string f_name,
-         const FileInfo& info,
-         const std::string& arg,
+    VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
          uint64_t mem_size = 128 * 1024 * 1024);
 
     uint32_t run();
@@ -37,7 +32,7 @@ class VEmu
     std::array<double, 32> get_fregs();
 
     VEmu(const VEmu& other)
-      : bus{ other.bus }
+        : bus { other.bus }
     {
         bin_file_name = other.bin_file_name;
         string_arg = other.string_arg;
@@ -48,11 +43,11 @@ class VEmu
 
     VEmu fork()
     {
-        VEmu other{ *this };
+        VEmu other { *this };
         return other;
     }
 
-  private:
+private:
     void init_func_map();
     void init_misa();
     std::map<IName, std::function<ReturnException(VEmu*)>> inst_funcs;
@@ -198,11 +193,11 @@ class VEmu
     void update_float_flags();
     void reset_float_flags();
 
-  private:
+private:
     void read_file();
     std::string bin_file_name;
 
-  private:
+private:
     constexpr static size_t CSR_NUM = 4096;
     std::array<uint64_t, CSR_NUM> csrs;
 
@@ -211,14 +206,14 @@ class VEmu
 
     void dump_csrs();
 
-  private:
+private:
     std::pair<uint32_t, ReturnException> get_4byte_aligned_instr(uint64_t);
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
     ReturnException store(uint64_t, uint64_t, size_t);
     void push_to_stack(uint64_t, size_t);
     void write_string_to_addr(const std::string&, uint64_t);
 
-  private:
+private:
     Mode mode;
 
     Bus bus;
@@ -234,7 +229,7 @@ class VEmu
     uint64_t code_size;
     uint64_t ram_size;
 
-  private:
+private:
     void take_interrupt(Interrupt i);
     Interrupt check_pending_interrupt();
     void trap(ReturnException e);
@@ -248,7 +243,7 @@ class VEmu
     std::string string_arg;
 
 #ifdef TEST_ENV
-  public:
+public:
     bool test_flag_done = false;
 #endif
 };

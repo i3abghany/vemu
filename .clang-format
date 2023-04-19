@@ -1,6 +1,8 @@
-BasedOnStyle: Mozilla
-ColumnLimit: 80
+BasedOnStyle: WebKit
+ColumnLimit: 90
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 Language: Cpp
 IndentWidth: 4
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
