@@ -77,10 +77,10 @@ void MMU::write_from(const std::vector<uint8_t>& buf, uint64_t start_addr)
     }
 }
 
-std::vector<uint8_t> MMU::read_to(uint64_t start_addr, uint64_t len) const
+std::pair<std::vector<uint8_t>, ReturnException> MMU::read_to(uint64_t start_addr, uint64_t len) const
 {
     assert(start_addr + len < ram_size);
-    std::vector<uint8_t> ret(len);
+    std::pair<std::vector<uint8_t>, ReturnException> ret { std::vector<uint8_t>(len), ReturnException::NormalExecutionReturn };
 
     bool can_read_all = true;
     bool has_raw = false;
@@ -89,45 +89,36 @@ std::vector<uint8_t> MMU::read_to(uint64_t start_addr, uint64_t len) const
         has_raw |= (byte_permission[i] & PERM_RAW) != 0;
     }
 
-    // TODO: Handle read permission errors gracefully.
-    // assert(can_read_all);
-    // assert(!has_raw);
     if (!can_read_all) {
-        std::cout << "WARNING: Reading memory without read permission @ 0x"
-                  << std::hex << start_addr << ", len: 0x" << len << std::endl;
-        std::cout << std::dec;
+        ret.second = ReturnException::ReadMemoryWithNoPermission;
     }
 
     if (has_raw) {
-        std::cout << "WARNING: Reading uninitialized memory @ 0x" << std::hex
-                  << start_addr << ", len: 0x" << len << std::endl;
-        std::cout << std::dec;
+        ret.second = ReturnException::UninitializedMemoryAccess;
     }
 
     for (uint64_t i = start_addr; i < start_addr + len; i++) {
-        ret[i - start_addr] = ram[i];
+        ret.first[i - start_addr] = ram[i];
     }
     return ret;
 }
 
 std::pair<uint64_t, ReturnException> MMU::load(uint64_t addr, size_t sz)
 {
-    std::pair<uint64_t, ReturnException> res{
-        0x00000000, ReturnException::NormalExecutionReturn
-    };
+    std::pair<uint64_t, ReturnException> res;
 
     switch (sz) {
         case 8:
-            res.first = load_byte(addr);
+            res = load_byte(addr);
             break;
         case 16:
-            res.first = load_hword(addr);
+            res = load_hword(addr);
             break;
         case 32:
-            res.first = load_word(addr);
+            res = load_word(addr);
             break;
         case 64:
-            res.first = load_dword(addr);
+            res = load_dword(addr);
             break;
         default:
             assert(false);
@@ -161,44 +152,45 @@ ReturnException MMU::store(uint64_t addr, uint64_t data, size_t sz)
     return ReturnException::NormalExecutionReturn;
 }
 
-uint64_t MMU::load_byte(uint64_t addr) const
+std::pair<uint64_t, ReturnException>  MMU::load_byte(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    std::vector<uint8_t> read_data = read_to(addr, 1);
+    auto [read_data, exp] = read_to(addr, 1);
     res |= static_cast<uint64_t>(read_data[0]);
 
-    return res;
+    return { res, exp };
 }
 
-uint64_t MMU::load_hword(uint64_t addr) const
+std::pair<uint64_t, ReturnException> MMU::load_hword(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    std::vector<uint8_t> read_data = read_to(addr, 2);
+    auto [read_data, exp] = read_to(addr, 2);
     res |= static_cast<uint64_t>(read_data[0]);
     res |= static_cast<uint64_t>(read_data[1]) << 8;
 
-    return res;
+    return { res, exp };
 }
 
-uint64_t MMU::load_word(uint64_t addr) const
+std::pair<uint64_t, ReturnException> MMU::load_word(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    std::vector<uint8_t> read_data = read_to(addr, 4);
+    auto [read_data, exp] = read_to(addr, 4);
     res |= static_cast<uint64_t>(read_data[0]);
     res |= static_cast<uint64_t>(read_data[1]) << 8;
     res |= static_cast<uint64_t>(read_data[2]) << 16;
     res |= static_cast<uint64_t>(read_data[3]) << 24;
-    return res;
+
+    return { res, exp };
 }
 
-uint64_t MMU::load_dword(uint64_t addr) const
+std::pair<uint64_t, ReturnException> MMU::load_dword(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 
-    std::vector<uint8_t> read_data = read_to(addr, 8);
+    auto [read_data, exp] = read_to(addr, 8);
     res |= static_cast<uint64_t>(read_data[0]);
     res |= static_cast<uint64_t>(read_data[1]) << 8;
     res |= static_cast<uint64_t>(read_data[2]) << 16;
@@ -208,18 +200,7 @@ uint64_t MMU::load_dword(uint64_t addr) const
     res |= static_cast<uint64_t>(read_data[6]) << 48;
     res |= static_cast<uint64_t>(read_data[7]) << 56;
 
-    return res;
-}
-
-[[nodiscard]] std::string MMU::_read_null_terminated_string(uint64_t addr) const
-{
-    std::string str;
-    uint8_t read_char = ' ';
-    while (read_char != 0) {
-        read_char = read_to(addr++, 1)[0];
-        str += read_char;
-    }
-    return str;
+    return { res, exp };
 }
 
 void MMU::store_byte(uint64_t addr, uint64_t data)
