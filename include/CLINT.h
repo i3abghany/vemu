@@ -7,14 +7,12 @@
 #include <Device.h>
 #include <defs.h>
 
-class CLINT : public Device
-{
-  public:
+class CLINT : public Device {
+public:
     CLINT();
     CLINT(const CLINT& other) = default;
 
-    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t,
-                                                            size_t) override;
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
     ReturnException store(uint64_t, uint64_t, size_t) override;
 
     [[nodiscard]] uint64_t get_base() const override { return CLINT_BASE; }
@@ -23,7 +21,7 @@ class CLINT : public Device
 
     [[nodiscard]] bool is_interrupting() override { return false; }
 
-  private:
+private:
     [[nodiscard]] uint64_t load64(uint64_t addr) const;
     void store64(uint64_t addr, uint64_t data);
 

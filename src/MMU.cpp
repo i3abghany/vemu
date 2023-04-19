@@ -3,7 +3,7 @@
 #include <execution>
 
 MMU::MMU(uint64_t mem_size)
-  : ram_size(mem_size)
+    : ram_size(mem_size)
 {
     ram.reserve(ram_size);
     byte_permission.reserve(ram_size);
@@ -12,10 +12,8 @@ MMU::MMU(uint64_t mem_size)
 void MMU::set_perms(uint64_t addr, uint64_t size, BytePermission perm)
 {
     assert(addr + size < ram_size);
-    std::fill(std::execution::par,
-              byte_permission.begin() + addr,
-              byte_permission.begin() + addr + size,
-              perm);
+    std::fill(std::execution::par, byte_permission.begin() + addr,
+              byte_permission.begin() + addr + size, perm);
 }
 
 uint64_t MMU::allocate(uint64_t size)
@@ -48,12 +46,11 @@ void MMU::load_file(FileInfo info)
             data.resize(seg.mem_size, 0);
         }
         if (data.size() > seg.mem_size)
-            data =
-              std::vector<uint8_t>{ data.begin(), data.begin() + seg.mem_size };
+            data = std::vector<uint8_t> { data.begin(), data.begin() + seg.mem_size };
         write_from(data, seg.start_addr);
         set_perms(seg.start_addr, seg.mem_size, seg.perms);
-        alloc_ptr = std::max(
-          alloc_ptr, ((seg.start_addr + seg.mem_size) + 0xFFFF) & ~0xFFFF);
+        alloc_ptr
+            = std::max(alloc_ptr, ((seg.start_addr + seg.mem_size) + 0xFFFF) & ~0xFFFF);
     }
 }
 
@@ -77,10 +74,13 @@ void MMU::write_from(const std::vector<uint8_t>& buf, uint64_t start_addr)
     }
 }
 
-std::pair<std::vector<uint8_t>, ReturnException> MMU::read_to(uint64_t start_addr, uint64_t len) const
+std::pair<std::vector<uint8_t>, ReturnException> MMU::read_to(uint64_t start_addr,
+                                                              uint64_t len) const
 {
     assert(start_addr + len < ram_size);
-    std::pair<std::vector<uint8_t>, ReturnException> ret { std::vector<uint8_t>(len), ReturnException::NormalExecutionReturn };
+    std::pair<std::vector<uint8_t>, ReturnException> ret {
+        std::vector<uint8_t>(len), ReturnException::NormalExecutionReturn
+    };
 
     bool can_read_all = true;
     bool has_raw = false;
@@ -108,20 +108,20 @@ std::pair<uint64_t, ReturnException> MMU::load(uint64_t addr, size_t sz)
     std::pair<uint64_t, ReturnException> res;
 
     switch (sz) {
-        case 8:
-            res = load_byte(addr);
-            break;
-        case 16:
-            res = load_hword(addr);
-            break;
-        case 32:
-            res = load_word(addr);
-            break;
-        case 64:
-            res = load_dword(addr);
-            break;
-        default:
-            assert(false);
+    case 8:
+        res = load_byte(addr);
+        break;
+    case 16:
+        res = load_hword(addr);
+        break;
+    case 32:
+        res = load_word(addr);
+        break;
+    case 64:
+        res = load_dword(addr);
+        break;
+    default:
+        assert(false);
     }
 
     return res;
@@ -130,20 +130,20 @@ std::pair<uint64_t, ReturnException> MMU::load(uint64_t addr, size_t sz)
 ReturnException MMU::store(uint64_t addr, uint64_t data, size_t sz)
 {
     switch (sz) {
-        case 8:
-            store_byte(addr, data);
-            break;
-        case 16:
-            store_hword(addr, data);
-            break;
-        case 32:
-            store_word(addr, data);
-            break;
-        case 64:
-            store_dword(addr, data);
-            break;
-        default:
-            assert(false);
+    case 8:
+        store_byte(addr, data);
+        break;
+    case 16:
+        store_hword(addr, data);
+        break;
+    case 32:
+        store_word(addr, data);
+        break;
+    case 64:
+        store_dword(addr, data);
+        break;
+    default:
+        assert(false);
     }
 
     uint64_t block_idx = addr / BLOCK_SIZE;
@@ -152,7 +152,7 @@ ReturnException MMU::store(uint64_t addr, uint64_t data, size_t sz)
     return ReturnException::NormalExecutionReturn;
 }
 
-std::pair<uint64_t, ReturnException>  MMU::load_byte(uint64_t addr) const
+std::pair<uint64_t, ReturnException> MMU::load_byte(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
 

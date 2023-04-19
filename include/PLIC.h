@@ -7,9 +7,8 @@
 #include <Device.h>
 #include <defs.h>
 
-class PLIC : public Device
-{
-  public:
+class PLIC : public Device {
+public:
     PLIC();
     PLIC(const PLIC& other) = default;
 
@@ -23,7 +22,7 @@ class PLIC : public Device
 
     [[nodiscard]] bool is_interrupting() override { return false; }
 
-  private:
+private:
     [[nodiscard]] uint64_t load64(uint64_t) const;
     void store64(uint64_t, uint64_t);
 

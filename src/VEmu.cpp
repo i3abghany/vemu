@@ -7,21 +7,20 @@
 #include <VEmu.h>
 
 #ifdef SUPPORT_SOFTFLOAT
-extern "C"
-{
+extern "C" {
 #include <softfloat.h>
 };
 #endif
 
 VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
-  : bin_file_name(std::move(f_name))
-  , bus(mem_size)
-  , pc(start_pc)
-  , ram_size(mem_size)
+    : bin_file_name(std::move(f_name))
+    , bus(mem_size)
+    , pc(start_pc)
+    , ram_size(mem_size)
 {
     mode = Mode::Machine;
-    iregs = RegFile{};
-    fregs = FRegFile{};
+    iregs = RegFile {};
+    fregs = FRegFile {};
 #ifndef FUZZ_ENV
     mode = Mode::User;
     csrs.fill(0);
@@ -32,11 +31,9 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
         read_file();
 }
 
-VEmu::VEmu(std::string f_name,
-           const FileInfo& info,
-           const std::string& arg,
+VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
            uint64_t mem_size)
-  : VEmu("", info.entry_point, mem_size)
+    : VEmu("", info.entry_point, mem_size)
 {
     bin_file_name = std::move(f_name);
     bus.get_mmu()->load_file(info);
@@ -69,10 +66,8 @@ VEmu::VEmu(std::string f_name,
     push_to_stack(argc, 64);
 }
 
-VEmu::VEmu(const std::vector<uint8_t>& bytes,
-           uint64_t start_pc,
-           uint64_t mem_size)
-  : VEmu("", start_pc, mem_size)
+VEmu::VEmu(const std::vector<uint8_t>& bytes, uint64_t start_pc, uint64_t mem_size)
+    : VEmu("", start_pc, mem_size)
 {
     code_size = bytes.size();
     auto aligned_code_size = (code_size + 0xFFFF) & ~0xFFFF;
@@ -89,9 +84,9 @@ void VEmu::init_misa()
     misa |= (1 << 20); // User-mode
     misa |= (1 << 18); // Supervisor-mode
     misa |= (1 << 12); // Integer multiply/divide
-    misa |= (1 << 8);  // Base integer ISA
-    misa |= (1 << 5);  // Single-precision floating-point
-    misa |= (1 << 0);  // Atomic ISA
+    misa |= (1 << 8); // Base integer ISA
+    misa |= (1 << 5); // Single-precision floating-point
+    misa |= (1 << 0); // Atomic ISA
 
     store_csr(MISA, misa);
 }
@@ -115,138 +110,138 @@ void VEmu::write_string_to_addr(const std::string& arg, uint64_t addr)
 void VEmu::init_func_map()
 {
     inst_funcs = {
-        { IName::LB, &VEmu::LB },
-        { IName::LH, &VEmu::LH },
-        { IName::LW, &VEmu::LW },
-        { IName::LBU, &VEmu::LBU },
-        { IName::LHU, &VEmu::LHU },
-        { IName::LD, &VEmu::LD },
-        { IName::LWU, &VEmu::LWU },
-        { IName::ADDI, &VEmu::ADDI },
-        { IName::ADDIW, &VEmu::ADDIW },
-        { IName::SLTI, &VEmu::SLTI },
-        { IName::SLTIU, &VEmu::SLTIU },
-        { IName::XORI, &VEmu::XORI },
-        { IName::ORI, &VEmu::ORI },
-        { IName::OR, &VEmu::OR },
-        { IName::ANDI, &VEmu::ANDI },
-        { IName::AND, &VEmu::AND },
-        { IName::SLLI, &VEmu::SLLI },
-        { IName::SRLI, &VEmu::SRLI },
-        { IName::SRA, &VEmu::SRA },
-        { IName::SRAI, &VEmu::SRAI },
-        { IName::SLLIW, &VEmu::SLLIW },
-        { IName::SRLIW, &VEmu::SRLIW },
-        { IName::SRAIW, &VEmu::SRAIW },
-        { IName::SRAW, &VEmu::SRAW },
-        { IName::SRLW, &VEmu::SRLW },
-        { IName::FENCE, &VEmu::FENCE },
-        { IName::FENCEI, &VEmu::FENCEI },
-        { IName::ECALL, &VEmu::ECALL },
-        { IName::EBREAK, &VEmu::EBREAK },
-        { IName::CSRRW, &VEmu::CSRRW },
-        { IName::CSRRS, &VEmu::CSRRS },
-        { IName::CSRRC, &VEmu::CSRRC },
-        { IName::CSRRWI, &VEmu::CSRRWI },
-        { IName::CSRRSI, &VEmu::CSRRSI },
-        { IName::CSRRCI, &VEmu::CSRRCI },
-        { IName::BEQ, &VEmu::BEQ },
-        { IName::BNE, &VEmu::BNE },
-        { IName::BLT, &VEmu::BLT },
-        { IName::BGE, &VEmu::BGE },
-        { IName::BLTU, &VEmu::BLTU },
-        { IName::BGEU, &VEmu::BGEU },
-        { IName::SB, &VEmu::SB },
-        { IName::SH, &VEmu::SH },
-        { IName::SW, &VEmu::SW },
-        { IName::SD, &VEmu::SD },
-        { IName::ADD, &VEmu::ADD },
-        { IName::ADDW, &VEmu::ADDW },
-        { IName::SUB, &VEmu::SUB },
-        { IName::SUBW, &VEmu::SUBW },
-        { IName::SLL, &VEmu::SLL },
-        { IName::SLLW, &VEmu::SLLW },
-        { IName::SLT, &VEmu::SLT },
-        { IName::SLTU, &VEmu::SLTU },
-        { IName::XOR, &VEmu::XOR },
-        { IName::SRL, &VEmu::SRL },
-        { IName::SRLW, &VEmu::SRLW },
-        { IName::LUI, &VEmu::LUI },
-        { IName::AUIPC, &VEmu::AUIPC },
-        { IName::JAL, &VEmu::JAL },
-        { IName::JALR, &VEmu::JALR },
-        { IName::MUL, &VEmu::MUL },
-        { IName::MULH, &VEmu::MULH },
-        { IName::MULHSU, &VEmu::MULHSU },
-        { IName::MULHU, &VEmu::MULHU },
-        { IName::DIV, &VEmu::DIV },
-        { IName::DIVU, &VEmu::DIVU },
-        { IName::REM, &VEmu::REM },
-        { IName::REMU, &VEmu::REMU },
-        { IName::MULW, &VEmu::MULW },
-        { IName::DIVW, &VEmu::DIVW },
-        { IName::DIVUW, &VEmu::DIVUW },
-        { IName::REMW, &VEmu::REMW },
-        { IName::REMUW, &VEmu::REMUW },
+        {IName::LB,        &VEmu::LB      },
+        { IName::LH,       &VEmu::LH      },
+        { IName::LW,       &VEmu::LW      },
+        { IName::LBU,      &VEmu::LBU     },
+        { IName::LHU,      &VEmu::LHU     },
+        { IName::LD,       &VEmu::LD      },
+        { IName::LWU,      &VEmu::LWU     },
+        { IName::ADDI,     &VEmu::ADDI    },
+        { IName::ADDIW,    &VEmu::ADDIW   },
+        { IName::SLTI,     &VEmu::SLTI    },
+        { IName::SLTIU,    &VEmu::SLTIU   },
+        { IName::XORI,     &VEmu::XORI    },
+        { IName::ORI,      &VEmu::ORI     },
+        { IName::OR,       &VEmu::OR      },
+        { IName::ANDI,     &VEmu::ANDI    },
+        { IName::AND,      &VEmu::AND     },
+        { IName::SLLI,     &VEmu::SLLI    },
+        { IName::SRLI,     &VEmu::SRLI    },
+        { IName::SRA,      &VEmu::SRA     },
+        { IName::SRAI,     &VEmu::SRAI    },
+        { IName::SLLIW,    &VEmu::SLLIW   },
+        { IName::SRLIW,    &VEmu::SRLIW   },
+        { IName::SRAIW,    &VEmu::SRAIW   },
+        { IName::SRAW,     &VEmu::SRAW    },
+        { IName::SRLW,     &VEmu::SRLW    },
+        { IName::FENCE,    &VEmu::FENCE   },
+        { IName::FENCEI,   &VEmu::FENCEI  },
+        { IName::ECALL,    &VEmu::ECALL   },
+        { IName::EBREAK,   &VEmu::EBREAK  },
+        { IName::CSRRW,    &VEmu::CSRRW   },
+        { IName::CSRRS,    &VEmu::CSRRS   },
+        { IName::CSRRC,    &VEmu::CSRRC   },
+        { IName::CSRRWI,   &VEmu::CSRRWI  },
+        { IName::CSRRSI,   &VEmu::CSRRSI  },
+        { IName::CSRRCI,   &VEmu::CSRRCI  },
+        { IName::BEQ,      &VEmu::BEQ     },
+        { IName::BNE,      &VEmu::BNE     },
+        { IName::BLT,      &VEmu::BLT     },
+        { IName::BGE,      &VEmu::BGE     },
+        { IName::BLTU,     &VEmu::BLTU    },
+        { IName::BGEU,     &VEmu::BGEU    },
+        { IName::SB,       &VEmu::SB      },
+        { IName::SH,       &VEmu::SH      },
+        { IName::SW,       &VEmu::SW      },
+        { IName::SD,       &VEmu::SD      },
+        { IName::ADD,      &VEmu::ADD     },
+        { IName::ADDW,     &VEmu::ADDW    },
+        { IName::SUB,      &VEmu::SUB     },
+        { IName::SUBW,     &VEmu::SUBW    },
+        { IName::SLL,      &VEmu::SLL     },
+        { IName::SLLW,     &VEmu::SLLW    },
+        { IName::SLT,      &VEmu::SLT     },
+        { IName::SLTU,     &VEmu::SLTU    },
+        { IName::XOR,      &VEmu::XOR     },
+        { IName::SRL,      &VEmu::SRL     },
+        { IName::SRLW,     &VEmu::SRLW    },
+        { IName::LUI,      &VEmu::LUI     },
+        { IName::AUIPC,    &VEmu::AUIPC   },
+        { IName::JAL,      &VEmu::JAL     },
+        { IName::JALR,     &VEmu::JALR    },
+        { IName::MUL,      &VEmu::MUL     },
+        { IName::MULH,     &VEmu::MULH    },
+        { IName::MULHSU,   &VEmu::MULHSU  },
+        { IName::MULHU,    &VEmu::MULHU   },
+        { IName::DIV,      &VEmu::DIV     },
+        { IName::DIVU,     &VEmu::DIVU    },
+        { IName::REM,      &VEmu::REM     },
+        { IName::REMU,     &VEmu::REMU    },
+        { IName::MULW,     &VEmu::MULW    },
+        { IName::DIVW,     &VEmu::DIVW    },
+        { IName::DIVUW,    &VEmu::DIVUW   },
+        { IName::REMW,     &VEmu::REMW    },
+        { IName::REMUW,    &VEmu::REMUW   },
 
-        { IName::AMOSWAPW, &VEmu::AMOSWAPW },
-        { IName::AMOADDW, &VEmu::AMOADDW },
-        { IName::AMOXORW, &VEmu::AMOXORW },
-        { IName::AMOANDW, &VEmu::AMOANDW },
-        { IName::AMOORW, &VEmu::AMOORW },
-        { IName::AMOMINW, &VEmu::AMOMINW },
-        { IName::AMOMAXW, &VEmu::AMOMAXW },
-        { IName::AMOMINUW, &VEmu::AMOMINUW },
-        { IName::AMOMAXUW, &VEmu::AMOMAXUW },
-        { IName::LRW, &VEmu::LRW },
-        { IName::SCW, &VEmu::SCW },
+        { IName::AMOSWAPW, &VEmu::AMOSWAPW},
+        { IName::AMOADDW,  &VEmu::AMOADDW },
+        { IName::AMOXORW,  &VEmu::AMOXORW },
+        { IName::AMOANDW,  &VEmu::AMOANDW },
+        { IName::AMOORW,   &VEmu::AMOORW  },
+        { IName::AMOMINW,  &VEmu::AMOMINW },
+        { IName::AMOMAXW,  &VEmu::AMOMAXW },
+        { IName::AMOMINUW, &VEmu::AMOMINUW},
+        { IName::AMOMAXUW, &VEmu::AMOMAXUW},
+        { IName::LRW,      &VEmu::LRW     },
+        { IName::SCW,      &VEmu::SCW     },
 
-        { IName::AMOSWAPD, &VEmu::AMOSWAPD },
-        { IName::AMOADDD, &VEmu::AMOADDD },
-        { IName::AMOXORD, &VEmu::AMOXORD },
-        { IName::AMOANDD, &VEmu::AMOANDD },
-        { IName::AMOORD, &VEmu::AMOORD },
-        { IName::AMOMIND, &VEmu::AMOMIND },
-        { IName::AMOMAXD, &VEmu::AMOMAXD },
-        { IName::AMOMINUD, &VEmu::AMOMINUD },
-        { IName::AMOMAXUD, &VEmu::AMOMAXUD },
-        { IName::LRD, &VEmu::LRD },
-        { IName::SCD, &VEmu::SCD },
+        { IName::AMOSWAPD, &VEmu::AMOSWAPD},
+        { IName::AMOADDD,  &VEmu::AMOADDD },
+        { IName::AMOXORD,  &VEmu::AMOXORD },
+        { IName::AMOANDD,  &VEmu::AMOANDD },
+        { IName::AMOORD,   &VEmu::AMOORD  },
+        { IName::AMOMIND,  &VEmu::AMOMIND },
+        { IName::AMOMAXD,  &VEmu::AMOMAXD },
+        { IName::AMOMINUD, &VEmu::AMOMINUD},
+        { IName::AMOMAXUD, &VEmu::AMOMAXUD},
+        { IName::LRD,      &VEmu::LRD     },
+        { IName::SCD,      &VEmu::SCD     },
 
-        { IName::MRET, &VEmu::MRET },
-        { IName::SRET, &VEmu::SRET },
+        { IName::MRET,     &VEmu::MRET    },
+        { IName::SRET,     &VEmu::SRET    },
 
-        { IName::FLW, &VEmu::FLW },
-        { IName::FSW, &VEmu::FSW },
-        { IName::FMADDS, &VEmu::FMADDS },
-        { IName::FMSUBS, &VEmu::FMSUBS },
-        { IName::FNMSUBS, &VEmu::FNMSUBS },
-        { IName::FNMADDS, &VEmu::FNMADDS },
-        { IName::FADDS, &VEmu::FADDS },
-        { IName::FSUBS, &VEmu::FSUBS },
-        { IName::FMULS, &VEmu::FMULS },
-        { IName::FDIVS, &VEmu::FDIVS },
-        { IName::FSGNJS, &VEmu::FSGNJS },
-        { IName::FSGNJNS, &VEmu::FSGNJNS },
-        { IName::FSGNJXS, &VEmu::FSGNJXS },
-        { IName::FMINS, &VEmu::FMINS },
-        { IName::FMAXS, &VEmu::FMAXS },
-        { IName::FCVTWS, &VEmu::FCVTWS },
-        { IName::FCVTWUS, &VEmu::FCVTWUS },
-        { IName::FMVXW, &VEmu::FMVXW },
-        { IName::FEQS, &VEmu::FEQS },
-        { IName::FLTS, &VEmu::FLTS },
-        { IName::FLES, &VEmu::FLES },
-        { IName::FCVTSW, &VEmu::FCVTSW },
-        { IName::FCVTSWU, &VEmu::FCVTSWU },
-        { IName::FMVWX, &VEmu::FMVWX },
-        { IName::FCVTLS, &VEmu::FCVTLS },
-        { IName::FCVTLUS, &VEmu::FCVTLUS },
-        { IName::FCVTSL, &VEmu::FCVTSL },
-        { IName::FCVTSLU, &VEmu::FCVTSLU },
-        { IName::FCLASSS, &VEmu::FCLASSS },
+        { IName::FLW,      &VEmu::FLW     },
+        { IName::FSW,      &VEmu::FSW     },
+        { IName::FMADDS,   &VEmu::FMADDS  },
+        { IName::FMSUBS,   &VEmu::FMSUBS  },
+        { IName::FNMSUBS,  &VEmu::FNMSUBS },
+        { IName::FNMADDS,  &VEmu::FNMADDS },
+        { IName::FADDS,    &VEmu::FADDS   },
+        { IName::FSUBS,    &VEmu::FSUBS   },
+        { IName::FMULS,    &VEmu::FMULS   },
+        { IName::FDIVS,    &VEmu::FDIVS   },
+        { IName::FSGNJS,   &VEmu::FSGNJS  },
+        { IName::FSGNJNS,  &VEmu::FSGNJNS },
+        { IName::FSGNJXS,  &VEmu::FSGNJXS },
+        { IName::FMINS,    &VEmu::FMINS   },
+        { IName::FMAXS,    &VEmu::FMAXS   },
+        { IName::FCVTWS,   &VEmu::FCVTWS  },
+        { IName::FCVTWUS,  &VEmu::FCVTWUS },
+        { IName::FMVXW,    &VEmu::FMVXW   },
+        { IName::FEQS,     &VEmu::FEQS    },
+        { IName::FLTS,     &VEmu::FLTS    },
+        { IName::FLES,     &VEmu::FLES    },
+        { IName::FCVTSW,   &VEmu::FCVTSW  },
+        { IName::FCVTSWU,  &VEmu::FCVTSWU },
+        { IName::FMVWX,    &VEmu::FMVWX   },
+        { IName::FCVTLS,   &VEmu::FCVTLS  },
+        { IName::FCVTLUS,  &VEmu::FCVTLUS },
+        { IName::FCVTSL,   &VEmu::FCVTSL  },
+        { IName::FCVTSLU,  &VEmu::FCVTSLU },
+        { IName::FCLASSS,  &VEmu::FCLASSS },
 
-        { IName::XXX, &VEmu::XXX },
+        { IName::XXX,      &VEmu::XXX     },
     };
 }
 
@@ -257,7 +252,7 @@ void VEmu::read_file()
         std::cout << "Could not open the file " << bin_file_name << "\n";
         exit(EXIT_FAILURE);
     }
-    std::filesystem::path file_path{ bin_file_name };
+    std::filesystem::path file_path { bin_file_name };
     auto sz = std::filesystem::file_size(file_path);
     code_size = static_cast<uint64_t>(sz);
     auto aligned_code_size = (code_size + 0xFFFF) & ~0xFFFF;
@@ -265,8 +260,7 @@ void VEmu::read_file()
     pc = base;
     std::vector<uint8_t> content;
     content.reserve(code_size);
-    std::copy_n(std::istreambuf_iterator<char>(ifs),
-                code_size,
+    std::copy_n(std::istreambuf_iterator<char>(ifs), code_size,
                 std::back_inserter<std::vector<uint8_t>>(content));
     bus.get_mmu()->set_perms(base, code_size, PERM_WRITE);
     bus.get_mmu()->write_from(content, base);
@@ -278,20 +272,11 @@ std::pair<uint64_t, ReturnException> VEmu::load(uint64_t addr, size_t sz)
     return bus.load(addr, sz);
 }
 
-void VEmu::dump_regs()
-{
-    iregs.dump_regs();
-}
+void VEmu::dump_regs() { iregs.dump_regs(); }
 
-std::array<int64_t, 32> VEmu::get_iregs()
-{
-    return iregs.get_regs();
-}
+std::array<int64_t, 32> VEmu::get_iregs() { return iregs.get_regs(); }
 
-std::array<double, 32> VEmu::get_fregs()
-{
-    return fregs.get_regs();
-}
+std::array<double, 32> VEmu::get_fregs() { return fregs.get_regs(); }
 
 ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 {
@@ -387,11 +372,10 @@ void VEmu::dump_csrs()
     std::cout << "scause: " << load_csr(SCAUSE) << '\n';
 }
 
-template<typename T>
-uint64_t sext_from(T w)
+template <typename T> uint64_t sext_from(T w)
 {
     return static_cast<uint64_t>(
-      static_cast<int64_t>(static_cast<typename std::make_signed<T>::type>(w)));
+        static_cast<int64_t>(static_cast<typename std::make_signed<T>::type>(w)));
 }
 
 ReturnException VEmu::LB()
@@ -400,8 +384,7 @@ ReturnException VEmu::LB()
 
     auto rd = curr_instr.get_fields().rd;
 
-    auto res =
-      static_cast<int64_t>(sext_from<uint8_t>(iregs.load_reg(rd) & 0xFFUL));
+    auto res = static_cast<int64_t>(sext_from<uint8_t>(iregs.load_reg(rd) & 0xFFUL));
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -413,8 +396,8 @@ ReturnException VEmu::LW()
 
     auto rd = curr_instr.get_fields().rd;
 
-    auto res = static_cast<int64_t>(
-      sext_from<uint32_t>(iregs.load_reg(rd) & 0xFFFFFFFFUL));
+    auto res
+        = static_cast<int64_t>(sext_from<uint32_t>(iregs.load_reg(rd) & 0xFFFFFFFFUL));
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -428,8 +411,8 @@ ReturnException VEmu::LBU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    uint64_t mem_addr = static_cast<uint64_t>(
-      static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
+    uint64_t mem_addr
+        = static_cast<uint64_t>(static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
 
     auto load_ret = load(mem_addr, 8);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
@@ -448,8 +431,7 @@ ReturnException VEmu::LH()
 
     auto rd = curr_instr.get_fields().rd;
 
-    auto res =
-      static_cast<int64_t>(sext_from<uint16_t>(iregs.load_reg(rd) & 0xFFFFUL));
+    auto res = static_cast<int64_t>(sext_from<uint16_t>(iregs.load_reg(rd) & 0xFFFFUL));
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -463,8 +445,8 @@ ReturnException VEmu::LHU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    uint64_t mem_addr = static_cast<uint64_t>(
-      static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
+    uint64_t mem_addr
+        = static_cast<uint64_t>(static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
 
     auto load_ret = load(mem_addr, 16);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
@@ -485,8 +467,8 @@ ReturnException VEmu::LD()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    uint64_t mem_addr = static_cast<uint64_t>(
-      static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
+    uint64_t mem_addr
+        = static_cast<uint64_t>(static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
 
     auto load_ret = load(mem_addr, 64);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
@@ -507,8 +489,8 @@ ReturnException VEmu::LWU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    uint64_t mem_addr = static_cast<uint64_t>(
-      static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
+    uint64_t mem_addr
+        = static_cast<uint64_t>(static_cast<int64_t>(iregs.load_reg(base_reg)) + imm);
 
     auto load_ret = load(mem_addr, 32);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
@@ -573,8 +555,7 @@ ReturnException VEmu::SLTIU()
     auto rd = curr_instr.get_fields().rd;
     auto rs1 = curr_instr.get_fields().rs1;
 
-    auto res =
-      (static_cast<uint64_t>(iregs.load_reg(rs1)) < static_cast<uint64_t>(imm))
+    auto res = (static_cast<uint64_t>(iregs.load_reg(rs1)) < static_cast<uint64_t>(imm))
         ? 1
         : 0;
     iregs.store_reg(rd, res);
@@ -708,17 +689,9 @@ ReturnException VEmu::SRAIW()
     return ReturnException::NormalExecutionReturn;
 }
 
-ReturnException VEmu::FENCE()
-{
+ReturnException VEmu::FENCE() { return ReturnException::NormalExecutionReturn; }
 
-    return ReturnException::NormalExecutionReturn;
-}
-
-ReturnException VEmu::FENCEI()
-{
-
-    return ReturnException::NormalExecutionReturn;
-}
+ReturnException VEmu::FENCEI() { return ReturnException::NormalExecutionReturn; }
 
 #ifdef FUZZ_ENV
 ReturnException VEmu::ECALL()
@@ -726,9 +699,8 @@ ReturnException VEmu::ECALL()
     int64_t syscall_number = iregs.load_reg(REG_A7);
     if (syscall_number == SYSCALL_NR_BRK) {
         uint64_t addr = iregs.load_reg(REG_A0);
-        int64_t increment =
-          addr == 0 ? 0
-                    : (int64_t)addr - (int64_t)bus.get_mmu()->cur_alloc_ptr();
+        int64_t increment
+            = addr == 0 ? 0 : (int64_t)addr - (int64_t)bus.get_mmu()->cur_alloc_ptr();
         if (increment < 0) {
             iregs.store_reg(REG_A0, ~0);
         } else {
@@ -746,8 +718,8 @@ ReturnException VEmu::ECALL()
             iregs.store_reg(REG_A0, count);
         }
     } else {
-        std::cout << "Unsupported syscall: " << std::dec << syscall_number
-                  << ", pc: 0x" << std::hex << pc << '\n';
+        std::cout << "Unsupported syscall: " << std::dec << syscall_number << ", pc: 0x"
+                  << std::hex << pc << '\n';
         exit(EXIT_FAILURE);
     }
 
@@ -761,8 +733,8 @@ ReturnException VEmu::ECALL()
         std::cout << "Passed\n";
     } else {
         std::cout << "Failed test: " << bin_file_name << '\n';
-        std::cout << ("Failed on testcase #" +
-                      std::to_string(iregs.load_reg(REG_GP) >> 1) + '\n');
+        std::cout << ("Failed on testcase #" + std::to_string(iregs.load_reg(REG_GP) >> 1)
+                      + '\n');
         dump_regs();
     }
     test_flag_done = true;
@@ -772,24 +744,21 @@ ReturnException VEmu::ECALL()
 ReturnException VEmu::ECALL()
 {
     switch (mode) {
-        case Mode::User:
-            return ReturnException::EnvironmentCallFromUserMode;
-        case Mode::Supervisor:
-            return ReturnException::EnvironmentCallFromSupervisorMode;
-        case Mode::Machine:
-            return ReturnException::EnvironmentCallFromMachineMode;
-        default:
-            exit(EXIT_FAILURE);
+    case Mode::User:
+        return ReturnException::EnvironmentCallFromUserMode;
+    case Mode::Supervisor:
+        return ReturnException::EnvironmentCallFromSupervisorMode;
+    case Mode::Machine:
+        return ReturnException::EnvironmentCallFromMachineMode;
+    default:
+        exit(EXIT_FAILURE);
     }
 
     exit(EXIT_FAILURE);
 }
 #endif
 
-ReturnException VEmu::EBREAK()
-{
-    return ReturnException::InstructionAddressBreakpoint;
-}
+ReturnException VEmu::EBREAK() { return ReturnException::InstructionAddressBreakpoint; }
 
 ReturnException VEmu::CSRRW()
 {
@@ -966,8 +935,8 @@ ReturnException VEmu::BLTU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (static_cast<uint64_t>(iregs.load_reg(rs1)) <
-        static_cast<uint64_t>(iregs.load_reg(rs2))) {
+    if (static_cast<uint64_t>(iregs.load_reg(rs1))
+        < static_cast<uint64_t>(iregs.load_reg(rs2))) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -983,8 +952,8 @@ ReturnException VEmu::BGEU()
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
 
-    if (static_cast<uint64_t>(iregs.load_reg(rs1)) >=
-        static_cast<uint64_t>(iregs.load_reg(rs2))) {
+    if (static_cast<uint64_t>(iregs.load_reg(rs1))
+        >= static_cast<uint64_t>(iregs.load_reg(rs2))) {
         this->pc += imm;
         this->pc -= 4;
     }
@@ -1102,8 +1071,7 @@ ReturnException VEmu::SLL()
 
     uint8_t shamt = static_cast<uint64_t>(iregs.load_reg(rs2)) & 0x3F;
 
-    auto res =
-      static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1)) << shamt);
+    auto res = static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1)) << shamt);
 
     iregs.store_reg(rd, res);
 
@@ -1150,10 +1118,10 @@ ReturnException VEmu::SLTU()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    auto res = (static_cast<uint64_t>(iregs.load_reg(rs1)) <
-                static_cast<uint64_t>(iregs.load_reg(rs2)))
-                 ? 1
-                 : 0;
+    auto res = (static_cast<uint64_t>(iregs.load_reg(rs1))
+                < static_cast<uint64_t>(iregs.load_reg(rs2)))
+        ? 1
+        : 0;
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -1189,8 +1157,8 @@ ReturnException VEmu::MULW()
     auto rs2 = curr_instr.get_fields().rs2;
     auto rd = curr_instr.get_fields().rd;
 
-    auto res = static_cast<int32_t>(iregs.load_reg(rs1) & 0xFFFFFFFF) *
-               static_cast<int32_t>(iregs.load_reg(rs2) & 0xFFFFFFFF);
+    auto res = static_cast<int32_t>(iregs.load_reg(rs1) & 0xFFFFFFFF)
+        * static_cast<int32_t>(iregs.load_reg(rs2) & 0xFFFFFFFF);
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -1203,7 +1171,7 @@ ReturnException VEmu::MULH()
     auto rd = curr_instr.get_fields().rd;
 
     auto res = static_cast<int64_t>(
-      ((__int128)iregs.load_reg(rs1) * (__int128)iregs.load_reg(rs2)) >> 64);
+        ((__int128)iregs.load_reg(rs1) * (__int128)iregs.load_reg(rs2)) >> 64);
 
     iregs.store_reg(rd, res);
 
@@ -1219,9 +1187,9 @@ ReturnException VEmu::MULHU()
     uint64_t urs1 = static_cast<uint64_t>(iregs.load_reg(rs1));
     uint64_t urs2 = static_cast<uint64_t>(iregs.load_reg(rs2));
 
-    auto res = static_cast<int64_t>((static_cast<unsigned __int128>(urs1) *
-                                     static_cast<unsigned __int128>(urs2)) >>
-                                    64);
+    auto res = static_cast<int64_t>(
+        (static_cast<unsigned __int128>(urs1) * static_cast<unsigned __int128>(urs2))
+        >> 64);
 
     iregs.store_reg(rd, res);
 
@@ -1237,8 +1205,8 @@ ReturnException VEmu::MULHSU()
     int64_t irs1 = iregs.load_reg(rs1);
     uint64_t urs2 = static_cast<uint64_t>(iregs.load_reg(rs2));
 
-    unsigned __int128 rs1_val =
-      static_cast<unsigned __int128>(static_cast<__int128>(irs1));
+    unsigned __int128 rs1_val
+        = static_cast<unsigned __int128>(static_cast<__int128>(irs1));
     unsigned __int128 rs2_val = static_cast<unsigned __int128>(urs2);
 
     auto res = static_cast<int64_t>((rs1_val * rs2_val) >> 64);
@@ -1283,8 +1251,8 @@ ReturnException VEmu::DIVU()
         res = 0xFFFFFFFF'FFFFFFFF;
         iregs.store_reg(rd, res);
     } else {
-        res = static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1)) /
-                                   static_cast<uint64_t>(iregs.load_reg(rs2)));
+        res = static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1))
+                                   / static_cast<uint64_t>(iregs.load_reg(rs2)));
         iregs.store_reg(rd, res);
     }
 
@@ -1371,8 +1339,8 @@ ReturnException VEmu::REMU()
         res = iregs.load_reg(rs1);
         iregs.store_reg(rd, res);
     } else {
-        res = static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1)) %
-                                   static_cast<uint64_t>(iregs.load_reg(rs2)));
+        res = static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1))
+                                   % static_cast<uint64_t>(iregs.load_reg(rs2)));
         iregs.store_reg(rd, res);
     }
 
@@ -1395,8 +1363,8 @@ ReturnException VEmu::REMW()
     } else if (rs2_32 == -1 && rs1_32 == INT32_MIN) {
         res = 0;
     } else {
-        res = static_cast<int32_t>(iregs.load_reg(rs1)) %
-              static_cast<int32_t>(iregs.load_reg(rs2));
+        res = static_cast<int32_t>(iregs.load_reg(rs1))
+            % static_cast<int32_t>(iregs.load_reg(rs2));
     }
     iregs.store_reg(rd, res);
 
@@ -1433,8 +1401,7 @@ ReturnException VEmu::SRL()
 
     uint8_t shamt = static_cast<uint64_t>(iregs.load_reg(rs2)) & 0x3F;
 
-    auto res =
-      static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1)) >> shamt);
+    auto res = static_cast<int64_t>(static_cast<uint64_t>(iregs.load_reg(rs1)) >> shamt);
     iregs.store_reg(rd, res);
 
     return ReturnException::NormalExecutionReturn;
@@ -1678,8 +1645,8 @@ ReturnException VEmu::AMOSWAPW()
 
     int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
 
-    auto store_ret =
-      store(addr, static_cast<int32_t>(iregs.load_reg(rs2) & 0xFFFFFFFF), 32);
+    auto store_ret
+        = store(addr, static_cast<int32_t>(iregs.load_reg(rs2) & 0xFFFFFFFF), 32);
     if (store_ret != ReturnException::NormalExecutionReturn) {
         return store_ret;
     }
@@ -1839,9 +1806,8 @@ ReturnException VEmu::AMOMINW()
     int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(iregs.load_reg(rs2) & 0xFFFFFFFF);
 
-    uint64_t res = tmp < rs2_val
-                     ? static_cast<uint64_t>(static_cast<uint32_t>(tmp))
-                     : static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
+    uint64_t res = tmp < rs2_val ? static_cast<uint64_t>(static_cast<uint32_t>(tmp))
+                                 : static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
     auto store_ret = store(addr, res, 32);
     if (store_ret != ReturnException::NormalExecutionReturn) {
@@ -1872,9 +1838,8 @@ ReturnException VEmu::AMOMAXW()
     int32_t tmp = static_cast<int32_t>(load_ret.first & 0xFFFFFFFF);
     int32_t rs2_val = static_cast<int32_t>(iregs.load_reg(rs2) & 0xFFFFFFFF);
 
-    uint64_t res = tmp > rs2_val
-                     ? static_cast<uint64_t>(static_cast<uint32_t>(tmp))
-                     : static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
+    uint64_t res = tmp > rs2_val ? static_cast<uint64_t>(static_cast<uint32_t>(tmp))
+                                 : static_cast<uint64_t>(static_cast<uint32_t>(rs2_val));
 
     auto store_ret = store(addr, res, 32);
     if (store_ret != ReturnException::NormalExecutionReturn) {
@@ -1905,8 +1870,8 @@ ReturnException VEmu::AMOMINUW()
     uint32_t tmp = static_cast<uint32_t>(load_ret.first);
     uint32_t rs2_val = static_cast<uint32_t>(iregs.load_reg(rs2));
 
-    uint64_t res = tmp < rs2_val ? static_cast<uint64_t>(tmp)
-                                 : static_cast<uint64_t>(rs2_val);
+    uint64_t res
+        = tmp < rs2_val ? static_cast<uint64_t>(tmp) : static_cast<uint64_t>(rs2_val);
 
     auto store_ret = store(addr, res, 32);
     if (store_ret != ReturnException::NormalExecutionReturn) {
@@ -2288,7 +2253,7 @@ ReturnException VEmu::SRET()
 
 ReturnException VEmu::XXX()
 {
-    std::ios_base::fmtflags ft{ std::cout.flags() };
+    std::ios_base::fmtflags ft { std::cout.flags() };
     std::cout << "Faulty instruction: 0x";
     std::cout << std::setw(8) << std::setfill('0') << std::hex << hex_instr
               << " PC: " << pc << '\n';
@@ -2348,8 +2313,8 @@ Interrupt VEmu::check_pending_interrupt()
 #ifdef FUZZ_ENV
 void VEmu::trap(ReturnException e)
 {
-    std::cout << "Unexpected return exception: " << stringify_exception(e)
-              << " @ pc: 0x" << std::hex << pc << '\n';
+    std::cout << "Unexpected return exception: " << stringify_exception(e) << " @ pc: 0x"
+              << std::hex << pc << '\n';
 }
 #else
 void VEmu::trap(ReturnException e)
@@ -2367,8 +2332,7 @@ void VEmu::trap(ReturnException e)
     */
     bool do_deleg = (load_csr(MEDELEG) >> cause) & 1;
 
-    if ((prev_mode == Mode::User || prev_mode == Mode::Supervisor) &&
-        do_deleg) {
+    if ((prev_mode == Mode::User || prev_mode == Mode::Supervisor) && do_deleg) {
         mode = Mode::Supervisor;
 
         /* Set PC to the exception handler base address. */
@@ -2435,19 +2399,19 @@ void VEmu::trap(ReturnException e)
         /* MPP is a two-bit field. 00 -> User, 01 -> Supervisor, 11 -> Machine
          */
         switch (prev_mode) {
-            case Mode::User:
-                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11U << 11U)));
-                break;
-            case Mode::Supervisor:
-                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1U << 12U)));
-                store_csr(MSTATUS, load_csr(MSTATUS) | (0b1U << 11U));
-                break;
-            case Mode::Machine:
-                store_csr(MSTATUS, load_csr(MSTATUS) | (0b11U << 11U));
-                break;
-            default:
-                std::cout << "Unsupported(?) previous privilege mode.\n";
-                exit(EXIT_FAILURE);
+        case Mode::User:
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11U << 11U)));
+            break;
+        case Mode::Supervisor:
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1U << 12U)));
+            store_csr(MSTATUS, load_csr(MSTATUS) | (0b1U << 11U));
+            break;
+        case Mode::Machine:
+            store_csr(MSTATUS, load_csr(MSTATUS) | (0b11U << 11U));
+            break;
+        default:
+            std::cout << "Unsupported(?) previous privilege mode.\n";
+            exit(EXIT_FAILURE);
         }
     }
 }
@@ -2455,11 +2419,11 @@ void VEmu::trap(ReturnException e)
 
 bool VEmu::is_fatal(ReturnException e)
 {
-    return e == ReturnException::LoadAccessFault ||
-           e == ReturnException::InstructionAccessFault ||
-           e == ReturnException::InstructionAddressMisaligned ||
-           e == ReturnException::StoreAMOAddressMisaligned ||
-           e == ReturnException::StoreAMOAccessFault;
+    return e == ReturnException::LoadAccessFault
+        || e == ReturnException::InstructionAccessFault
+        || e == ReturnException::InstructionAddressMisaligned
+        || e == ReturnException::StoreAMOAddressMisaligned
+        || e == ReturnException::StoreAMOAccessFault;
 }
 
 void VEmu::exit_fatally(ReturnException e)
@@ -2475,43 +2439,43 @@ void VEmu::exit_fatally(ReturnException e)
 std::string VEmu::stringify_exception(ReturnException e)
 {
     switch (e) {
-        case ReturnException::InstructionAddressMisaligned:
-            return "InstructionAddressMisaligned";
-        case ReturnException::InstructionAccessFault:
-            return "InstructionAccessFault";
-        case ReturnException::IllegalInstruction:
-            return "IllegalInstruction";
-        case ReturnException::InstructionAddressBreakpoint:
-            return "InstructionAddressBreakpoint";
-        case ReturnException::LoadAddressMisaligned:
-            return "LoadAddressMisaligned";
-        case ReturnException::LoadAccessFault:
-            return "LoadAccessFault";
-        case ReturnException::StoreAMOAddressMisaligned:
-            return "StoreAMOAddressMisaligned";
-        case ReturnException::StoreAMOAccessFault:
-            return "StoreAMOAccessFault";
-        case ReturnException::EnvironmentCallFromUserMode:
-            return "EnvironmentCallFromUserMode";
-        case ReturnException::EnvironmentCallFromSupervisorMode:
-            return "EnvironmentCallFromSupervisorMode";
-        case ReturnException::EnvironmentCallFromMachineMode:
-            return "EnvironmentCallFromMachineMode";
-        case ReturnException::InstructionPageFault:
-            return "InstructionPageFault";
-        case ReturnException::LoadPageFault:
-            return "LoadPageFault";
-        case ReturnException::StoreAMOPageFault:
-            return "StoreAMOPageFault";
-        case ReturnException::NormalExecutionReturn:
-            return "NormalExecutionReturn";
-        case ReturnException::UninitializedMemoryAccess:
-            return "UninitializedMemoryAccess";
-        case ReturnException::ReadMemoryWithNoPermission:
-            return "ReadMemoryWithNoPermission";
-        default:
-            std::cout << "stringify_exception: Unsupported exception.\n";
-            exit(EXIT_FAILURE);
+    case ReturnException::InstructionAddressMisaligned:
+        return "InstructionAddressMisaligned";
+    case ReturnException::InstructionAccessFault:
+        return "InstructionAccessFault";
+    case ReturnException::IllegalInstruction:
+        return "IllegalInstruction";
+    case ReturnException::InstructionAddressBreakpoint:
+        return "InstructionAddressBreakpoint";
+    case ReturnException::LoadAddressMisaligned:
+        return "LoadAddressMisaligned";
+    case ReturnException::LoadAccessFault:
+        return "LoadAccessFault";
+    case ReturnException::StoreAMOAddressMisaligned:
+        return "StoreAMOAddressMisaligned";
+    case ReturnException::StoreAMOAccessFault:
+        return "StoreAMOAccessFault";
+    case ReturnException::EnvironmentCallFromUserMode:
+        return "EnvironmentCallFromUserMode";
+    case ReturnException::EnvironmentCallFromSupervisorMode:
+        return "EnvironmentCallFromSupervisorMode";
+    case ReturnException::EnvironmentCallFromMachineMode:
+        return "EnvironmentCallFromMachineMode";
+    case ReturnException::InstructionPageFault:
+        return "InstructionPageFault";
+    case ReturnException::LoadPageFault:
+        return "LoadPageFault";
+    case ReturnException::StoreAMOPageFault:
+        return "StoreAMOPageFault";
+    case ReturnException::NormalExecutionReturn:
+        return "NormalExecutionReturn";
+    case ReturnException::UninitializedMemoryAccess:
+        return "UninitializedMemoryAccess";
+    case ReturnException::ReadMemoryWithNoPermission:
+        return "ReadMemoryWithNoPermission";
+    default:
+        std::cout << "stringify_exception: Unsupported exception.\n";
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -2533,8 +2497,7 @@ void VEmu::take_interrupt(Interrupt i)
     */
     bool do_deleg = (load_csr(MEDELEG) >> cause) & 1U;
 
-    if ((prev_mode == Mode::User || prev_mode == Mode::Supervisor) &&
-        do_deleg) {
+    if ((prev_mode == Mode::User || prev_mode == Mode::Supervisor) && do_deleg) {
         mode = Mode::Supervisor;
 
         /* Set PC to the exception handler base address. */
@@ -2603,19 +2566,19 @@ void VEmu::take_interrupt(Interrupt i)
         /* MPP is a two-bit field. 00 -> User, 01 -> Supervisor, 11 -> Machine
          */
         switch (prev_mode) {
-            case Mode::User:
-                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11U << 11U)));
-                break;
-            case Mode::Supervisor:
-                store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1U << 12U)));
-                store_csr(MSTATUS, load_csr(MSTATUS) | (0b1U << 11U));
-                break;
-            case Mode::Machine:
-                store_csr(MSTATUS, load_csr(MSTATUS) | (0b11U << 11U));
-                break;
-            default:
-                std::cout << "Unsupported(?) previous privilege mode.\n";
-                exit(EXIT_FAILURE);
+        case Mode::User:
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b11U << 11U)));
+            break;
+        case Mode::Supervisor:
+            store_csr(MSTATUS, load_csr(MSTATUS) & (~(0b1U << 12U)));
+            store_csr(MSTATUS, load_csr(MSTATUS) | (0b1U << 11U));
+            break;
+        case Mode::Machine:
+            store_csr(MSTATUS, load_csr(MSTATUS) | (0b11U << 11U));
+            break;
+        default:
+            std::cout << "Unsupported(?) previous privilege mode.\n";
+            exit(EXIT_FAILURE);
         }
     }
 }
@@ -2635,11 +2598,10 @@ ReturnException VEmu::FLW()
     if (load_res.second != ReturnException::NormalExecutionReturn)
         return load_res.second;
 
-    union
-    {
+    union {
         uint32_t i;
         float s;
-    } a{};
+    } a {};
     a.i = static_cast<uint32_t>(load_res.first);
 
     fregs.store_reg(rd, static_cast<double>(a.s));
@@ -2658,11 +2620,10 @@ ReturnException VEmu::FSW()
 
     auto addr = iregs.load_reg(rs1) + offs;
 
-    union
-    {
+    union {
         uint32_t i;
         float s;
-    } a{};
+    } a {};
 
     a.s = static_cast<float>(fregs.load_reg(rs2));
     auto store_res = store(addr, static_cast<uint64_t>(a.i), 32);
@@ -2786,10 +2747,7 @@ void VEmu::update_float_flags()
     }
 }
 
-void VEmu::reset_float_flags()
-{
-    softfloat_exceptionFlags = 0;
-}
+void VEmu::reset_float_flags() { softfloat_exceptionFlags = 0; }
 #endif
 
 ReturnException VEmu::FADDS()
@@ -2849,8 +2807,7 @@ ReturnException VEmu::FSUBS()
     float res;
     memcpy(&res, &res_bits.v, sizeof(uint32_t));
 
-    if (std::isinf(op1) && std::isinf(op2) && !std::signbit(op1) &&
-        !std::signbit(op2)) {
+    if (std::isinf(op1) && std::isinf(op2) && !std::signbit(op1) && !std::signbit(op2)) {
         res = std::fabs(res);
     }
 
@@ -3020,8 +2977,7 @@ ReturnException VEmu::FSGNJXS()
 
 bool VEmu::is_negative_zero(double d)
 {
-    union
-    {
+    union {
         int64_t a;
         double d;
     } u;
@@ -3033,8 +2989,7 @@ bool VEmu::is_negative_zero(double d)
 
 bool VEmu::is_positive_zero(double d)
 {
-    union
-    {
+    union {
         int64_t a;
         double d;
     } u;
@@ -3148,11 +3103,10 @@ ReturnException VEmu::FMVXW()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    union
-    {
+    union {
         int32_t i;
         float s;
-    } a{};
+    } a {};
 
     a.s = static_cast<float>(fregs.load_reg(rs1));
 
@@ -3256,11 +3210,10 @@ ReturnException VEmu::FMVWX()
     auto rs1 = curr_instr.get_fields().rs1;
     auto rd = curr_instr.get_fields().rd;
 
-    union
-    {
+    union {
         uint32_t i;
         float s;
-    } a{};
+    } a {};
 
     a.i = static_cast<uint32_t>(iregs.load_reg(rs1));
 
@@ -3349,35 +3302,35 @@ ReturnException VEmu::FCLASSS()
     int64_t res = 0;
 
     switch (fpc) {
-        case FP_INFINITE:
-            if (sign)
-                res = 0;
-            else
-                res = 7;
-            break;
-        case FP_NORMAL:
-            if (sign)
-                res = 1;
-            else
-                res = 6;
-            break;
-        case FP_SUBNORMAL:
-            if (sign)
-                res = 2;
-            else
-                res = 5;
-            break;
-        case FP_ZERO:
-            if (sign)
-                res = 3;
-            else
-                res = 4;
-            break;
-        case FP_NAN:
-            res = 9;
-            break;
-        default:
-            break;
+    case FP_INFINITE:
+        if (sign)
+            res = 0;
+        else
+            res = 7;
+        break;
+    case FP_NORMAL:
+        if (sign)
+            res = 1;
+        else
+            res = 6;
+        break;
+    case FP_SUBNORMAL:
+        if (sign)
+            res = 2;
+        else
+            res = 5;
+        break;
+    case FP_ZERO:
+        if (sign)
+            res = 3;
+        else
+            res = 4;
+        break;
+    case FP_NAN:
+        res = 9;
+        break;
+    default:
+        break;
     }
 
     iregs.store_reg(rd, res);

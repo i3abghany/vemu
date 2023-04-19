@@ -2,7 +2,7 @@
 
 UART::UART()
 {
-    uart_mem = std::array<uint8_t, UART_SIZE>{};
+    uart_mem = std::array<uint8_t, UART_SIZE> {};
 
     {
         std::lock_guard<std::mutex> lock(mu);
@@ -35,12 +35,12 @@ std::pair<uint64_t, ReturnException> UART::load(uint64_t addr, size_t sz)
     res.second = ReturnException::NormalExecutionReturn;
 
     switch (sz) {
-        case 8:
-            res.first = load8(addr);
-            break;
-        default:
-            res.second = ReturnException::LoadAccessFault;
-            break;
+    case 8:
+        res.first = load8(addr);
+        break;
+    default:
+        res.second = ReturnException::LoadAccessFault;
+        break;
     }
 
     return res;
@@ -52,12 +52,12 @@ ReturnException UART::store(uint64_t addr, uint64_t value, size_t sz)
     res = ReturnException::NormalExecutionReturn;
 
     switch (sz) {
-        case 8:
-            store8(addr, value);
-            break;
-        default:
-            res = ReturnException::StoreAMOAccessFault;
-            break;
+    case 8:
+        store8(addr, value);
+        break;
+    default:
+        res = ReturnException::StoreAMOAccessFault;
+        break;
     }
 
     return res;
@@ -79,10 +79,10 @@ void UART::store8(uint64_t addr, uint64_t value)
     std::lock_guard<std::mutex> lock(mu);
 
     switch (addr) {
-        case UART_THR:
-            std::cout << static_cast<char>(value) << std::flush;
-            return;
-        default:
-            uart_mem[addr - UART_BASE] = static_cast<uint8_t>(value & 0xFF);
+    case UART_THR:
+        std::cout << static_cast<char>(value) << std::flush;
+        return;
+    default:
+        uart_mem[addr - UART_BASE] = static_cast<uint8_t>(value & 0xFF);
     }
 }
