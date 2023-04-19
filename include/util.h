@@ -9,8 +9,7 @@ using namespace ELFIO;
 
 typedef uint8_t BytePermission;
 
-struct MemorySegment
-{
+struct MemorySegment {
     BytePermission perms;
     uint64_t start_addr;
     uint64_t mem_size;
@@ -18,8 +17,7 @@ struct MemorySegment
     const uint8_t* data;
 };
 
-struct FileInfo
-{
+struct FileInfo {
     std::vector<MemorySegment> segments;
     uint64_t entry_point;
 };

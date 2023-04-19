@@ -18,11 +18,8 @@ FileInfo read_elf(const std::string& fname, bool exit_fatally)
             continue;
         const uint8_t* p = (const uint8_t*)reader.segments[i]->get_data();
         auto seg_perms = (BytePermission)pseg->get_flags();
-        segments.push_back({ seg_perms,
-                             pseg->get_virtual_address(),
-                             pseg->get_memory_size(),
-                             pseg->get_file_size(),
-                             p });
+        segments.push_back({ seg_perms, pseg->get_virtual_address(),
+                             pseg->get_memory_size(), pseg->get_file_size(), p });
     }
     return { segments, reader.get_entry() };
 }

@@ -74,8 +74,7 @@
 
 #define FP_R_OPCODE (uint8_t)0b1010011
 
-enum class IName : uint8_t
-{
+enum class IName : uint8_t {
     LB,
     LH,
     LW,
@@ -285,15 +284,14 @@ enum class IName : uint8_t
 #define REG_T5 30
 #define REG_T6 31
 
-enum class Mode : uint8_t
-{
-    User = 0b00,
-    Supervisor = 0b01,
-    Machine = 0b11
-};
+#define SYSCALL_NR_EXIT 57
+#define SYSCALL_NR_WRITE 64
+#define SYSCALL_NR_BRK 214
+#define SYSCALL_NR_OPEN 1024
 
-enum class ReturnException : uint8_t
-{
+enum class Mode : uint8_t { User = 0b00, Supervisor = 0b01, Machine = 0b11 };
+
+enum class ReturnException : uint8_t {
     InstructionAddressMisaligned = 0,
     InstructionAccessFault = 1,
     IllegalInstruction = 2,
@@ -308,11 +306,12 @@ enum class ReturnException : uint8_t
     InstructionPageFault = 12,
     LoadPageFault = 13,
     StoreAMOPageFault = 15,
+    ReadMemoryWithNoPermission = 253,
+    UninitializedMemoryAccess = 254,
     NormalExecutionReturn = 255,
 };
 
-enum class Interrupt : uint8_t
-{
+enum class Interrupt : uint8_t {
     UserSoftwareInterrupt = 0,
     SupervisorSoftwareInterrupt = 1,
     MachineSoftwareInterrupt = 3,

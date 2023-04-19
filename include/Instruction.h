@@ -7,8 +7,7 @@
 
 #include <defs.h>
 
-struct Fields
-{
+struct Fields {
     uint8_t OPCode;
     uint8_t rd;
     uint8_t funct3;
@@ -23,28 +22,17 @@ struct Fields
     uint8_t rs3;
 };
 
-class Instruction
-{
-  public:
-    enum class Type
-    {
-        R,
-        R4,
-        I,
-        S,
-        B,
-        U,
-        J,
-        WRONG
-    };
+class Instruction {
+public:
+    enum class Type { R, R4, I, S, B, U, J, WRONG };
 
-  public:
+public:
     Instruction() = default;
     Instruction(Type type, IName i, Fields vals, std::string n)
-      : t(type)
-      , name(i)
-      , f(vals)
-      , str_name(n){};
+        : t(type)
+        , name(i)
+        , f(vals)
+        , str_name(n) {};
 
     Type get_type();
     Fields get_fields();
@@ -91,7 +79,7 @@ class Instruction
         return os << "\n";
     }
 
-  private:
+private:
     Type t;
     IName name;
     Fields f;

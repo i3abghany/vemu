@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
     auto info = read_elf(argv[1]);
-    VEmu em = VEmu{ argv[1], info, argv[2] };
+    VEmu em = VEmu { argv[1], info, argv[2] };
     em.run();
     em.dump_regs();
 #else

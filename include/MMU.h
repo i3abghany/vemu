@@ -15,9 +15,8 @@ static constexpr BytePermission PERM_RAW = (1 << 3);
 
 static constexpr uint64_t BLOCK_SIZE = 4096;
 
-class MMU : public Device
-{
-  public:
+class MMU : public Device {
+public:
     MMU(const MMU& other)
     {
         ram = other.ram;
@@ -28,8 +27,7 @@ class MMU : public Device
     }
 
     MMU(uint64_t ram_size);
-    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t,
-                                                            size_t) override;
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load(uint64_t, size_t) override;
     ReturnException store(uint64_t, uint64_t, size_t) override;
 
     [[nodiscard]] uint64_t get_base() const override { return 0; }
@@ -39,8 +37,8 @@ class MMU : public Device
     [[nodiscard]] bool is_interrupting() override { return false; }
 
     void write_from(const std::vector<uint8_t>&, uint64_t);
-    [[nodiscard]] std::vector<uint8_t> read_to(uint64_t, uint64_t) const;
-    [[nodiscard]] std::string _read_null_terminated_string(uint64_t) const;
+    [[nodiscard]] std::pair<std::vector<uint8_t>, ReturnException>
+        read_to(uint64_t, uint64_t) const;
     [[nodiscard]] uint64_t cur_alloc_ptr() const { return alloc_ptr; }
 
     void reset_to(const MMU& other);
@@ -50,18 +48,18 @@ class MMU : public Device
 
     void load_file(FileInfo);
 
-  private:
-    [[nodiscard]] uint64_t load_byte(uint64_t) const;
-    [[nodiscard]] uint64_t load_hword(uint64_t) const;
-    [[nodiscard]] uint64_t load_word(uint64_t) const;
-    [[nodiscard]] uint64_t load_dword(uint64_t) const;
+private:
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load_byte(uint64_t) const;
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load_hword(uint64_t) const;
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load_word(uint64_t) const;
+    [[nodiscard]] std::pair<uint64_t, ReturnException> load_dword(uint64_t) const;
 
     void store_byte(uint64_t, uint64_t);
     void store_hword(uint64_t, uint64_t);
     void store_word(uint64_t, uint64_t);
     void store_dword(uint64_t, uint64_t);
 
-  private:
+private:
     std::vector<uint8_t> ram;
     std::vector<uint8_t> byte_permission;
     std::unordered_set<uint64_t> dirty_blocks;

@@ -8,14 +8,13 @@
 #include <PLIC.h>
 #include <UART.h>
 
-class Bus
-{
-  public:
+class Bus {
+public:
     Bus(uint64_t mem_size)
-      : ram_size(mem_size)
+        : ram_size(mem_size)
     {
 #ifndef FUZZ_ENV
-        devices = std::vector<Device*>{ new CLINT(), new PLIC(), new UART() };
+        devices = std::vector<Device*> { new CLINT(), new PLIC(), new UART() };
 #endif
         mmu = new MMU(ram_size);
     }
@@ -23,11 +22,10 @@ class Bus
     Bus(const Bus& other)
     {
 #ifndef FUZZ_ENV
-        devices = std::vector<Device*>{
-            new CLINT(*dynamic_cast<CLINT*>(other.devices[0])),
-            new PLIC(*dynamic_cast<PLIC*>(other.devices[1])),
-            new UART(*dynamic_cast<UART*>(other.devices[2]))
-        };
+        devices
+            = std::vector<Device*> { new CLINT(*dynamic_cast<CLINT*>(other.devices[0])),
+                                     new PLIC(*dynamic_cast<PLIC*>(other.devices[1])),
+                                     new UART(*dynamic_cast<UART*>(other.devices[2])) };
 #endif
         mmu = new MMU(*other.mmu);
     }
@@ -47,14 +45,13 @@ class Bus
 
     MMU* get_mmu() const { return mmu; }
 
-  private:
+private:
     std::vector<Device*> devices;
     Device* get_uart() const
     {
-        return *std::find_if(
-          std::begin(devices), std::end(devices), [](Device* device) {
-              return dynamic_cast<UART*>(device) != nullptr;
-          });
+        return *std::find_if(std::begin(devices), std::end(devices), [](Device* device) {
+            return dynamic_cast<UART*>(device) != nullptr;
+        });
     }
 
     uint64_t ram_size;
