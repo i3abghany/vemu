@@ -710,7 +710,7 @@ ReturnException VEmu::ECALL()
             iregs.store_reg(REG_A0, ret_base + increment);
         }
     } else if (syscall_number == SYSCALL_NR_WRITE) {
-        uint64_t fd = iregs.load_reg(REG_A0);
+        int64_t fd = iregs.load_reg(REG_A0);
         uint64_t buf = iregs.load_reg(REG_A1);
         size_t count = iregs.load_reg(REG_A2);
         auto str = bus.get_mmu()->read_to(buf, count).first;
@@ -735,16 +735,17 @@ ReturnException VEmu::ECALL()
         char* buffer = (char*)malloc(file_size + 1);
         assert(buffer);
         int64_t r = read(fd, buffer, file_size);
-        assert((uint64_t)r == file_size);
-
+        (void)r;
         buffer[file_size] = '\0';
-        file_table.push_back(FileHandle { buffer, (const char*)pathname, fd, file_size, 0,
+        char* fname = (char*)malloc(p.size() + 1);
+        strcpy(fname, p.c_str());
+        file_table.push_back(FileHandle { buffer, (const char*)fname, fd, file_size, 0,
                                           FileType::DiskFile });
         iregs.store_reg(REG_A0, fd);
     } else if (syscall_number == SYSCALL_NR_EXIT) {
         exit((int)iregs.load_reg(REG_A0));
     } else if (syscall_number == SYSCALL_NR_FSTAT) {
-        uint64_t fd = iregs.load_reg(REG_A0);
+        int64_t fd = iregs.load_reg(REG_A0);
         uint64_t statbuf = iregs.load_reg(REG_A1);
         bool exists = false;
         for (auto fh : file_table) {
