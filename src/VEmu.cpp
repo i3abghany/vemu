@@ -2,7 +2,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <fcntl.h>
 #include <type_traits>
+#include <unistd.h>
 
 #include <VEmu.h>
 
@@ -42,7 +44,7 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
     auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
-    iregs.store_reg(2, stack_base + STACK_SIZE);
+    iregs.store_reg(REG_SP, stack_base + STACK_SIZE);
 
     push_to_stack(0, 64);
     push_to_stack(0, 64);
@@ -62,7 +64,7 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
     write_string_to_addr(bin_file_name, argv0);
     push_to_stack(argv0, 64);
 
-    static constexpr uint64_t argc = 2;
+    static constexpr uint64_t argc = 3;
     push_to_stack(argc, 64);
 }
 
@@ -103,7 +105,7 @@ void VEmu::write_string_to_addr(const std::string& arg, uint64_t addr)
     std::vector<uint8_t> p(arg.size() + 1);
     for (size_t i = 0; i < p.size(); i++)
         p[i] = arg[i];
-    p.back() = '\0';
+    p[arg.size()] = '\0';
     bus.get_mmu()->write_from(p, addr);
 }
 
@@ -696,7 +698,7 @@ ReturnException VEmu::FENCEI() { return ReturnException::NormalExecutionReturn; 
 #ifdef FUZZ_ENV
 ReturnException VEmu::ECALL()
 {
-    int64_t syscall_number = iregs.load_reg(REG_A7);
+    auto syscall_number = iregs.load_reg(REG_A7);
     if (syscall_number == SYSCALL_NR_BRK) {
         uint64_t addr = iregs.load_reg(REG_A0);
         int64_t increment
@@ -708,7 +710,7 @@ ReturnException VEmu::ECALL()
             iregs.store_reg(REG_A0, ret_base + increment);
         }
     } else if (syscall_number == SYSCALL_NR_WRITE) {
-        uint64_t fd = iregs.load_reg(REG_A0);
+        int64_t fd = iregs.load_reg(REG_A0);
         uint64_t buf = iregs.load_reg(REG_A1);
         size_t count = iregs.load_reg(REG_A2);
         auto str = bus.get_mmu()->read_to(buf, count).first;
@@ -717,6 +719,79 @@ ReturnException VEmu::ECALL()
             std::cout << s << std::flush;
             iregs.store_reg(REG_A0, count);
         }
+    } else if (syscall_number == SYSCALL_NR_OPEN) {
+        auto pathname = iregs.load_reg(REG_A0);
+        auto flags = iregs.load_reg(REG_A1);
+        auto p = bus.get_mmu()->_read_null_terminated_string(pathname);
+        int fd = open(p.c_str(), (int)flags);
+        assert(fd != -1);
+        if (fd == -1) {
+            iregs.store_reg(REG_A0, -1);
+            return ReturnException::NormalExecutionReturn;
+        }
+
+        uint64_t file_size = lseek(fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_SET);
+        char* buffer = (char*)malloc(file_size + 1);
+        assert(buffer);
+        int64_t r = read(fd, buffer, file_size);
+        (void)r;
+        buffer[file_size] = '\0';
+        char* fname = (char*)malloc(p.size() + 1);
+        strcpy(fname, p.c_str());
+        file_table.push_back(FileHandle { buffer, (const char*)fname, fd, file_size, 0,
+                                          FileType::DiskFile });
+        iregs.store_reg(REG_A0, fd);
+    } else if (syscall_number == SYSCALL_NR_EXIT) {
+        exit((int)iregs.load_reg(REG_A0));
+    } else if (syscall_number == SYSCALL_NR_FSTAT) {
+        int64_t fd = iregs.load_reg(REG_A0);
+        uint64_t statbuf = iregs.load_reg(REG_A1);
+        bool exists = false;
+        for (auto fh : file_table) {
+            if (fh.fd == (int)fd) {
+                exists = true;
+                break;
+            }
+        }
+        assert(exists);
+        struct stat st { };
+        st.st_dev = 0x802;
+        st.st_ino = 0x22068c;
+        st.st_mode = 0x81fd;
+        st.st_nlink = 0x1;
+        st.st_uid = 0x3e8;
+        st.st_gid = 0x3e8;
+        st.st_rdev = 0x0;
+        st.st_size = 0x33de40;
+        st.st_blksize = 0x1000;
+        st.st_blocks = 0x19f0;
+        st.st_atime = 0x6440824f;
+        st.st_mtime = 0x6440824a;
+        st.st_ctime = 0x6440824a;
+
+        auto ptr = reinterpret_cast<uint8_t*>(&st);
+        std::vector<uint8_t> bytes(ptr, ptr + sizeof(struct stat));
+        bus.get_mmu()->write_from(bytes, statbuf);
+        iregs.store_reg(REG_A0, 0);
+    } else if (syscall_number == SYSCALL_NR_LSEEK) {
+        int64_t file = iregs.load_reg(REG_A0);
+        int64_t offset = iregs.load_reg(REG_A1);
+        int64_t whence = iregs.load_reg(REG_A2);
+
+        for (auto& fh : file_table) {
+            if (fh.fd == file) {
+                if (whence == SEEK_SET)
+                    fh.idx = offset;
+                else if (whence == SEEK_CUR)
+                    fh.idx += offset;
+                else if (whence == SEEK_END)
+                    fh.idx = fh.len + offset;
+                iregs.store_reg(REG_A0, fh.idx);
+                return ReturnException::NormalExecutionReturn;
+            }
+        }
+        iregs.store_reg(REG_A0, -1);
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number << ", pc: 0x"
                   << std::hex << pc << '\n';

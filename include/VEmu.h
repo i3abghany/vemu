@@ -242,6 +242,27 @@ private:
     FileInfo file_info;
     std::string string_arg;
 
+private:
+    enum class FileType {
+        Stdin,
+        Stdout,
+        Stderr,
+        DiskFile,
+    };
+    struct FileHandle {
+        char* data;
+        const char* pathname;
+        int fd;
+        uint64_t len;
+        uint64_t idx;
+        FileType type;
+    };
+    std::vector<FileHandle> file_table {
+        FileHandle {nullptr,  nullptr, 0, 0, 0, FileType::Stdin },
+        FileHandle { nullptr, nullptr, 1, 0, 0, FileType::Stdout},
+        FileHandle { nullptr, nullptr, 2, 0, 0, FileType::Stderr},
+    };
+
 #ifdef TEST_ENV
 public:
     bool test_flag_done = false;
