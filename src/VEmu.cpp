@@ -282,29 +282,24 @@ std::array<double, 32> VEmu::get_fregs() { return fregs.get_regs(); }
 
 ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 {
-    // FIXME: only checks on aligned addresses
-    // Will have to check for individual bytes.
-    // For example: if the address 0x81000000
-    // is in the reservation set, storing in
-    // the address 0x810000001 will not
-    // mark the word as not reserved.
-
-    if (reservation_set.count(addr)) {
-        reservation_set.erase(addr);
-    }
-
     return bus.store(addr, data, sz);
 }
 
 std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 {
+#ifdef TEST_ENV
     auto load_ret = load(i, 32);
+    return load_ret;
     if (load_ret.second == ReturnException::NormalExecutionReturn) {
         return { static_cast<uint32_t>(load_ret.first),
                  ReturnException::NormalExecutionReturn };
     } else {
         return { 0, ReturnException::InstructionAccessFault };
     }
+#else
+    auto load_ret = bus.get_mmu()->load_insn(i);
+    return load_ret;
+#endif
 }
 
 uint32_t VEmu::run()
@@ -1666,8 +1661,6 @@ ReturnException VEmu::LRW()
         return ReturnException::LoadAddressMisaligned;
     }
 
-    reservation_set.insert(addr);
-
     auto load_ret = load(addr, 32);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
         return load_ret.second;
@@ -1687,8 +1680,6 @@ ReturnException VEmu::LRD()
     if (addr % 8 != 0) {
         return ReturnException::LoadAddressMisaligned;
     }
-
-    reservation_set.insert(addr);
 
     auto load_ret = load(addr, 64);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
@@ -1710,15 +1701,9 @@ ReturnException VEmu::SCW()
         return ReturnException::StoreAMOAddressMisaligned;
     }
 
-    if (!reservation_set.count(addr)) {
-        reservation_set.erase(addr);
-        auto store_ret = store(addr, iregs.load_reg(rs2), 32);
-        iregs.store_reg(rd, 0);
-        return store_ret;
-    } else {
-        iregs.store_reg(rd, 1);
-        return ReturnException::NormalExecutionReturn;
-    }
+    auto store_ret = store(addr, iregs.load_reg(rs2), 32);
+    iregs.store_reg(rd, 0);
+    return store_ret;
 }
 
 ReturnException VEmu::SCD()
@@ -1732,15 +1717,9 @@ ReturnException VEmu::SCD()
         return ReturnException::StoreAMOAddressMisaligned;
     }
 
-    if (!reservation_set.count(addr)) {
-        reservation_set.erase(addr);
-        auto store_ret = store(addr, iregs.load_reg(rs2), 64);
-        iregs.store_reg(rd, 0);
-        return store_ret;
-    } else {
-        iregs.store_reg(rd, 1);
-        return ReturnException::NormalExecutionReturn;
-    }
+    auto store_ret = store(addr, iregs.load_reg(rs2), 64);
+    iregs.store_reg(rd, 0);
+    return store_ret;
 }
 
 ReturnException VEmu::AMOSWAPW()

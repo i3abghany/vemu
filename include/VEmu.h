@@ -215,16 +215,11 @@ private:
 
 private:
     Mode mode;
-
     Bus bus;
-    std::unordered_set<uint64_t> reservation_set;
-
     RegFile iregs;
     FRegFile fregs;
-
     uint32_t hex_instr;
     Instruction curr_instr;
-
     uint64_t pc;
     uint64_t code_size;
     uint64_t ram_size;
