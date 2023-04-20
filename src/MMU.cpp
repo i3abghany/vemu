@@ -163,6 +163,18 @@ ReturnException MMU::store(uint64_t addr, uint64_t data, size_t sz)
     return str;
 }
 
+std::pair<uint32_t, ReturnException> MMU::load_insn(uint64_t addr) const
+{
+    uint64_t res = 0x00000000;
+
+    res |= static_cast<uint64_t>(ram[addr + 0]);
+    res |= static_cast<uint64_t>(ram[addr + 1]) << 8;
+    res |= static_cast<uint64_t>(ram[addr + 2]) << 16;
+    res |= static_cast<uint64_t>(ram[addr + 3]) << 24;
+
+    return { res, ReturnException::NormalExecutionReturn };
+}
+
 std::pair<uint64_t, ReturnException> MMU::load_byte(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
