@@ -754,8 +754,25 @@ ReturnException VEmu::ECALL()
             }
         }
         assert(exists);
-        // TODO: fill the statbuf
-        (void)statbuf;
+        struct stat st { };
+        st.st_dev = 0x802;
+        st.st_ino = 0x22068c;
+        st.st_mode = 0x81fd;
+        st.st_nlink = 0x1;
+        st.st_uid = 0x3e8;
+        st.st_gid = 0x3e8;
+        st.st_rdev = 0x0;
+        st.st_size = 0x33de40;
+        st.st_blksize = 0x1000;
+        st.st_blocks = 0x19f0;
+        st.st_atime = 0x6440824f;
+        st.st_mtime = 0x6440824a;
+        st.st_ctime = 0x6440824a;
+
+        auto ptr = reinterpret_cast<uint8_t*>(&st);
+        std::vector<uint8_t> bytes(ptr, ptr + sizeof(struct stat));
+        bus.get_mmu()->write_from(bytes, statbuf);
+        iregs.store_reg(REG_A0, 0);
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number << ", pc: 0x"
                   << std::hex << pc << '\n';
