@@ -773,6 +773,24 @@ ReturnException VEmu::ECALL()
         std::vector<uint8_t> bytes(ptr, ptr + sizeof(struct stat));
         bus.get_mmu()->write_from(bytes, statbuf);
         iregs.store_reg(REG_A0, 0);
+    } else if (syscall_number == SYSCALL_NR_LSEEK) {
+        int64_t file = iregs.load_reg(REG_A0);
+        int64_t offset = iregs.load_reg(REG_A1);
+        int64_t whence = iregs.load_reg(REG_A2);
+
+        for (auto& fh : file_table) {
+            if (fh.fd == file) {
+                if (whence == SEEK_SET)
+                    fh.idx = offset;
+                else if (whence == SEEK_CUR)
+                    fh.idx += offset;
+                else if (whence == SEEK_END)
+                    fh.idx = fh.len + offset;
+                iregs.store_reg(REG_A0, fh.idx);
+                return ReturnException::NormalExecutionReturn;
+            }
+        }
+        iregs.store_reg(REG_A0, -1);
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number << ", pc: 0x"
                   << std::hex << pc << '\n';
