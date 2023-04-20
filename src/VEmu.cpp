@@ -755,30 +755,51 @@ ReturnException VEmu::ECALL()
             }
         }
         assert(exists);
-        struct stat st { };
-        st.st_dev = 0x802;
-        st.st_ino = 0x22068c;
-        st.st_mode = 0x81fd;
-        st.st_nlink = 0x1;
-        st.st_uid = 0x3e8;
-        st.st_gid = 0x3e8;
-        st.st_rdev = 0x0;
-        st.st_size = 0x33de40;
-        st.st_blksize = 0x1000;
-        st.st_blocks = 0x19f0;
-        st.st_atime = 0x6440824f;
-        st.st_mtime = 0x6440824a;
-        st.st_ctime = 0x6440824a;
+
+        struct riscv_stat {
+            uint64_t _st_dev;
+            uint64_t _st_ino;
+            uint32_t _st_mode;
+            uint32_t _st_nlink;
+            uint32_t _st_uid;
+            uint32_t _st_gid;
+            uint64_t _st_rdev;
+            uint64_t _ppad1;
+            int64_t _st_size;
+            int32_t _st_blksize;
+            int32_t _ppad2;
+            uint64_t _st_blocks;
+            uint64_t _st_atime;
+            uint64_t _st_atimensec;
+            uint64_t _st_mtime;
+            uint64_t _st_mtimensec;
+            uint64_t _st_ctime;
+            uint64_t _st_ctimensec;
+            int __glibc_reserved[2];
+        } st;
+
+        st._st_dev = (fd == 1) ? 0x18 : 0x802;
+        st._st_ino = (fd == 1) ? 0x3 : 0x22068c;
+        st._st_mode = (fd == 1) ? 0x2190 : 0x81fd;
+        st._st_nlink = 0x1;
+        st._st_uid = 0x3e8;
+        st._st_gid = (fd == 1) ? 0x5 : 0x3e8;
+        st._st_rdev = (fd == 1) ? 0x8800 : 0x0;
+        st._st_size = (fd == 1) ? 0x0 : file_table.back().len;
+        st._st_blksize = (fd == 1) ? 0x400 : 0x1000;
+        st._st_blocks = (fd == 1) ? 0x0 : file_table.back().len / st._st_blksize;
+        st._st_atime = 0x6440824f;
+        st._st_mtime = 0x6440824a;
+        st._st_ctime = 0x6440824a;
 
         auto ptr = reinterpret_cast<uint8_t*>(&st);
-        std::vector<uint8_t> bytes(ptr, ptr + sizeof(struct stat));
+        std::vector<uint8_t> bytes(ptr, ptr + sizeof(riscv_stat));
         bus.get_mmu()->write_from(bytes, statbuf);
         iregs.store_reg(REG_A0, 0);
     } else if (syscall_number == SYSCALL_NR_LSEEK) {
         int64_t file = iregs.load_reg(REG_A0);
         int64_t offset = iregs.load_reg(REG_A1);
         int64_t whence = iregs.load_reg(REG_A2);
-
         for (auto& fh : file_table) {
             if (fh.fd == file) {
                 if (whence == SEEK_SET)
@@ -787,11 +808,33 @@ ReturnException VEmu::ECALL()
                     fh.idx += offset;
                 else if (whence == SEEK_END)
                     fh.idx = fh.len + offset;
+                else
+                    assert(false);
                 iregs.store_reg(REG_A0, fh.idx);
                 return ReturnException::NormalExecutionReturn;
             }
         }
         iregs.store_reg(REG_A0, -1);
+    } else if (syscall_number == SYSCALL_NR_READ) {
+        int64_t fd = iregs.load_reg(REG_A0);
+        uint64_t buf = iregs.load_reg(REG_A1);
+        uint64_t count = iregs.load_reg(REG_A2);
+        for (auto& fh : file_table) {
+            if (fh.fd == fd) {
+                const uint8_t* data_start = (const uint8_t*)fh.data;
+                if (fh.idx + count >= fh.len)
+                    count = fh.len - fh.idx;
+                if (count == 0)
+                    return ReturnException::NormalExecutionReturn;
+                std::vector<uint8_t> data(data_start + fh.idx,
+                                          data_start + fh.idx + count);
+                fh.idx += count;
+                bus.get_mmu()->write_from(data, buf);
+                iregs.store_reg(REG_A0, count);
+                return ReturnException::NormalExecutionReturn;
+            }
+        }
+        assert(false);
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number << ", pc: 0x"
                   << std::hex << pc << '\n';
@@ -1592,7 +1635,6 @@ ReturnException VEmu::JALR()
 
 ReturnException VEmu::LUI()
 {
-    // the full 32-bit U-imm
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     auto rd = curr_instr.get_fields().rd;
 
@@ -1604,7 +1646,6 @@ ReturnException VEmu::LUI()
 
 ReturnException VEmu::AUIPC()
 {
-    // the full 32-bit U-imm
     auto rd = curr_instr.get_fields().rd;
     int32_t imm_32 = static_cast<int32_t>(curr_instr.get_fields().imm);
     int64_t imm = static_cast<int64_t>(imm_32);
@@ -2388,8 +2429,10 @@ Interrupt VEmu::check_pending_interrupt()
 #ifdef FUZZ_ENV
 void VEmu::trap(ReturnException e)
 {
-    std::cout << "Unexpected return exception: " << stringify_exception(e) << " @ pc: 0x"
-              << std::hex << pc << '\n';
+    (void)e;
+    // std::cout << "Unexpected return exception: " << stringify_exception(e) << " @ pc:
+    // 0x"
+    //           << std::hex << pc << '\n';
 }
 #else
 void VEmu::trap(ReturnException e)
