@@ -2,7 +2,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <fcntl.h>
 #include <type_traits>
+#include <unistd.h>
 
 #include <VEmu.h>
 
@@ -42,7 +44,7 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
     auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
-    iregs.store_reg(2, stack_base + STACK_SIZE);
+    iregs.store_reg(REG_SP, stack_base + STACK_SIZE);
 
     push_to_stack(0, 64);
     push_to_stack(0, 64);
@@ -62,7 +64,7 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
     write_string_to_addr(bin_file_name, argv0);
     push_to_stack(argv0, 64);
 
-    static constexpr uint64_t argc = 2;
+    static constexpr uint64_t argc = 3;
     push_to_stack(argc, 64);
 }
 
@@ -103,7 +105,7 @@ void VEmu::write_string_to_addr(const std::string& arg, uint64_t addr)
     std::vector<uint8_t> p(arg.size() + 1);
     for (size_t i = 0; i < p.size(); i++)
         p[i] = arg[i];
-    p.back() = '\0';
+    p[arg.size()] = '\0';
     bus.get_mmu()->write_from(p, addr);
 }
 
@@ -696,7 +698,7 @@ ReturnException VEmu::FENCEI() { return ReturnException::NormalExecutionReturn; 
 #ifdef FUZZ_ENV
 ReturnException VEmu::ECALL()
 {
-    int64_t syscall_number = iregs.load_reg(REG_A7);
+    auto syscall_number = iregs.load_reg(REG_A7);
     if (syscall_number == SYSCALL_NR_BRK) {
         uint64_t addr = iregs.load_reg(REG_A0);
         int64_t increment
@@ -717,6 +719,43 @@ ReturnException VEmu::ECALL()
             std::cout << s << std::flush;
             iregs.store_reg(REG_A0, count);
         }
+    } else if (syscall_number == SYSCALL_NR_OPEN) {
+        auto pathname = iregs.load_reg(REG_A0);
+        auto flags = iregs.load_reg(REG_A1);
+        auto p = bus.get_mmu()->_read_null_terminated_string(pathname);
+        int fd = open(p.c_str(), (int)flags);
+        assert(fd != -1);
+        if (fd == -1) {
+            iregs.store_reg(REG_A0, -1);
+            return ReturnException::NormalExecutionReturn;
+        }
+
+        uint64_t file_size = lseek(fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_SET);
+        char* buffer = (char*)malloc(file_size + 1);
+        assert(buffer);
+        int64_t r = read(fd, buffer, file_size);
+        assert((uint64_t)r == file_size);
+
+        buffer[file_size] = '\0';
+        file_table.push_back(FileHandle { buffer, (const char*)pathname, fd, file_size, 0,
+                                          FileType::DiskFile });
+        iregs.store_reg(REG_A0, fd);
+    } else if (syscall_number == SYSCALL_NR_EXIT) {
+        exit((int)iregs.load_reg(REG_A0));
+    } else if (syscall_number == SYSCALL_NR_FSTAT) {
+        uint64_t fd = iregs.load_reg(REG_A0);
+        uint64_t statbuf = iregs.load_reg(REG_A1);
+        bool exists = false;
+        for (auto fh : file_table) {
+            if (fh.fd == (int)fd) {
+                exists = true;
+                break;
+            }
+        }
+        assert(exists);
+        // TODO: fill the statbuf
+        (void)statbuf;
     } else {
         std::cout << "Unsupported syscall: " << std::dec << syscall_number << ", pc: 0x"
                   << std::hex << pc << '\n';

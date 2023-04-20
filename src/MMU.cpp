@@ -152,6 +152,17 @@ ReturnException MMU::store(uint64_t addr, uint64_t data, size_t sz)
     return ReturnException::NormalExecutionReturn;
 }
 
+[[nodiscard]] std::string MMU::_read_null_terminated_string(uint64_t addr) const
+{
+    std::string str;
+    uint8_t read_char = ' ';
+    while (read_char != 0) {
+        read_char = read_to(addr++, 1).first[0];
+        str += read_char;
+    }
+    return str;
+}
+
 std::pair<uint64_t, ReturnException> MMU::load_byte(uint64_t addr) const
 {
     uint64_t res = 0x00000000;
