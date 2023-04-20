@@ -287,6 +287,7 @@ enum class IName : uint8_t {
 #define SYSCALL_NR_EXIT 57
 #define SYSCALL_NR_WRITE 64
 #define SYSCALL_NR_LSEEK 62
+#define SYSCALL_NR_READ 63
 #define SYSCALL_NR_FSTAT 80
 #define SYSCALL_NR_BRK 214
 #define SYSCALL_NR_OPEN 1024
