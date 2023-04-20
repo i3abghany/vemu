@@ -14,6 +14,8 @@ extern "C" {
 };
 #endif
 
+static constexpr bool VERBOSE_OUTPUT = false;
+
 VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     : bin_file_name(std::move(f_name))
     , bus(mem_size)
@@ -705,13 +707,18 @@ ReturnException VEmu::ECALL()
             iregs.store_reg(REG_A0, ret_base + increment);
         }
     } else if (syscall_number == SYSCALL_NR_WRITE) {
-        int64_t fd = iregs.load_reg(REG_A0);
-        uint64_t buf = iregs.load_reg(REG_A1);
-        size_t count = iregs.load_reg(REG_A2);
-        auto str = bus.get_mmu()->read_to(buf, count).first;
-        std::string s(str.begin(), str.end());
-        if (fd == 1 || fd == 2) {
-            std::cout << s << std::flush;
+        if (VERBOSE_OUTPUT) {
+            int64_t fd = iregs.load_reg(REG_A0);
+            uint64_t buf = iregs.load_reg(REG_A1);
+            size_t count = iregs.load_reg(REG_A2);
+            auto str = bus.get_mmu()->read_to(buf, count).first;
+            std::string s(str.begin(), str.end());
+            if (fd == 1 || fd == 2) {
+                std::cout << s;
+                iregs.store_reg(REG_A0, count);
+            }
+        } else {
+            size_t count = iregs.load_reg(REG_A2);
             iregs.store_reg(REG_A0, count);
         }
     } else if (syscall_number == SYSCALL_NR_OPEN) {
