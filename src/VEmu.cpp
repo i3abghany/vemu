@@ -756,16 +756,16 @@ ReturnException VEmu::ECALL()
         }
         assert(exists);
         struct stat st { };
-        st.st_dev = 0x802;
-        st.st_ino = 0x22068c;
-        st.st_mode = 0x81fd;
+        st.st_dev = (fd == 1) ? 0x18 : 0x802;
+        st.st_ino = (fd == 1) ? 0x3  : 0x22068c;
+        st.st_mode = (fd == 1) ? 0x2190 : 0x81fd;
         st.st_nlink = 0x1;
         st.st_uid = 0x3e8;
-        st.st_gid = 0x3e8;
-        st.st_rdev = 0x0;
-        st.st_size = 0x33de40;
-        st.st_blksize = 0x1000;
-        st.st_blocks = 0x19f0;
+        st.st_gid = (fd == 1) ? 0x5 : 0x3e8;
+        st.st_rdev = (fd == 1) ? 0x8800 : 0x0;
+        st.st_size = (fd == 1) ? 0x0 : 0x33de40;
+        st.st_blksize = (fd == 1) ? 0x400 : 0x1000;
+        st.st_blocks = (fd == 1) ? 0x0 : 0x19f0;
         st.st_atime = 0x6440824f;
         st.st_mtime = 0x6440824a;
         st.st_ctime = 0x6440824a;
