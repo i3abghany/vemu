@@ -50,3 +50,12 @@ FileInfo* Corpus::get_random_free_file()
             return f;
     }
 }
+
+void mutate(FileInfo* info, uint64_t n_bytes)
+{
+    while (n_bytes--) {
+        uint64_t seg_idx = gen_rand() % info->segments.size();
+        uint64_t byte_idx = gen_rand() % info->segments[seg_idx].file_size;
+        info->segments[seg_idx].data[byte_idx] = (uint8_t)(gen_rand() % 255);
+    }
+}

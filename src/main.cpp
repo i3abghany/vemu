@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
     auto corpus = Corpus(argv[1]);
     auto* fuzz_info = read_elf(argv[2]);
     auto* input_info = corpus.get_random_free_file();
+    mutate(input_info, gen_rand() % 16);
     char** fuzzed_cmd_args = &argv[3];
     VEmu em = VEmu { argv[2], fuzz_info,
                      substitute_input(fuzzed_cmd_args, argc - 3,

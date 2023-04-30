@@ -33,6 +33,7 @@ struct FileInfo {
 };
 
 FileInfo* read_elf(const std::string& fname, bool exit_fatally = true);
+uint64_t gen_rand();
 
 class Corpus {
 public:
@@ -42,3 +43,5 @@ public:
 private:
     std::vector<FileInfo*> corpus_files;
 };
+
+void mutate(FileInfo* info, uint64_t n_bytes);
