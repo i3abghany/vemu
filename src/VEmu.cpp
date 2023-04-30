@@ -14,7 +14,7 @@ extern "C" {
 };
 #endif
 
-static constexpr bool VERBOSE_OUTPUT = true;
+static constexpr bool VERBOSE_OUTPUT = false;
 
 VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     : bin_file_name(std::move(f_name))
@@ -741,7 +741,10 @@ ReturnException VEmu::ECALL()
                                           FileType::DiskFile });
         iregs.store_reg(REG_A0, fd);
     } else if (syscall_number == SYSCALL_NR_EXIT) {
-        exit((int)iregs.load_reg(REG_A0));
+        auto exit_code = (int)iregs.load_reg(REG_A0);
+        if (exit_code == 11)
+            std::cout << "Crash Detected\n";
+        exit(0);
     } else if (syscall_number == SYSCALL_NR_FSTAT) {
         int64_t fd = iregs.load_reg(REG_A0);
         uint64_t statbuf = iregs.load_reg(REG_A1);
