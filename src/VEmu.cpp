@@ -14,7 +14,7 @@ extern "C" {
 };
 #endif
 
-static constexpr bool VERBOSE_OUTPUT = false;
+static constexpr bool VERBOSE_OUTPUT = true;
 
 VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     : bin_file_name(std::move(f_name))
@@ -35,14 +35,12 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
         read_file();
 }
 
-VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
+VEmu::VEmu(std::string f_name, FileInfo* info, const std::vector<char*>& args,
            uint64_t mem_size)
-    : VEmu("", info.entry_point, mem_size)
+    : VEmu("", info->entry_point, mem_size)
 {
     bin_file_name = std::move(f_name);
     bus.get_mmu()->load_file(info);
-    file_info = info;
-    string_arg = arg;
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
     auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
@@ -54,19 +52,17 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
     // argv end
     push_to_stack(0, 64);
 
-    auto argv2 = bus.get_mmu()->allocate(256);
-    write_string_to_addr(arg, argv2);
-    push_to_stack(argv2, 64);
-
-    auto argv1 = bus.get_mmu()->allocate(8);
-    write_string_to_addr("-x", argv1);
-    push_to_stack(argv1, 64);
+    for (auto arg = args.rbegin(); arg != args.rend(); arg++) {
+        auto argval = bus.get_mmu()->allocate(256);
+        write_string_to_addr(*arg, argval);
+        push_to_stack(argval, 64);
+    }
 
     auto argv0 = bus.get_mmu()->allocate(256);
     write_string_to_addr(bin_file_name, argv0);
     push_to_stack(argv0, 64);
 
-    static constexpr uint64_t argc = 3;
+    const uint64_t argc = args.size() + 1;
     push_to_stack(argc, 64);
 }
 

@@ -23,7 +23,7 @@ public:
     explicit VEmu(const std::vector<uint8_t>&, uint64_t pc = 0x80000000,
                   uint64_t mem_size = 128 * 1024 * 1024);
 
-    VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
+    VEmu(std::string f_name, FileInfo* info, const std::vector<char*>& args,
          uint64_t mem_size = 128 * 1024 * 1024);
 
     uint32_t run();
@@ -35,9 +35,7 @@ public:
         : bus { other.bus }
     {
         bin_file_name = other.bin_file_name;
-        string_arg = other.string_arg;
-        file_info = other.file_info;
-        pc = file_info.entry_point;
+        pc = other.pc;
         ram_size = other.ram_size;
     }
 
@@ -233,9 +231,6 @@ private:
     std::string stringify_exception(ReturnException e);
 
     static constexpr int UART_IRQ = 10;
-
-    FileInfo file_info;
-    std::string string_arg;
 
 private:
     enum class FileType {

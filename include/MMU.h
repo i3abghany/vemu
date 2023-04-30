@@ -44,7 +44,7 @@ public:
     uint64_t allocate(uint64_t);
     void set_perms(uint64_t, uint64_t, BytePermission);
 
-    void load_file(FileInfo);
+    void load_file(FileInfo*);
 
 private:
     [[nodiscard]] std::pair<uint64_t, ReturnException> load_byte(uint64_t) const;
