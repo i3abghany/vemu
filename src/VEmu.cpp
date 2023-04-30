@@ -14,6 +14,8 @@ extern "C" {
 };
 #endif
 
+static constexpr bool VERBOSE_OUTPUT = false;
+
 VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
     : bin_file_name(std::move(f_name))
     , bus(mem_size)
@@ -33,14 +35,12 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
         read_file();
 }
 
-VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
+VEmu::VEmu(std::string f_name, FileInfo* info, const std::vector<char*>& args,
            uint64_t mem_size)
-    : VEmu("", info.entry_point, mem_size)
+    : VEmu("", info->entry_point, mem_size)
 {
     bin_file_name = std::move(f_name);
     bus.get_mmu()->load_file(info);
-    file_info = info;
-    string_arg = arg;
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
     auto stack_base = bus.get_mmu()->allocate(STACK_SIZE);
@@ -52,19 +52,17 @@ VEmu::VEmu(std::string f_name, const FileInfo& info, const std::string& arg,
     // argv end
     push_to_stack(0, 64);
 
-    auto argv2 = bus.get_mmu()->allocate(256);
-    write_string_to_addr(arg, argv2);
-    push_to_stack(argv2, 64);
-
-    auto argv1 = bus.get_mmu()->allocate(8);
-    write_string_to_addr("-x", argv1);
-    push_to_stack(argv1, 64);
+    for (auto arg = args.rbegin(); arg != args.rend(); arg++) {
+        auto argval = bus.get_mmu()->allocate(256);
+        write_string_to_addr(*arg, argval);
+        push_to_stack(argval, 64);
+    }
 
     auto argv0 = bus.get_mmu()->allocate(256);
     write_string_to_addr(bin_file_name, argv0);
     push_to_stack(argv0, 64);
 
-    static constexpr uint64_t argc = 3;
+    const uint64_t argc = args.size() + 1;
     push_to_stack(argc, 64);
 }
 
@@ -282,29 +280,24 @@ std::array<double, 32> VEmu::get_fregs() { return fregs.get_regs(); }
 
 ReturnException VEmu::store(uint64_t addr, uint64_t data, size_t sz)
 {
-    // FIXME: only checks on aligned addresses
-    // Will have to check for individual bytes.
-    // For example: if the address 0x81000000
-    // is in the reservation set, storing in
-    // the address 0x810000001 will not
-    // mark the word as not reserved.
-
-    if (reservation_set.count(addr)) {
-        reservation_set.erase(addr);
-    }
-
     return bus.store(addr, data, sz);
 }
 
 std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 {
+#ifdef TEST_ENV
     auto load_ret = load(i, 32);
+    return load_ret;
     if (load_ret.second == ReturnException::NormalExecutionReturn) {
         return { static_cast<uint32_t>(load_ret.first),
                  ReturnException::NormalExecutionReturn };
     } else {
         return { 0, ReturnException::InstructionAccessFault };
     }
+#else
+    auto load_ret = bus.get_mmu()->load_insn(i);
+    return load_ret;
+#endif
 }
 
 uint32_t VEmu::run()
@@ -710,13 +703,18 @@ ReturnException VEmu::ECALL()
             iregs.store_reg(REG_A0, ret_base + increment);
         }
     } else if (syscall_number == SYSCALL_NR_WRITE) {
-        int64_t fd = iregs.load_reg(REG_A0);
-        uint64_t buf = iregs.load_reg(REG_A1);
-        size_t count = iregs.load_reg(REG_A2);
-        auto str = bus.get_mmu()->read_to(buf, count).first;
-        std::string s(str.begin(), str.end());
-        if (fd == 1 || fd == 2) {
-            std::cout << s << std::flush;
+        if (VERBOSE_OUTPUT) {
+            int64_t fd = iregs.load_reg(REG_A0);
+            uint64_t buf = iregs.load_reg(REG_A1);
+            size_t count = iregs.load_reg(REG_A2);
+            auto str = bus.get_mmu()->read_to(buf, count).first;
+            std::string s(str.begin(), str.end());
+            if (fd == 1 || fd == 2) {
+                std::cout << s;
+                iregs.store_reg(REG_A0, count);
+            }
+        } else {
+            size_t count = iregs.load_reg(REG_A2);
             iregs.store_reg(REG_A0, count);
         }
     } else if (syscall_number == SYSCALL_NR_OPEN) {
@@ -743,7 +741,10 @@ ReturnException VEmu::ECALL()
                                           FileType::DiskFile });
         iregs.store_reg(REG_A0, fd);
     } else if (syscall_number == SYSCALL_NR_EXIT) {
-        exit((int)iregs.load_reg(REG_A0));
+        auto exit_code = (int)iregs.load_reg(REG_A0);
+        if (exit_code == 11)
+            std::cout << "Crash Detected\n";
+        exit(0);
     } else if (syscall_number == SYSCALL_NR_FSTAT) {
         int64_t fd = iregs.load_reg(REG_A0);
         uint64_t statbuf = iregs.load_reg(REG_A1);
@@ -1666,8 +1667,6 @@ ReturnException VEmu::LRW()
         return ReturnException::LoadAddressMisaligned;
     }
 
-    reservation_set.insert(addr);
-
     auto load_ret = load(addr, 32);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
         return load_ret.second;
@@ -1687,8 +1686,6 @@ ReturnException VEmu::LRD()
     if (addr % 8 != 0) {
         return ReturnException::LoadAddressMisaligned;
     }
-
-    reservation_set.insert(addr);
 
     auto load_ret = load(addr, 64);
     if (load_ret.second != ReturnException::NormalExecutionReturn) {
@@ -1710,15 +1707,9 @@ ReturnException VEmu::SCW()
         return ReturnException::StoreAMOAddressMisaligned;
     }
 
-    if (!reservation_set.count(addr)) {
-        reservation_set.erase(addr);
-        auto store_ret = store(addr, iregs.load_reg(rs2), 32);
-        iregs.store_reg(rd, 0);
-        return store_ret;
-    } else {
-        iregs.store_reg(rd, 1);
-        return ReturnException::NormalExecutionReturn;
-    }
+    auto store_ret = store(addr, iregs.load_reg(rs2), 32);
+    iregs.store_reg(rd, 0);
+    return store_ret;
 }
 
 ReturnException VEmu::SCD()
@@ -1732,15 +1723,9 @@ ReturnException VEmu::SCD()
         return ReturnException::StoreAMOAddressMisaligned;
     }
 
-    if (!reservation_set.count(addr)) {
-        reservation_set.erase(addr);
-        auto store_ret = store(addr, iregs.load_reg(rs2), 64);
-        iregs.store_reg(rd, 0);
-        return store_ret;
-    } else {
-        iregs.store_reg(rd, 1);
-        return ReturnException::NormalExecutionReturn;
-    }
+    auto store_ret = store(addr, iregs.load_reg(rs2), 64);
+    iregs.store_reg(rd, 0);
+    return store_ret;
 }
 
 ReturnException VEmu::AMOSWAPW()

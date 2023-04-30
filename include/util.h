@@ -7,6 +7,8 @@
 #pragma GCC diagnostic pop
 using namespace ELFIO;
 
+#include <mutex>
+
 typedef uint8_t BytePermission;
 
 struct MemorySegment {
@@ -14,12 +16,32 @@ struct MemorySegment {
     uint64_t start_addr;
     uint64_t mem_size;
     uint64_t file_size;
-    const uint8_t* data;
+    uint8_t* data;
 };
 
 struct FileInfo {
+    FileInfo(std::string fname, std::vector<MemorySegment> segs, uint64_t e)
+        : file_name(std::move(fname))
+        , segments(std::move(segs))
+        , entry_point(e)
+    {
+    }
+    std::string file_name;
     std::vector<MemorySegment> segments;
     uint64_t entry_point;
+    std::mutex lock;
 };
 
-FileInfo read_elf(const std::string& fname, bool exit_fatally = true);
+FileInfo* read_elf(const std::string& fname, bool exit_fatally = true);
+uint64_t gen_rand();
+
+class Corpus {
+public:
+    explicit Corpus(const std::string& dir_path);
+    FileInfo* get_random_free_file();
+
+private:
+    std::vector<FileInfo*> corpus_files;
+};
+
+void mutate(FileInfo* info, uint64_t n_bytes);

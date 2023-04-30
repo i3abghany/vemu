@@ -36,9 +36,9 @@ void MMU::reset_to(const MMU& other)
     dirty_blocks.clear();
 }
 
-void MMU::load_file(FileInfo info)
+void MMU::load_file(FileInfo* info)
 {
-    for (auto seg : info.segments) {
+    for (auto seg : info->segments) {
         set_perms(seg.start_addr, seg.mem_size, PERM_WRITE);
         std::vector<uint8_t> data;
         data.assign((uint8_t*)seg.data, (uint8_t*)seg.data + seg.file_size);
@@ -49,8 +49,9 @@ void MMU::load_file(FileInfo info)
             data = std::vector<uint8_t> { data.begin(), data.begin() + seg.mem_size };
         write_from(data, seg.start_addr);
         set_perms(seg.start_addr, seg.mem_size, seg.perms);
-        alloc_ptr
-            = std::max(alloc_ptr, ((seg.start_addr + seg.mem_size) + 0xFFFF) & ~0xFFFF);
+        alloc_ptr = std::max(
+            alloc_ptr,
+            (uint64_t)(((seg.start_addr + seg.mem_size) + 0xFFFFULL) & ~0xFFFFULL));
     }
 }
 
@@ -161,6 +162,18 @@ ReturnException MMU::store(uint64_t addr, uint64_t data, size_t sz)
         str += read_char;
     }
     return str;
+}
+
+std::pair<uint32_t, ReturnException> MMU::load_insn(uint64_t addr) const
+{
+    uint64_t res = 0x00000000;
+
+    res |= static_cast<uint64_t>(ram[addr + 0]);
+    res |= static_cast<uint64_t>(ram[addr + 1]) << 8;
+    res |= static_cast<uint64_t>(ram[addr + 2]) << 16;
+    res |= static_cast<uint64_t>(ram[addr + 3]) << 24;
+
+    return { res, ReturnException::NormalExecutionReturn };
 }
 
 std::pair<uint64_t, ReturnException> MMU::load_byte(uint64_t addr) const
