@@ -40,11 +40,11 @@ int main(int argc, char* argv[])
     auto* input_info = corpus.get_random_free_file();
     mutate(input_info, gen_rand() % 16);
     char** fuzzed_cmd_args = &argv[3];
-    VEmu em = VEmu { argv[2], fuzz_info,
+    VEmu em = VEmu { fuzz_info,
                      substitute_input(fuzzed_cmd_args, argc - 3,
                                       input_info->file_name.c_str()) };
-    em.run();
-    em.dump_regs();
+    auto exit_status = em.run();
+    std::cout << exit_status;
 #else
 #error "General emulation still WIP."
 #endif
