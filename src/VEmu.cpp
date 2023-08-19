@@ -35,11 +35,11 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
         read_file();
 }
 
-VEmu::VEmu(std::string f_name, FileInfo* info, const std::vector<char*>& args,
+VEmu::VEmu(FileInfo* info, const std::vector<char*>& args,
            uint64_t mem_size)
     : VEmu("", info->entry_point, mem_size)
 {
-    bin_file_name = std::move(f_name);
+    bin_file_name = info->file_name;
     bus.get_mmu()->load_file(info);
 
     static constexpr size_t STACK_SIZE = 1 * 1024 * 1024;
