@@ -34,6 +34,7 @@ struct FileInfo {
     std::mutex lock;
 };
 
+std::vector<char*> substitute_input(const char** args, size_t len, const char* input_name);
 FileInfo* read_elf(const std::string& fname, bool exit_fatally = true);
 uint64_t gen_rand();
 

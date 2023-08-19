@@ -28,6 +28,21 @@ FileInfo* read_elf(const std::string& fname, bool exit_fatally)
     return new FileInfo { fname, segments, reader.get_entry() };
 }
 
+std::vector<char*> substitute_input(const char** args, size_t len, const char* input_name)
+{
+    std::vector<char*> new_args(len);
+    for (size_t i = 0; i < len; i++) {
+        if (strcmp(args[i], "{}") == 0) {
+            new_args[i] = new char[strlen(input_name) + 1];
+            strcpy(new_args[i], input_name);
+        } else
+            new_args[i] = (char *) args[i];
+    }
+
+    return new_args;
+}
+
+
 static uint64_t seed = 123456789;
 uint64_t gen_rand()
 {

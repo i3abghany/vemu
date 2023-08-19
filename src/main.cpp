@@ -2,31 +2,18 @@
 #include <string>
 
 #include <util.h>
+#include <FuzzThread.h>
 #ifndef TEST_ENV
 #include <VEmu.h>
 #else
 #include <Tester.h>
 #endif
 
-std::vector<char*> substitute_input(char** args, size_t len, const char* input_name)
+int main(int argc, const char* argv[])
 {
-    std::vector<char*> new_args(len);
-    for (size_t i = 0; i < len; i++) {
-        if (strcmp(args[i], "{}") == 0) {
-            new_args[i] = new char[strlen(input_name) + 1];
-            strcpy(new_args[i], input_name);
-        } else
-            new_args[i] = args[i];
-    }
-
-    return new_args;
-}
-
-int main(int argc, char* argv[])
-{
-#ifdef TEST_ENV
     (void)argc;
     (void)argv;
+#ifdef TEST_ENV
     Tester::run();
 #elif defined(FUZZ_ENV)
     if (argc < 4) {
