@@ -17,7 +17,7 @@ FileInfo* read_elf(const std::string& fname, bool exit_fatally)
         if (pseg->get_type() != PT_LOAD)
             continue;
         auto* p = (uint8_t*)pseg->get_data();
-        uint8_t *dat = new uint8_t[pseg->get_file_size()];
+        uint8_t* dat = new uint8_t[pseg->get_file_size()];
         memcpy(dat, p, pseg->get_file_size());
         auto seg_perms = (BytePermission)pseg->get_flags();
         segments.push_back(MemorySegment { seg_perms, pseg->get_virtual_address(),

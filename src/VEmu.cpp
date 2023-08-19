@@ -35,8 +35,7 @@ VEmu::VEmu(std::string f_name, uint64_t start_pc, uint64_t mem_size)
         read_file();
 }
 
-VEmu::VEmu(FileInfo* info, const std::vector<char*>& args,
-           uint64_t mem_size)
+VEmu::VEmu(FileInfo* info, const std::vector<char*>& args, uint64_t mem_size)
     : VEmu("", info->entry_point, mem_size)
 {
     bin_file_name = info->file_name;
