@@ -7,9 +7,11 @@
 #pragma GCC diagnostic pop
 using namespace ELFIO;
 
+#include <map>
 #include <mutex>
 
 typedef uint8_t BytePermission;
+using MutationHistory = std::map<std::pair<uint64_t, uint64_t>, uint8_t>;
 
 struct MemorySegment {
     BytePermission perms;
@@ -44,4 +46,5 @@ private:
     std::vector<FileInfo*> corpus_files;
 };
 
-void mutate(FileInfo* info, uint64_t n_bytes);
+void push_mutate(FileInfo* info, uint64_t n_bytes, MutationHistory& history);
+void pop_mutate(FileInfo* info, const MutationHistory& history);

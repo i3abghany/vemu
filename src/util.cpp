@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <map>
 #include <util.h>
 
 static elfio reader;
@@ -54,11 +55,26 @@ FileInfo* Corpus::get_random_free_file()
     }
 }
 
-void mutate(FileInfo* info, uint64_t n_bytes)
+using MutationHistory = std::map<std::pair<uint64_t, uint64_t>, uint8_t>;
+
+void push_mutate(FileInfo* info, uint64_t n_bytes, MutationHistory& history)
 {
     while (n_bytes--) {
         uint64_t seg_idx = gen_rand() % info->segments.size();
         uint64_t byte_idx = gen_rand() % info->segments[seg_idx].file_size;
+        if (history.find({ seg_idx, byte_idx }) == std::end(history)) {
+            history[{ seg_idx, byte_idx }] = info->segments[seg_idx].data[byte_idx];
+        }
+
         info->segments[seg_idx].data[byte_idx] = (uint8_t)(gen_rand() % 255);
+    }
+}
+
+void pop_mutate(FileInfo* info, const MutationHistory& history)
+{
+    for (auto it = std::begin(history); it != std::end(history); it++) {
+        auto pos = (*it).first;
+        auto byte_val = (*it).second;
+        info->segments[pos.first].data[pos.second] = byte_val;
     }
 }

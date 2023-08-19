@@ -24,9 +24,9 @@ std::vector<char*> substitute_input(char** args, size_t len, const char* input_n
 
 int main(int argc, char* argv[])
 {
+#ifdef TEST_ENV
     (void)argc;
     (void)argv;
-#ifdef TEST_ENV
     Tester::run();
 #elif defined(FUZZ_ENV)
     if (argc < 4) {
@@ -38,11 +38,13 @@ int main(int argc, char* argv[])
     auto corpus = Corpus(argv[1]);
     auto* fuzz_info = read_elf(argv[2]);
     auto* input_info = corpus.get_random_free_file();
-    mutate(input_info, gen_rand() % 16);
+    MutationHistory hist;
+    push_mutate(input_info, gen_rand() % 16, hist);
     char** fuzzed_cmd_args = &argv[3];
     VEmu em = VEmu { fuzz_info,
                      substitute_input(fuzzed_cmd_args, argc - 3,
                                       input_info->file_name.c_str()) };
+    pop_mutate(input_info, hist);
     auto exit_status = em.run();
     std::cout << exit_status;
 #else
