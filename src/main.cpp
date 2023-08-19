@@ -15,8 +15,9 @@ std::vector<char*> substitute_input(char** args, size_t len, const char* input_n
         if (strcmp(args[i], "{}") == 0) {
             new_args[i] = new char[strlen(input_name) + 1];
             strcpy(new_args[i], input_name);
-        } else
+        } else {
             new_args[i] = args[i];
+        }
     }
 
     return new_args;

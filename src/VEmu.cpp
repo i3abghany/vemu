@@ -303,6 +303,11 @@ std::pair<uint32_t, ReturnException> VEmu::get_4byte_aligned_instr(uint64_t i)
 uint32_t VEmu::run()
 {
     for (;; pc += 4) {
+
+        if (has_exited) {
+            return exit_code;
+        }
+
 #ifndef FUZZ_ENV
         Interrupt i = check_pending_interrupt();
         if (i != Interrupt::NoInterrupt) {
@@ -740,11 +745,27 @@ ReturnException VEmu::ECALL()
         file_table.push_back(FileHandle { buffer, (const char*)fname, fd, file_size, 0,
                                           FileType::DiskFile });
         iregs.store_reg(REG_A0, fd);
+    } else if (syscall_number == SYSCALL_NR_CLOSE) {
+        int fd = (int)iregs.load_reg(REG_A0);
+        int entry_idx = -1;
+        for (size_t i = 0; i < file_table.size(); i++) {
+            if (file_table[i].fd == fd) {
+                entry_idx = (int)i;
+                break;
+            }
+        }
+        if (entry_idx == -1) {
+            exit_emu(12);
+        } else {
+            file_table.erase(std::begin(file_table) + entry_idx);
+        }
+        return ReturnException::NormalExecutionReturn;
     } else if (syscall_number == SYSCALL_NR_EXIT) {
-        auto exit_code = (int)iregs.load_reg(REG_A0);
-        if (exit_code == 11)
+        auto _exit_code = (int)iregs.load_reg(REG_A0);
+        if (_exit_code == 11)
             std::cout << "Crash Detected\n";
-        exit(0);
+        exit_emu((uint8_t)(_exit_code % 255));
+        return ReturnException::NormalExecutionReturn;
     } else if (syscall_number == SYSCALL_NR_FSTAT) {
         int64_t fd = iregs.load_reg(REG_A0);
         uint64_t statbuf = iregs.load_reg(REG_A1);
@@ -2361,6 +2382,12 @@ ReturnException VEmu::XXX()
 
     std::cout.flags(ft);
     return ReturnException::IllegalInstruction;
+}
+
+void VEmu::exit_emu(uint8_t _exit_code)
+{
+    has_exited = true;
+    exit_code = _exit_code;
 }
 
 Interrupt VEmu::check_pending_interrupt()
