@@ -17,6 +17,7 @@ set(SRC_FILES
     src/PLIC.cpp
     src/UART.cpp
     src/util.cpp
+    src/FuzzThread.cpp
 )
 
 include_directories(include)
