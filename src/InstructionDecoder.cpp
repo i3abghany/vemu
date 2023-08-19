@@ -60,6 +60,7 @@ Instruction InstructionDecoder::decode(const uint32_t inst)
         return instr_cache.at(inst);
 
     auto t = instr_type(inst);
+
     switch (t) {
     case Instruction::Type::R:
         return instr_cache[inst] = decode_r(inst);

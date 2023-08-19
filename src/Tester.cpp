@@ -14,7 +14,7 @@ void Tester::run()
         FileInfo *info = read_elf(tcase.bin_file_name, false);
         if (info->entry_point == (uint64_t)~0)
             continue;
-        VEmu em = VEmu { tcase.bin_file_name, info, std::vector<char *>{}, 2 * 1024 * 1024 };
+        VEmu em = VEmu { info, std::vector<char *>{}, 2 * 1024 * 1024 };
         em.run();
     }
 }

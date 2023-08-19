@@ -18,12 +18,12 @@
 class VEmu {
 public:
     VEmu(std::string f_name = "", uint64_t pc = 0x80000000,
-         uint64_t ram_size = 128 * 1024 * 1024);
+         uint64_t mem_size = 128 * 1024 * 1024);
 
     explicit VEmu(const std::vector<uint8_t>&, uint64_t pc = 0x80000000,
                   uint64_t mem_size = 128 * 1024 * 1024);
 
-    VEmu(std::string f_name, FileInfo* info, const std::vector<char*>& args,
+    VEmu(FileInfo* info, const std::vector<char*>& args,
          uint64_t mem_size = 128 * 1024 * 1024);
 
     uint32_t run();
@@ -228,6 +228,7 @@ private:
     void trap(ReturnException e);
     bool is_fatal(ReturnException e);
     void exit_fatally(ReturnException e);
+    void exit_emu(uint8_t exit_code);
     std::string stringify_exception(ReturnException e);
 
     static constexpr int UART_IRQ = 10;
@@ -252,6 +253,9 @@ private:
         FileHandle { nullptr, nullptr, 1, 0, 0, FileType::Stdout},
         FileHandle { nullptr, nullptr, 2, 0, 0, FileType::Stderr},
     };
+
+    bool has_exited = false;
+    uint8_t exit_code = 0;
 
 #ifdef TEST_ENV
 public:
