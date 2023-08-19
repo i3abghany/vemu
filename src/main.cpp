@@ -24,16 +24,9 @@ int main(int argc, const char* argv[])
 
     auto corpus = Corpus(argv[1]);
     auto* fuzz_info = read_elf(argv[2]);
-    auto* input_info = corpus.get_random_free_file();
-    MutationHistory hist;
-    push_mutate(input_info, gen_rand() % 16, hist);
-    char** fuzzed_cmd_args = &argv[3];
-    VEmu em = VEmu { fuzz_info,
-                     substitute_input(fuzzed_cmd_args, argc - 3,
-                                      input_info->file_name.c_str()) };
-    pop_mutate(input_info, hist);
-    auto exit_status = em.run();
-    std::cout << exit_status;
+    const char** fuzzed_cmd_args = &argv[3];
+    FuzzThread th1 { &corpus, fuzz_info, fuzzed_cmd_args, argc - 3 };
+    th1.dispatch(100);
 #else
 #error "General emulation still WIP."
 #endif

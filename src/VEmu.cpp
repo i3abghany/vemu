@@ -762,7 +762,7 @@ ReturnException VEmu::ECALL()
     } else if (syscall_number == SYSCALL_NR_EXIT) {
         auto _exit_code = (int)iregs.load_reg(REG_A0);
         if (_exit_code == 11)
-            std::cout << "Crash Detected\n";
+            std::cout << "Crash Detected" << std::endl;
         exit_emu((uint8_t)(_exit_code % 255));
         return ReturnException::NormalExecutionReturn;
     } else if (syscall_number == SYSCALL_NR_FSTAT) {
