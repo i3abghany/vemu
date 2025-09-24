@@ -7,7 +7,7 @@ struct TestCase {
     bool skip = false;
 
     TestCase(std::string fname)
-        : bin_file_name(std::move(fname)) {};
+        : bin_file_name(std::move(fname)) { };
 
     TestCase(std::string fname, bool to_skip)
         : bin_file_name(std::move(fname))

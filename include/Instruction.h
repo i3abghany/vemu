@@ -32,7 +32,7 @@ public:
         : t(type)
         , name(i)
         , f(vals)
-        , str_name(n) {};
+        , str_name(n) { };
 
     Type get_type();
     Fields get_fields();

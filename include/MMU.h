@@ -34,7 +34,7 @@ public:
     [[nodiscard]] bool is_interrupting() override { return false; }
     void write_from(const std::vector<uint8_t>&, uint64_t);
     [[nodiscard]] std::pair<std::vector<uint8_t>, ReturnException>
-        read_to(uint64_t, uint64_t) const;
+    read_to(uint64_t, uint64_t) const;
     [[nodiscard]] uint64_t cur_alloc_ptr() const { return alloc_ptr; }
     [[nodiscard]] std::string _read_null_terminated_string(uint64_t) const;
     [[nodiscard]] std::pair<uint32_t, ReturnException> load_insn(uint64_t addr) const;

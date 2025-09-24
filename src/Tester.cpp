@@ -17,6 +17,7 @@ void Tester::run()
         VEmu em = VEmu { info, std::vector<char*> {}, 2 * 1024 * 1024 };
         em.run();
     }
+    std::cout << "All tests done." << std::endl;
 }
 
 const std::vector<TestCase> Tester::test_cases

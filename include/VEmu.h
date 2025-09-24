@@ -249,9 +249,9 @@ private:
         FileType type;
     };
     std::vector<FileHandle> file_table {
-        FileHandle {nullptr,  nullptr, 0, 0, 0, FileType::Stdin },
-        FileHandle { nullptr, nullptr, 1, 0, 0, FileType::Stdout},
-        FileHandle { nullptr, nullptr, 2, 0, 0, FileType::Stderr},
+        FileHandle { nullptr, nullptr, 0, 0, 0, FileType::Stdin  },
+        FileHandle { nullptr, nullptr, 1, 0, 0, FileType::Stdout },
+        FileHandle { nullptr, nullptr, 2, 0, 0, FileType::Stderr },
     };
 
     bool has_exited = false;

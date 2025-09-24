@@ -1,8 +1,8 @@
 #include <iostream>
 #include <string>
 
-#include <util.h>
 #include <FuzzThread.h>
+#include <util.h>
 #ifndef TEST_ENV
 #include <VEmu.h>
 #else

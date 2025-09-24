@@ -41,22 +41,22 @@
 
 #define CLINT_BASE (uint64_t)0x200'0000
 #define CLINT_SIZE (uint64_t)0x10000
-#define CLINT_MTIMECMP (uint64_t) CLINT_BASE + 0x4000
-#define CLINT_MTIME (uint64_t) CLINT_BASE + 0xbff8
+#define CLINT_MTIMECMP (uint64_t)CLINT_BASE + 0x4000
+#define CLINT_MTIME (uint64_t)CLINT_BASE + 0xbff8
 
 #define PLIC_BASE (uint64_t)0xc00'0000
 #define PLIC_SIZE (uint64_t)0x400'0000
-#define PLIC_PENDING (uint64_t) PLIC_BASE + 0x1000
-#define PLIC_SENABLE (uint64_t) PLIC_BASE + 0x2080
-#define PLIC_SPRIORITY (uint64_t) PLIC_BASE + 0x201000
-#define PLIC_SCLAIM (uint64_t) PLIC_BASE + 0x201004
+#define PLIC_PENDING (uint64_t)PLIC_BASE + 0x1000
+#define PLIC_SENABLE (uint64_t)PLIC_BASE + 0x2080
+#define PLIC_SPRIORITY (uint64_t)PLIC_BASE + 0x201000
+#define PLIC_SCLAIM (uint64_t)PLIC_BASE + 0x201004
 
 #define UART_BASE (uint64_t)0x1000'0000
 #define UART_SIZE (uint64_t)0x100
-#define UART_RHR (uint64_t) UART_BASE + 0
-#define UART_THR (uint64_t) UART_BASE + 0
-#define UART_LCR (uint64_t) UART_BASE + 3
-#define UART_LSR (uint64_t) UART_BASE + 5
+#define UART_RHR (uint64_t)UART_BASE + 0
+#define UART_THR (uint64_t)UART_BASE + 0
+#define UART_LCR (uint64_t)UART_BASE + 3
+#define UART_LSR (uint64_t)UART_BASE + 5
 
 /*
  * The 0th bit if set, data is received and is stored in either
