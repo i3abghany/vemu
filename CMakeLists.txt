@@ -66,6 +66,10 @@ target_compile_options(fuzz_emu PRIVATE -DFUZZ_ENV)
 
 target_link_libraries(test_emu PRIVATE -lgcov)
 target_link_libraries(test_emu PRIVATE --coverage)
+target_link_libraries(test_emu PRIVATE -ltbb)
+
+target_link_libraries(emu PRIVATE -ltbb)
+target_link_libraries(fuzz_emu PRIVATE -ltbb)
 
 if (SUPPORT_SOFTFLOAT)
     target_link_libraries(test_emu PUBLIC ${CMAKE_SOURCE_DIR}/${SOFTFLOAT_MAIN_DIR}/build/Win64-MinGW-w64/softfloat.a)
