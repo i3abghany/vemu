@@ -13,7 +13,7 @@ public:
     Bus(uint64_t mem_size)
         : ram_size(mem_size)
     {
-#ifndef FUZZ_ENV
+#if !defined(FUZZ_ENV) && !defined(TEST_ENV)
         devices = std::vector<Device*> { new CLINT(), new PLIC(), new UART() };
 #endif
         mmu = new MMU(ram_size);
@@ -21,7 +21,7 @@ public:
 
     Bus(const Bus& other)
     {
-#ifndef FUZZ_ENV
+#if !defined(FUZZ_ENV) && !defined(TEST_ENV)
         devices
             = std::vector<Device*> { new CLINT(*dynamic_cast<CLINT*>(other.devices[0])),
                                      new PLIC(*dynamic_cast<PLIC*>(other.devices[1])),
@@ -32,7 +32,7 @@ public:
 
     ~Bus()
     {
-#ifndef FUZZ_ENV
+#if !defined(FUZZ_ENV) && !defined(TEST_ENV)
         for (Device* device : devices)
             delete device;
 #endif
@@ -41,7 +41,14 @@ public:
 
     std::pair<uint64_t, ReturnException> load(uint64_t, size_t);
     ReturnException store(uint64_t, uint64_t, size_t);
-    bool uart_is_interrupting() { return get_uart()->is_interrupting(); }
+    bool uart_is_interrupting()
+    {
+#if !defined(FUZZ_ENV) && !defined(TEST_ENV)
+        return get_uart()->is_interrupting();
+#else
+        return false;
+#endif
+    }
 
     MMU* get_mmu() const { return mmu; }
 
@@ -49,9 +56,13 @@ private:
     std::vector<Device*> devices;
     Device* get_uart() const
     {
+#if !defined(FUZZ_ENV) && !defined(TEST_ENV)
         return *std::find_if(std::begin(devices), std::end(devices), [](Device* device) {
             return dynamic_cast<UART*>(device) != nullptr;
         });
+#else
+        return nullptr;
+#endif
     }
 
     uint64_t ram_size;
