@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(vemu)
 
-set(CMAKE_CXX_COMPILER g++-12)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 26)
 
 set(SRC_FILES 
     src/main.cpp 
